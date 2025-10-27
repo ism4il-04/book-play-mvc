@@ -1,0 +1,12 @@
+# Disable directory listing
+Options -Indexes
+
+# Enable URL rewriting
+RewriteEngine On
+
+# If the requested file or directory exists, serve it directly
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Otherwise, redirect everything to index.php
+RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
