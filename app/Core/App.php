@@ -8,12 +8,14 @@ class App {
         $url = $this->parseUrl();
 
         // --- Controller ---
-        if (isset($url[0]) && file_exists("../app/Controllers/" . ucfirst($url[0]) . "Controller.php")) {
+        $controllerPath = __DIR__ . "/../Controllers/" . ucfirst($this->controller) . ".php";
+        if (isset($url[0]) && file_exists(__DIR__ . "/../Controllers/" . ucfirst($url[0]) . "Controller.php")) {
             $this->controller = ucfirst($url[0]) . "Controller";
+            $controllerPath = __DIR__ . "/../Controllers/" . $this->controller . ".php";
             unset($url[0]);
         }
 
-        require_once "../app/Controllers/" . $this->controller . ".php";
+        require_once $controllerPath;
         $this->controller = new $this->controller;
 
         // --- Method ---

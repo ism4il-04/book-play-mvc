@@ -1,12 +1,13 @@
 <?php
-require_once '../app/Core/Database.php';
+require_once __DIR__ . '/Database.php';
 
 class Model {
     protected $db;
 
     public function __construct() {
         // Connect to the database via Database.php
-        $this->db = Database::getInstance();
+        $database = Database::getInstance();
+        $this->db = $database->getConnection();
     }
 
     // Optional: helper for fetching all records from a table

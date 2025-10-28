@@ -1,9 +1,13 @@
 <?php
+// Load configuration for BASE_URL constant
+require_once __DIR__ . '/../../config/config.php';
+
 class Controller {
     // Load a model from the Models folder
     protected function model($model) {
-        if (file_exists("../app/Models/" . $model . ".php")) {
-            require_once "../app/Models/" . $model . ".php";
+        $file = __DIR__ . "/../Models/" . $model . ".php";
+        if (file_exists($file)) {
+            require_once $file;
             return new $model();
         } else {
             die("Model '$model' not found.");
@@ -12,7 +16,7 @@ class Controller {
 
     // Load a view from the Views folder
     protected function view($view, $data = []) {
-        $file = "../app/Views/" . $view . ".php";
+        $file = __DIR__ . "/../Views/" . $view . ".php";
         if (file_exists($file)) {
             extract($data); // makes $data['title'] become $title
             require_once $file;
