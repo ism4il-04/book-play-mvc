@@ -5,11 +5,9 @@ use PhpCsFixer\Finder;
 
 $finder = Finder::create()
     ->in([
-        __DIR__ . '/admin',
-        __DIR__ . '/gestionnaire',
-        __DIR__ . '/user',
-        __DIR__ . '/includes',
-        __DIR__ . '/classes',
+        __DIR__ . '/app',
+        __DIR__ . '/config',
+        __DIR__ . '/public',
     ])
     ->name('*.php')
     ->exclude('vendor')
@@ -18,37 +16,38 @@ $finder = Finder::create()
 
 return (new Config())
     ->setRules([
-        // ---- Standards généraux ----
-        '@PSR12' => true, // norme principale PHP-FIG
+        // === Standards de base ===
+        '@PSR12' => true,                 // Standard principal PHP-FIG
         '@PhpCsFixer' => true,
-        
-        // ---- Espaces et indentations ----
-        'indentation_type' => true,
+
+        // === Espaces et indentation ===
+        'indentation_type' => true,       // 4 espaces (pas de tab)
         'no_whitespace_in_blank_line' => true,
         'no_trailing_whitespace' => true,
         'single_blank_line_at_eof' => true,
 
-        // ---- Accolades ----
+        // === Accolades ===
         'braces' => [
-            'position_after_functions_and_oop_constructs' => 'same',
+            'position_after_functions_and_oop_constructs' => 'same', // accolade sur la même ligne
             'position_after_control_structures' => 'same',
+            'allow_single_line_closure' => true,
+            'position_after_anonymous_constructs' => 'same',
         ],
 
-        // ---- Espaces autour des opérateurs ----
+
+        // === Espaces autour des opérateurs ===
         'binary_operator_spaces' => [
-            'default' => 'single_space',
+            'default' => 'single_space',  // ex: $a = $b + $c;
         ],
 
-        // ---- Fonctions et parenthèses ----
-        'function_declaration' => [
-            'closure_function_spacing' => 'one',
-        ],
-        'method_argument_space' => [
-            'on_multiline' => 'ensure_fully_multiline',
-        ],
+        // === Parenthèses et fonctions ===
         'no_spaces_inside_parenthesis' => true,
+        'function_declaration' => ['closure_function_spacing' => 'one'],
+        'method_argument_space' => ['on_multiline' => 'ensure_fully_multiline'],
+        'function_typehint_space' => true,
 
-        // ---- Nommage et style ----
+        // === Nommage et style ===
+        'visibility_required' => ['elements' => ['method', 'property']],
         'class_attributes_separation' => [
             'elements' => [
                 'const' => 'one',
@@ -56,39 +55,51 @@ return (new Config())
                 'method' => 'one',
             ],
         ],
-        'visibility_required' => ['elements' => ['method', 'property']],
-        'single_quote' => true,
-        'array_syntax' => ['syntax' => 'short'],
+        'single_quote' => true, // Utiliser ' au lieu de "
+        'array_syntax' => ['syntax' => 'short'], // []
+        'concat_space' => ['spacing' => 'one'], // $a . $b
         'cast_spaces' => ['space' => 'single'],
-        'concat_space' => ['spacing' => 'one'],
 
-        // ---- Importations ----
+        // === Imports et use ===
         'ordered_imports' => [
             'sort_algorithm' => 'alpha',
             'imports_order' => ['class', 'function', 'const'],
         ],
         'no_unused_imports' => true,
 
-        // ---- Commentaires & PHPDoc ----
-        'phpdoc_align' => ['align' => 'vertical'],
-        'phpdoc_scalar' => true,
-        'phpdoc_summary' => true,
-        'phpdoc_no_package' => false,
+        // === Commentaires et documentation ===
+        'phpdoc_align' => ['align' => 'vertical'],       // aligner @param, @return
+        'phpdoc_summary' => true,                        // description courte obligatoire
         'phpdoc_order' => ['order' => ['param', 'return', 'throws']],
-        'phpdoc_var_annotation_correct_order' => true,
         'phpdoc_trim' => true,
-        'phpdoc_trim_consecutive_blank_line_separation' => true,
+        'phpdoc_no_empty_return' => false,
+        'phpdoc_var_annotation_correct_order' => true,
+        'phpdoc_scalar' => true,
 
-        // ---- Autres bonnes pratiques ----
-        'no_closing_tag' => true,
-        'no_empty_statement' => true,
-        'no_extra_blank_lines' => true,
+        // === Blocs de code ===
         'blank_line_before_statement' => [
-            'statements' => ['return', 'throw', 'try', 'if', 'for', 'foreach', 'while', 'switch'],
+            'statements' => [
+                'return', 'throw', 'try', 'if', 'for', 'foreach', 'while', 'switch',
+            ],
         ],
-        'include' => true,
+        'no_empty_statement' => true,
+        'no_extra_blank_lines' => [
+            'tokens' => [
+                'extra',
+                'throw',
+                'return',
+                'continue',
+                'break',
+                'case',
+                'default',
+            ],
+        ],
+
+        // === Autres règles utiles ===
+        'no_closing_tag' => true,        
+        'include' => true,               // include/require uniformisés
+        'line_ending' => true,
     ])
-    ->setIndent('    ') // 4 espaces
+    ->setIndent('    ')  // 4 espaces
     ->setLineEnding("\n")
     ->setFinder($finder);
-?>

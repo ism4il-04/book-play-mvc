@@ -37,31 +37,171 @@ En nous engageant à suivre ces lignes directrices, nous garantissons que le pro
 
 ## Organisation du projet
 
-Afin d'assurer une structure claire et compréhensible du projet, il est important de respecter une organisation cohérente des dossiers et fichiers. Chaque répertoire doit avoir un rôle précis afin de faciliter la navigation et la maintenance du code.
+Afin d’assurer une structure claire, cohérente et facilement maintenable, il est essentiel de respecter une organisation rigoureuse des dossiers et fichiers du projet.
+Notre application repose sur l’architecture MVC (Modèle – Vue – Contrôleur), qui permet de séparer les différentes responsabilités du code.
 
-Le projet est organisé en plusieurs dossiers principaux, chacun ayant un rôle précis :
+**Structure de projet**
+```
+/book-play
+│
+├── /app
+│   ├── /Controllers
+│   ├── /Models
+│   ├── /Views
+│   ├── /Core
+│   │   ├── App.php
+│   │   ├── Controller.php
+│   │   └── Model.php
+│   ├── /Helpers
+│   └── /Database
+│       └── Database.php
+│
+├── /config
+│   └── config.php
+│
+├── /public
+│   ├── index.php
+│   ├── /css
+│   ├── /js
+│   └── /uploads
+│
+├── /vendor
+├── .env
+├── composer.json
+└── README.md
+```
 
-- **admin/** : contient les pages et fichiers relatifs à la partie administrateur du site, comme dashboard.php, qui permet la gestion du contenu et des utilisateurs.
+### Détails des dossiers et fichiers ###
+***/app***
 
-- **gestionnaire/** : regroupe les fichiers spécifiques au profil du gestionnaire, notamment son tableau de bord et les fonctionnalités associées.
+C’est le cœur de l’application.
+Il contient toute la logique métier, les modèles, les contrôleurs et les vues.
 
-- **user/** : contient les fichiers liés à l'espace utilisateur, comme dashboard.php, ainsi que les éléments d'interface (user_header.php, user_footer.php, user_navbar.php, etc.).
+***/app/Controllers***
 
-- **includes/** : regroupe les fichiers communs réutilisables, partagés entre les différentes parties du projet. Ce dossier contient par exemple :
-  - Des fichiers PHP de connexion (db.php)
-  - Des sous-dossiers (admin, gestionnaire, user) contenant les styles des en-têtes, pieds de page et autres composants utilisés dans chaque interface
-  - Les fichiers CSS et JS
+Contient les contrôleurs
 
-- **assets/** : contient les ressources statiques telles que les images.
+Chaque contrôleur gère une partie de l’application (ex : UserController.php, HomeController.php)
 
-- **classes/** : regroupe les classes PHP utilisées pour structurer la logique du projet.
+Un contrôleur :
 
-- **vendor/** : généré automatiquement par Composer, il contient les dépendances externes nécessaires au projet.
+reçoit une requête (via l'URL)
 
-- **Fichiers racine** :
-  - index.php → point d'entrée du site
-  - landing.php → page d'accueil principale
-  - Fichiers de configuration (.env, composer.json, etc.)
+demande les données au modèle
+
+envoie les données à la vue
+
+Exemple : UserController.php
+
+```php
+class UserController extends Controller {
+    public function index() {
+        $users = $this->model("User")->getAll();
+        $this->view("users/index", ['users' => $users]);
+    }
+}
+```
+
+***/app/Models***
+
+Contient les modèles
+
+Un modèle permet d’interagir avec la base de données
+
+Il représente une entité : ex : User.php, Article.php
+
+Exemple : User.php
+
+```php
+class User extends Model {
+    public function getAll() {
+        return $this->db->query("SELECT * FROM users")->fetchAll();
+    }
+}
+```
+
+***/app/Views***
+
+Contient les fichiers qui affichent les pages HTML
+
+Chaque dossier correspond à un contrôleur (ex : /Views/users/index.php)
+
+❗ Les vues n’ont pas de logique métier, seulement de l’affichage.
+
+Exemple : Views/users/index.php
+
+```html
+<h1>Liste des utilisateurs</h1>
+<?php foreach ($users as $user): ?>
+    <p><?= $user["name"] ?></p>
+<?php endforeach ?>
+```
+
+***/app/Core***
+
+Contient les classes de base du framework MVC que tu construis :
+
+Fichier	Rôle
+App.php	Analyse l'URL et appelle le bon contrôleur et la bonne méthode. (Front Controller / Router)
+Controller.php	Classe parent de tous les contrôleurs : gère load model et load view.
+Model.php	Classe parent de tous les modèles : initialise la connexion à la DB.
+***/app/Database/ → Database.php***
+
+Gère la connexion à la base de données via PDO.
+
+Utilisée par Model.php
+
+Exemple : Singleton Database
+```php
+class Database {
+    private static $instance = null;
+
+    public static function getInstance() {
+        if (self::$instance == null) {
+            self::$instance = new PDO(...);
+        }
+        return self::$instance;
+    }
+}
+```
+
+***/config → config.php***
+
+Contient les variables de configuration statiques (ex: gestion de sessions, constantes globales).
+
+***/public***
+
+Point d’entrée du projet (accessible depuis le navigateur)
+
+Elément	Rôle
+index.php	Redirige toutes les requêtes vers App.php
+/css	Styles CSS
+/js	Scripts JavaScript
+/uploads	Images, fichiers uploadés
+public/index.php
+
+C’est le fichier principal exécuté par le serveur Apache/Nginx.
+```php
+require_once "../app/Core/App.php";
+require_once "../app/Core/Controller.php";
+```
+
+
+Il charge l’application.
+
+***.env***
+
+Contient les informations sensibles :
+```
+DB_HOST=localhost
+DB_USER=root
+DB_PASS=
+DB_NAME=monmvc
+```
+
+***composer.json***
+
+Contient les dépendances du projet et l’autoloading des classes.
 
 ---
 
@@ -101,7 +241,7 @@ Pour les classes CSS : **kebab-case**
 }
 ```
 
-### 4. Nommage des méthodes et fonctions
+### Nommage des méthodes et fonctions
 
 **camelCase** (nomMethode) : première lettre minuscule, majuscules pour les mots suivants
 
