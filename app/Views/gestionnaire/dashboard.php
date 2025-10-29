@@ -8,17 +8,17 @@ $currentUser = $user ?? null;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manager Dashboard - <?= APP_NAME ?></title>
+    <title>Manager Dashboard - <?php echo APP_NAME; ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="<?= $baseUrl ?>css/style.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-success">
         <div class="container">
-            <a class="navbar-brand" href="<?= $baseUrl ?>home">Book&Play</a>
+            <a class="navbar-brand" href="<?php echo $baseUrl; ?>home">Book&Play</a>
             <div class="navbar-nav ms-auto">
-                <span class="navbar-text me-3">Welcome, <?= htmlspecialchars($currentUser['name'] ?? 'Manager') ?></span>
-                <a class="nav-link" href="<?= $baseUrl ?>auth/logout">Logout</a>
+                <span class="navbar-text me-3">Welcome, <?php echo htmlspecialchars($currentUser['name'] ?? 'Manager'); ?></span>
+                <a class="nav-link" href="<?php echo $baseUrl; ?>auth/logout">Logout</a>
             </div>
         </div>
     </nav>

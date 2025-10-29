@@ -1659,6 +1659,7 @@
         },
         {
             "name": "sebastian/diff",
+<<<<<<< HEAD
             "version": "7.0.0",
             "source": {
                 "type": "git",
@@ -1677,11 +1678,35 @@
             "require-dev": {
                 "phpunit/phpunit": "^12.0",
                 "symfony/process": "^7.2"
+=======
+            "version": "6.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/sebastianbergmann/diff.git",
+                "reference": "b4ccd857127db5d41a5b676f24b51371d76d8544"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/sebastianbergmann/diff/zipball/b4ccd857127db5d41a5b676f24b51371d76d8544",
+                "reference": "b4ccd857127db5d41a5b676f24b51371d76d8544",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.2"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^11.0",
+                "symfony/process": "^4.2 || ^5"
+>>>>>>> 025f9a10f04e4fb955241686cf6d8c5112dd8368
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
+<<<<<<< HEAD
                     "dev-main": "7.0-dev"
+=======
+                    "dev-main": "6.0-dev"
+>>>>>>> 025f9a10f04e4fb955241686cf6d8c5112dd8368
                 }
             },
             "autoload": {
@@ -1714,7 +1739,11 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/diff/issues",
                 "security": "https://github.com/sebastianbergmann/diff/security/policy",
+<<<<<<< HEAD
                 "source": "https://github.com/sebastianbergmann/diff/tree/7.0.0"
+=======
+                "source": "https://github.com/sebastianbergmann/diff/tree/6.0.2"
+>>>>>>> 025f9a10f04e4fb955241686cf6d8c5112dd8368
             },
             "funding": [
                 {
@@ -1722,7 +1751,11 @@
                     "type": "github"
                 }
             ],
+<<<<<<< HEAD
             "time": "2025-02-07T04:55:46+00:00"
+=======
+            "time": "2024-07-03T04:53:05+00:00"
+>>>>>>> 025f9a10f04e4fb955241686cf6d8c5112dd8368
         },
         {
             "name": "symfony/console",
