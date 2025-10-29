@@ -1,7 +1,7 @@
 <?php
 class AuthController extends Controller {
     
-    public function login() {
+    public function Login() {
         $this->view('auth/login', []);
     }
     

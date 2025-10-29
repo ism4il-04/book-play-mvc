@@ -3,7 +3,7 @@
 
 // Global configuration constants
 const APP_NAME = 'book&play';
-const BASE_URL = 'http://localhost/book&play/public/';
+const BASE_URL = 'http://localhost/book-play-mvc/public/';
 
 // Define if not already defined (helps when included multiple times)
 if (!defined('APP_NAME')) {
