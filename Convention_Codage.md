@@ -3,6 +3,7 @@
 ## Convention de Codage : TP4 (Réservations des terrains)
 
 **Membres du groupe :**
+
 - Lyamani Ismail
 - Moeniss Douae
 - Oumhella Abdellatif
@@ -40,8 +41,9 @@ En nous engageant à suivre ces lignes directrices, nous garantissons que le pro
 Afin d’assurer une structure claire, cohérente et facilement maintenable, il est essentiel de respecter une organisation rigoureuse des dossiers et fichiers du projet.
 Notre application repose sur l’architecture MVC (Modèle – Vue – Contrôleur), qui permet de séparer les différentes responsabilités du code.
 
-**Structure de projet**
-```
+### Structure de projet
+
+```text
 /book-play
 │
 ├── /app
@@ -71,7 +73,8 @@ Notre application repose sur l’architecture MVC (Modèle – Vue – Contrôle
 └── README.md
 ```
 
-### Détails des dossiers et fichiers ###
+### Détails des dossiers et fichiers
+
 ***/app***
 
 C’est le cœur de l’application.
@@ -141,10 +144,14 @@ Exemple : Views/users/index.php
 
 Contient les classes de base du framework MVC que tu construis :
 
-Fichier	Rôle
-App.php	Analyse l'URL et appelle le bon contrôleur et la bonne méthode. (Front Controller / Router)
-Controller.php	Classe parent de tous les contrôleurs : gère load model et load view.
-Model.php	Classe parent de tous les modèles : initialise la connexion à la DB.
+Fichier Rôle
+
+App.php: Analyse l'URL et appelle le bon contrôleur et la bonne méthode. (Front Controller / Router)
+
+Controller.php: Classe parent de tous les contrôleurs : gère load model et load view.
+
+Model.php: Classe parent de tous les modèles : initialise la connexion à la DB.
+
 ***/app/Database/ → Database.php***
 
 Gère la connexion à la base de données via PDO.
@@ -152,6 +159,7 @@ Gère la connexion à la base de données via PDO.
 Utilisée par Model.php
 
 Exemple : Singleton Database
+
 ```php
 class Database {
     private static $instance = null;
@@ -173,26 +181,27 @@ Contient les variables de configuration statiques (ex: gestion de sessions, cons
 
 Point d’entrée du projet (accessible depuis le navigateur)
 
-Elément	Rôle
-index.php	Redirige toutes les requêtes vers App.php
-/css	Styles CSS
-/js	Scripts JavaScript
-/uploads	Images, fichiers uploadés
+Elément Rôle
+index.php: Redirige toutes les requêtes vers App.php
+/css: Styles CSS
+/js: Scripts JavaScript
+/uploads: Images, fichiers uploadés
 public/index.php
 
-C’est le fichier principal exécuté par le serveur Apache/Nginx.
+C’est le fichier principal exécuté par le serveur Apache.
+
 ```php
 require_once "../app/Core/App.php";
 require_once "../app/Core/Controller.php";
 ```
-
 
 Il charge l’application.
 
 ***.env***
 
 Contient les informations sensibles :
-```
+
+```text
 DB_HOST=localhost
 DB_USER=root
 DB_PASS=
@@ -225,7 +234,10 @@ Exemple : `user_dashboard.php`, `booking_manager.php`
 
 **PascalCase** : première lettre de chaque mot en majuscule
 
-Exemple : <br> pour les classes **JavaScript**
+Exemple :
+
+pour les classes **JavaScript**
+
 ```php
 class UserReservation {
     private $userId;
@@ -245,14 +257,18 @@ Pour les classes CSS : **kebab-case**
 
 **camelCase** (nomMethode) : première lettre minuscule, majuscules pour les mots suivants
 
-Exemple : <br>
-**PHP**
+Exemple :
+
+#### PHP
+
 ```php
 public function getReservations() {
     return $this->reservations;
 }
 ```
-**JavaScript**
+
+#### JavaScript
+
 ```javascript
 function updatePage() {
     let x = 0;
@@ -266,17 +282,20 @@ function updatePage() {
 
 pour javascript, il faut declarer les variables avec **let**
 
-Exemple : <br>
-**PHP**
+Exemple :
+
+#### php
+
 ```php
 $userId = 123;
 $terrainName = "Terrain A";
 ```
-**JavaScript**
+
+#### javascript
+
 ```javascript
 let variableUser = 'user';
 ```
-
 
 Dans CSS : **kebab-case** avec préfixe sémantique
 
@@ -312,7 +331,7 @@ CREATE TABLE user_reservations (
 
 ### Nommage de ID dans CSS
 
-**camelCase**
+#### camelCase
 
 ```css
 #userName {
@@ -322,7 +341,7 @@ CREATE TABLE user_reservations (
 
 ### Nommage des attributs et balises en HTML
 
-**minuscules**
+#### miniscules
 
 ```html
 <div class="container">
@@ -338,7 +357,7 @@ Le style de code a pour objectif d'assurer une lecture fluide et uniforme du cod
 
 > **Note importante** : PHP et JavaScript suivent les mêmes conventions de style de code en ce qui concerne l'indentation (4 espaces), le nommage (camelCase pour variables et méthodes, PascalCase pour les classes), les accolades (même ligne), et les espaces autour des opérateurs. Cela garantit une cohérence totale entre le code backend (PHP) et le code frontend (JavaScript).
 
-#### Indentation et espacement
+### Indentation et espacement
 
 - **JavaScript et PHP** : 4 espaces (pas de tabulation)
 - **HTML et CSS** : 2 espaces (pas de tabulation)
@@ -348,6 +367,7 @@ Le style de code a pour objectif d'assurer une lecture fluide et uniforme du cod
 Pour les classes : accolade dans la même ligne de déclaration de classe
 
 **PHP** :
+
 ```php
 class User {
     private $name;
@@ -359,6 +379,7 @@ class User {
 ```
 
 **JavaScript** :
+
 ```javascript
 class User {
     constructor(name) {
@@ -374,6 +395,7 @@ class User {
 Pour les méthodes/fonctions : accolade dans la même ligne de déclaration
 
 **PHP** :
+
 ```php
 public function getReservations() {
     return $this->reservations;
@@ -381,6 +403,7 @@ public function getReservations() {
 ```
 
 **JavaScript** :
+
 ```javascript
 function getReservations() {
     return this.reservations;
@@ -405,6 +428,7 @@ const getReservations = () => {
 Si une ligne dépasse, la découper de manière logique
 
 **Correct** :
+
 ```php
 $reservation = new Reservation(
     $userId,
@@ -415,6 +439,7 @@ $reservation = new Reservation(
 ```
 
 **Incorrect** :
+
 ```php
 $reservation = new Reservation($userId, $terrainId, $startDate, $endDate, $additionalInfo, $comments);
 ```
@@ -424,6 +449,7 @@ $reservation = new Reservation($userId, $terrainId, $startDate, $endDate, $addit
 **Autour des opérateurs** :
 
 Correct (PHP et JavaScript identique) :
+
 ```php
 // PHP
 $total = $price + $tax;
@@ -437,6 +463,7 @@ let isValid = (age >= 18) && (hasLicense === true);
 ```
 
 Incorrect :
+
 ```php
 // PHP
 $total=$price+$tax;
@@ -450,6 +477,7 @@ let total=price+tax;
 **Structures de contrôle** :
 
 Correct (PHP et JavaScript identique) :
+
 ```php
 // PHP
 if ($condition) {
@@ -473,6 +501,7 @@ for (let item of items) {
 ```
 
 Incorrect :
+
 ```php
 // PHP
 if($condition){
@@ -498,6 +527,7 @@ for(let item of items){
 **Appels de fonction** :
 
 Correct (PHP et JavaScript identique) :
+
 ```php
 // PHP
 calculateTotal($items, $discount);
@@ -509,6 +539,7 @@ calculateTotal(items, discount);
 ```
 
 Incorrect :
+
 ```php
 // PHP
 calculateTotal( $items , $discount );
@@ -522,6 +553,7 @@ calculateTotal( items , discount );
 **Déclarations de fonction** :
 
 Correct (PHP et JavaScript identique) :
+
 ```php
 // PHP
 public function updateUser($id, $data) {
@@ -541,6 +573,7 @@ const updateUser = (id, data) => {
 ```
 
 Incorrect :
+
 ```php
 // PHP
 public function updateUser ($id,$data) {
@@ -566,6 +599,7 @@ Respecter un ordre logique pour les propriétés :
 5. Animation : `transition`, `transform`
 
 Exemple :
+
 ```css
 .card {
     position: relative;
@@ -750,11 +784,11 @@ Exemple :
 
 ## Références
 
-- **Documentation PHP officielle** : https://www.php.net/docs.php
-- **Normes de codage PHP-FIG (PSR)** : https://www.php-fig.org/psr/
+- **Documentation PHP officielle** : [https://www.php.net/docs.php](https://www.php.net/docs.php)
+- **Normes de codage PHP-FIG (PSR)** : [https://www.php-fig.org/psr/](https://www.php-fig.org/psr/)
 - **Exemples des conventions de codage** :
-  - https://github.com/florentdupont/Conventions/wiki/Convention-de-codage
-  - https://github.com/Romain-Donze/Conventions/tree/main/Qt%20Qml
+  - [https://github.com/florentdupont/Conventions/wiki/Convention-de-codage](https://github.com/florentdupont/Conventions/wiki/Convention-de-codage)
+  - [https://github.com/Romain-Donze/Conventions/tree/main/Qt%20Qml](https://github.com/florentdupont/Conventions/wiki/Convention-de-codage)
 
 ---
 
