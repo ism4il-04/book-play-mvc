@@ -1,14 +1,11 @@
 <?php
 
-class HomeController extends Controller
-{
-    public function index()
-    {
+class HomeController extends Controller {
+    public function index() {
         $this->view('home/index');
     }
 
-    public function subscribe()
-    {
+    public function subscribe() {
         if ('POST' === $_SERVER['REQUEST_METHOD'] && isset($_POST['email'])) {
             $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);
 

@@ -1,15 +1,13 @@
 <?php
 
-class App
-{
+class App {
     protected $controller = 'HomeController'; // Default controller
 
     protected $method = 'index';               // Default method
 
     protected $params = [];                    // Any parameters
 
-    public function __construct()
-    {
+    public function __construct() {
         $url = $this->parseUrl();
 
         // --- Controller ---
@@ -38,8 +36,7 @@ class App
     }
 
     // Parse the URL: /controller/method/param1/param2
-    private function parseUrl()
-    {
+    private function parseUrl() {
         if (isset($_GET['url'])) {
             return explode('/', filter_var(rtrim($_GET['url'], '/'), FILTER_SANITIZE_URL));
         }

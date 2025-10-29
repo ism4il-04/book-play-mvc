@@ -66,7 +66,15 @@ return (new Config())
             'imports_order' => ['class', 'function', 'const'],
         ],
         'no_unused_imports' => true,
-
+        // === Accolades ===
+        // === Accolades ===
+        'braces_position' => [
+            'functions_opening_brace' => 'same_line',
+            'classes_opening_brace' => 'same_line',
+            'anonymous_classes_opening_brace' => 'same_line',
+            'control_structures_opening_brace' => 'same_line',
+            'anonymous_functions_opening_brace' => 'same_line',
+        ],
         // === Commentaires et documentation ===
         'phpdoc_align' => ['align' => 'vertical'],       // aligner @param, @return
         'phpdoc_summary' => true,                        // description courte obligatoire

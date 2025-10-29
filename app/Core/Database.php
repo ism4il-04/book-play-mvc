@@ -4,14 +4,12 @@
 
 use Dotenv\Dotenv;
 
-class Database
-{
+class Database {
     private static $instance;
 
     private $conn;
 
-    private function __construct()
-    {
+    private function __construct() {
         try {
             // Load environment variables if not already loaded
             if (!isset($_ENV['DB_HOST'])) {
@@ -35,13 +33,11 @@ class Database
     }
 
     // Magic method to call PDO methods directly on Database instance
-    public function __call($method, $args)
-    {
+    public function __call($method, $args) {
         return call_user_func_array([$this->conn, $method], $args);
     }
 
-    public static function getInstance()
-    {
+    public static function getInstance() {
         if (null === self::$instance) {
             self::$instance = new self();
         }
@@ -49,8 +45,7 @@ class Database
         return self::$instance;
     }
 
-    public function getConnection()
-    {
+    public function getConnection() {
         return $this->conn;
     }
 }
