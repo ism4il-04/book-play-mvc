@@ -8,7 +8,14 @@ $dotenv->load();
 
 // Global configuration constants
 const APP_NAME = 'book&play';
-const BASE_URL = 'http://localhost/book&play/public/';
+
+// Load BASE_URL from environment at runtime (const can't use $_ENV)
+if (isset($_ENV['BASE_URL']) && $_ENV['BASE_URL'] !== '') {
+    define('BASE_URL', $_ENV['BASE_URL']);
+} elseif (getenv('BASE_URL')) {
+    define('BASE_URL', getenv('BASE_URL'));
+}
+
 
 // Define if not already defined (helps when included multiple times)
 if (!defined('APP_NAME')) {
