@@ -265,7 +265,12 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
 
             <!-- Recent Activities -->
             <div class="content-section">
-               
+                <div class="section-header">
+                    <h2>Mes Terrains</h2>
+                    <a href="<?php echo $baseUrl; ?>terrains/create" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Ajouter un terrain
+                    </a>
+                </div>
 
                 <div class="activities-list">
                     <?php if (!empty($stats['recent_activities'])): ?>
@@ -274,9 +279,9 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
                                 <!-- Image -->
                                 <?php if (!empty($terrain['image'])): ?>
                                     <?php 
-                                        $imagePath = $baseUrl . 'uploads/terrains/' . $terrain['image'];
+                                        $imagePath = $baseUrl . 'images/' . $terrain['image'];
                                         $rootDir = realpath(__DIR__ . '/../../../');
-                                        $absolutePath = $rootDir . '/public/uploads/terrains/' . $terrain['image'];
+                                        $absolutePath = $rootDir . '/public/images/' . $terrain['image'];
                                         $imageExists = file_exists($absolutePath);
                                     ?>
                                     
