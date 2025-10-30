@@ -43,7 +43,7 @@ $baseUrl = BASE_URL;
                 <a href="<?= $baseUrl ?>home/terrains" class="btn btn-green mt-3">Book a Field Now</a>
             </div>
             <div class="col-lg-6 text-center">
-                <img src="<?php echo $baseUrl; ?>images/téléchargement.jpeg?v=<?php echo time(); ?>" alt="People playing football">
+                <img src="<?php echo $baseUrl; ?>images/messi.jpg?v=<?php echo time(); ?>" alt="People playing football">
             </div>
         </div>
     </div>
