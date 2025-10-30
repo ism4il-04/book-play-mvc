@@ -9,8 +9,6 @@ class Dashboad_gestionnaireController extends Controller {
 
         $this->view('gestionnaire/dashboard', ['user' => $_SESSION['user']]);
     }
-    p
-
 }
 
 

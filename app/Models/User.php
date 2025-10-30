@@ -84,4 +84,31 @@ class User extends Model {
 
         return $user;
     }
+
+    /**
+     * Enregistrer un nouvel utilisateur.
+     */
+    public function register(string $nom, string $prenom, string $email, string $password, string $num_tel = ''): bool {
+        // Vérifier si l'email existe déjà
+        $stmt = $this->db->prepare("SELECT id FROM {$this->table} WHERE email = ? LIMIT 1");
+        $stmt->execute([$email]);
+        if ($stmt->fetch(PDO::FETCH_ASSOC)) {
+            return false; // email déjà pris
+        }
+
+        // Hacher le mot de passe
+        $hashed = password_hash($password, PASSWORD_BCRYPT);
+
+        // Insérer le nouvel utilisateur avec le numéro de téléphone
+        $insert = $this->db->prepare(
+            "INSERT INTO {$this->table} (nom, prenom, email, password, num_tel) VALUES (?, ?, ?, ?, ?)"
+        );
+
+        try {
+            return (bool) $insert->execute([$nom, $prenom, $email, $hashed, $num_tel]);
+        } catch (PDOException $e) {
+            // Optionnel: log de l'erreur $e->getMessage()
+            return false;
+        }
+    }
 }
