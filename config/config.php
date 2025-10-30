@@ -24,3 +24,6 @@ if (!defined('APP_NAME')) {
 if (!defined('BASE_URL')) {
     define('BASE_URL', 'http://localhost/TPs_Dev-web/book-play-mvc/public/');
 }
+
+define('RECAPTCHA_SITE_KEY', '6LdHhuQrAAAAAN_Jx1i6sic0N2KxGmrz3J1yyRAL');
+define('RECAPTCHA_SECRET_KEY', '6LdHhuQrAAAAAFDFflYcxPYgQSS7w-UwqaZUUanI');
