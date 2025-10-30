@@ -3,58 +3,97 @@ require_once __DIR__ . '/../../../config/config.php';
 $baseUrl = BASE_URL;
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - <?php echo APP_NAME; ?></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
+    <title>Inscription - <?php echo APP_NAME; ?></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/register.css">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
-<body class="bg-light">
-    <div class="container mt-5">
-        <div class="row justify-content-center">
-            <div class="col-md-6 col-lg-4">
-                <div class="card shadow">
-                    <div class="card-body p-4">
-                        <h3 class="card-title text-center mb-4">Register</h3>
-                        <?php if (isset($_GET['error'])) { ?>
-                            <div class="alert alert-danger"><?php echo htmlspecialchars($_GET['error']); ?></div>
-                        <?php } ?>
-                        <form method="POST" action="<?php echo $baseUrl; ?>auth/register">
-                            <div class="mb-3">
-                                <label for="name" class="form-label">Name</label>
-                                <input type="text" class="form-control" id="name" name="name" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="email" class="form-label">Email</label>
-                                <input type="email" class="form-control" id="email" name="email" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="password" class="form-label">Password</label>
-                                <input type="password" class="form-control" id="password" name="password" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="role" class="form-label">Role</label>
-                                <select class="form-select" id="role" name="role">
-                                    <option value="utilisateur">Utilisateur</option>
-                                    <option value="gestionnaire">Gestionnaire</option>
-                                </select>
-                            </div>
-                            <button type="submit" class="btn btn-primary w-100 mb-2">Register</button>
-                        </form>
-                        <p class="text-center mt-3 mb-0">
-                            <a href="<?php echo $baseUrl; ?>auth/login">Already have an account? Login</a>
-                        </p>
-                        <p class="text-center mt-2">
-                            <a href="<?php echo $baseUrl; ?>home">Back to Home</a>
-                        </p>
+<body>
+    <div class="form-container">
+       
+        <h1 class="form-title">
+            <i class="bi bi-person-plus-fill"></i>
+            Inscription
+        </h1>
+
+        <?php if (isset($_GET['error'])): ?>
+            <div class="error-list">
+                <ul>
+                    <li><?php echo htmlspecialchars($_GET['error']); ?></li>
+                </ul>
+            </div>
+        <?php endif; ?>
+
+        <form method="POST" action="<?php echo BASE_URL; ?>auth/register">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="name">Nom</label>
+                    <div class="input-wrapper">
+                        <i class="bi bi-person input-icon"></i>
+                        <input type="text" id="name" name="name" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="prenom">Prénom</label>
+                    <div class="input-wrapper">
+                        <i class="bi bi-person-badge input-icon"></i>
+                        <input type="text" id="prenom" name="prenom" required>
                     </div>
                 </div>
             </div>
-        </div>
+
+            <div class="form-group full-width">
+                <label for="email">Email</label>
+                <div class="input-wrapper">
+                    <i class="bi bi-envelope input-icon"></i>
+                    <input type="email" id="email" name="email" required value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
+                </div>
+            </div>
+
+            <div class="form-group full-width">
+                <label for="num_tel">Téléphone</label>
+                <div class="input-wrapper phone">
+                    <i class="bi bi-telephone input-icon phone-icon"></i>
+                    <input type="tel" id="num_tel" name="num_tel" placeholder="+212 6 XX XX XX XX" value="<?php echo htmlspecialchars($_POST['num_tel'] ?? ''); ?>">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="password">Mot de passe</label>
+                    <div class="input-wrapper">
+                        <i class="bi bi-lock input-icon"></i>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="confirm_password">Confirmer</label>
+                    <div class="input-wrapper">
+                        <i class="bi bi-lock-fill input-icon"></i>
+                        <input type="password" id="confirm_password" name="confirm_password" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="recaptcha-wrapper">
+                <div class="g-recaptcha" data-sitekey="<?php echo RECAPTCHA_SITE_KEY; ?>"></div>
+            </div>
+            
+            <button type="submit" class="submit-btn">
+                <i class="bi bi-check-circle"></i>
+                S'inscrire
+            </button>
+
+            <div class="login-link">
+                <i class="bi bi-box-arrow-in-right"></i>
+                Déjà un compte ? <a href="<?php echo BASE_URL; ?>auth/login">Se connecter</a>
+            </div>
+        </form>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
 

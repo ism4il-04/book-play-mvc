@@ -51,9 +51,11 @@ return (new Config())
         'class_attributes_separation' => [
             'elements' => [
                 'const' => 'one',
+                
                 'property' => 'one',
                 'method' => 'one',
             ],
+            
         ],
         'single_quote' => true, // Utiliser ' au lieu de "
         'array_syntax' => ['syntax' => 'short'], // []
@@ -75,6 +77,7 @@ return (new Config())
             'control_structures_opening_brace' => 'same_line',
             'anonymous_functions_opening_brace' => 'same_line',
         ],
+        
         // === Commentaires et documentation ===
         'phpdoc_align' => ['align' => 'vertical'],       // aligner @param, @return
         'phpdoc_summary' => true,                        // description courte obligatoire
