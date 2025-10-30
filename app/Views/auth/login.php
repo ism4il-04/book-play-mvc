@@ -10,8 +10,11 @@
 </head>
 <body>
     <div class="form-container">
-      
-        
+        <a href="<?php echo BASE_URL; ?>home" class="back-btn">
+            <i class="bi bi-arrow-left"></i>
+            Retour
+        </a>
+
         <h1 class="form-title">
             <i class="bi bi-box-arrow-in-right"></i>
             Connexion
