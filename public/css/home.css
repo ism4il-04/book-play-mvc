@@ -356,6 +356,49 @@ body {
     border: none;
     box-shadow: none;
 }
+.brand-icon img {
+    max-height: 60px;
+    width: auto;
+    object-fit: contain;
+}
+
+
+.brand-icon {
+    width: 90px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: white;
+    font-size: 1.2rem;
+    transition: transform 0.3s ease;
+}
+.hero img {
+    border-radius: 20px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    max-width: 100%;
+    height: auto; /* conserve les proportions */
+    width: 120%;  /* augmente la largeur par rapport à son conteneur */
+    object-fit: cover; /* ajuste le contenu si tu dépasses */
+}
+
+.navbar-brand {
+    font-size: 2rem; /* Augmenter la taille du texte + logo */
+}
+.logo-img {
+    width: 100px;
+    height: 100px;
+    display: flex;
+    /*align-items: center;*/
+    /*justify-content: center;*/
+   /*/ border-radius: 50%;*/
+    color: white;
+    transition: transform 0.3s ease;
+}
+
+
+
 .terrains-page form .btn-success.w-100 {
     background: #b9ff00;
     color: #064420;

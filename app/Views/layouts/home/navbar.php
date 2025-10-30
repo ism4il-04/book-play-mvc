@@ -2,13 +2,27 @@
 require_once __DIR__ . '/../../../../config/config.php';
 $baseUrl = BASE_URL;
 ?>
+<style>
+    .brand-icon {
+        width: 90px;
+        height: 90px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        color: white;
+        font-size: 1.2rem;
+        transition: transform 0.3s ease;
+    }
+</style>
+<link rel="stylesheet" href="<?= $baseUrl ?>css/home.css">
 <!-- Top Navbar -->
 <nav class="navbar navbar-expand-lg shadow-sm">
     <div class="container d-flex justify-content-between align-items-center">
         <!-- Brand -->
         <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="<?= $baseUrl ?>">
-            <div class="brand-icon">
-                <img src="<?= $baseUrl ?>images/téléchargement.jpeg" alt="Book&Play Logo">
+            <div class="logo-img">
+                <img src="<?= $baseUrl ?>images/logo.png" alt="Book&Play Logo">
             </div>
             <span class="brand-text">Book<span>&</span>Play</span>
         </a>
@@ -78,7 +92,7 @@ $baseUrl = BASE_URL;
         height: auto;
     }
     .brand-icon img {
-        max-height: 40px;
+        max-height: 60px;
         width: auto;
         object-fit: contain;
     }
