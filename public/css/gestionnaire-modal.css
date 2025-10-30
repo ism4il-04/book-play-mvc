@@ -1,0 +1,388 @@
+/* ============================================
+   MODAL GÉNÉRAL
+   ============================================ */
+.modal-content {
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+
+.modal-lg {
+    max-width: 700px;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+.modal-header {
+    background: linear-gradient(135deg, #0a5c3c 0%, #064420 100%);
+    color: white;
+    padding: 1.5rem 2rem;
+    border-bottom: none;
+}
+
+.modal-header .btn-close {
+    filter: brightness(0) invert(1);
+    opacity: 0.9;
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.modal-header .btn-close:hover {
+    opacity: 1;
+    transform: rotate(90deg);
+}
+
+.modal-title {
+    font-weight: 700;
+    font-size: 1.25rem;
+    letter-spacing: -0.02em;
+}
+
+/* ============================================
+   BODY
+   ============================================ */
+.modal-body {
+    padding: 2.5rem 2rem;
+    max-height: 70vh;
+    overflow-y: auto;
+    background-color: #fafafa;
+}
+
+/* ============================================
+   TITRES DE SECTION
+   ============================================ */
+.section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0a5c3c;
+    margin-bottom: 1.25rem;
+    margin-top: 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e5e7eb;
+    position: relative;
+}
+
+.section-title::before {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 60px;
+    height: 2px;
+    background: linear-gradient(90deg, #0a5c3c, #84cc16);
+}
+
+.section-title:not(:first-child) {
+    margin-top: 2rem;
+}
+
+/* ============================================
+   FORMULAIRE
+   ============================================ */
+.form-label {
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1.5px solid #d1d5db;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    background-color: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.form-control:hover, .form-select:hover {
+    border-color: #9ca3af;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0a5c3c;
+    box-shadow: 0 0 0 4px rgba(10, 92, 60, 0.1), 0 1px 3px rgba(0, 0, 0, 0.05);
+    outline: none;
+    background-color: white;
+}
+
+.form-control::placeholder {
+    color: #9ca3af;
+    font-size: 0.9rem;
+}
+
+.form-select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23374151' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+}
+
+/* Espacement entre les rangées */
+.row.mb-3, .row.mb-4 {
+    margin-bottom: 1.25rem !important;
+}
+
+.mb-3 {
+    margin-bottom: 1.25rem !important;
+}
+
+.mb-4 {
+    margin-bottom: 1.75rem !important;
+}
+
+/* ============================================
+   UPLOAD DE DOCUMENTS
+   ============================================ */
+.document-upload {
+    border: 2px dashed #d1d5db;
+    padding: 2.5rem 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+    background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+    transition: all 0.4s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.document-upload::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at center, rgba(10, 92, 60, 0.03) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.document-upload:hover {
+    border-color: #0a5c3c;
+    background: linear-gradient(135deg, #f0f9f4 0%, #e6f7ed 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(10, 92, 60, 0.1);
+}
+
+.document-upload:hover::before {
+    opacity: 1;
+}
+
+.upload-icon {
+    margin-bottom: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.document-upload:hover .upload-icon {
+    transform: translateY(-5px);
+}
+
+.document-upload:hover .upload-icon svg {
+    stroke: #0a5c3c;
+}
+
+.upload-label {
+    display: block;
+    color: #0a5c3c;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: color 0.3s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.document-upload:hover .upload-label {
+    color: #064420;
+}
+
+.upload-hint {
+    display: block;
+    color: #6b7280;
+    font-size: 0.85rem;
+    position: relative;
+    z-index: 1;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+.modal-footer {
+    padding: 1.5rem 2rem;
+    border-top: 1px solid #e5e7eb;
+    background-color: #ffffff;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+/* ============================================
+   BOUTONS
+   ============================================ */
+.btn-cancel {
+    background-color: #0a5c3c;
+    color: white;
+    border: none;
+    padding: 0.75rem 2.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(10, 92, 60, 0.2);
+}
+
+.btn-cancel:hover {
+    background-color: #084d32;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(10, 92, 60, 0.3);
+}
+
+.btn-cancel:active {
+    transform: translateY(0);
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, #84cc16 0%, #65a30d 100%);
+    color: #1a1a1a;
+    border: none;
+    padding: 0.75rem 2.5rem;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(132, 204, 22, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-submit::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.btn-submit:hover {
+    background: linear-gradient(135deg, #65a30d 0%, #84cc16 100%);
+    color: #1a1a1a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(132, 204, 22, 0.4);
+}
+
+.btn-submit:hover::before {
+    left: 100%;
+}
+
+.btn-submit:active {
+    transform: translateY(0);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+    .modal-body {
+        padding: 2rem 1.5rem;
+    }
+    
+    .modal-header {
+        padding: 1.25rem 1.5rem;
+    }
+    
+    .modal-footer {
+        padding: 1.25rem 1.5rem;
+        flex-direction: column;
+    }
+    
+    .btn-cancel,
+    .btn-submit {
+        width: 100%;
+        padding: 0.85rem 1rem;
+    }
+    
+    .section-title {
+        font-size: 0.95rem;
+    }
+    
+    .document-upload {
+        padding: 2rem 1rem;
+    }
+}
+
+/* ============================================
+   SCROLLBAR PERSONNALISÉE
+   ============================================ */
+.modal-body::-webkit-scrollbar {
+    width: 10px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #0a5c3c, #064420);
+    border-radius: 10px;
+    border: 2px solid #f1f5f9;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #064420, #0a5c3c);
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal.show .modal-dialog {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* ============================================
+   ÉTATS DE VALIDATION
+   ============================================ */
+.form-control:invalid:not(:placeholder-shown) {
+    border-color: #ef4444;
+}
+
+.form-control:valid:not(:placeholder-shown) {
+    border-color: #10b981;
+}
+
+.form-control:invalid:not(:placeholder-shown):focus {
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+}
+
+.form-control:valid:not(:placeholder-shown):focus {
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+}
+
+/* ============================================
+   ACCESSIBILITÉ
+   ============================================ */
+.form-control:focus-visible,
+.form-select:focus-visible,
+.btn-cancel:focus-visible,
+.btn-submit:focus-visible {
+    outline: 3px solid rgba(10, 92, 60, 0.4);
+    outline-offset: 2px;
+}
