@@ -14,7 +14,11 @@ $baseUrl = BASE_URL;
 </head>
 <body>
     <div class="form-container">
-       
+        <a href="<?php echo BASE_URL; ?>home" class="back-btn">
+            <i class="bi bi-arrow-left"></i>
+            Retour
+        </a>
+        
         <h1 class="form-title">
             <i class="bi bi-person-plus-fill"></i>
             Inscription
