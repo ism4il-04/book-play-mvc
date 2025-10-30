@@ -19,4 +19,34 @@ class Terrain extends Model {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function getAvailableTerrainsFiltered(?string $search, ?string $taille, ?string $type) {
+        $conditions = ["statut = 'disponible'"];
+        $params = [];
+
+        if ($search !== null && $search !== '') {
+            $conditions[] = '(localisation LIKE :search OR type_terrain LIKE :search OR format_terrain LIKE :search)';
+            $params[':search'] = '%' . $search . '%';
+        }
+
+        if ($taille !== null && $taille !== '') {
+            $conditions[] = 'format_terrain = :taille';
+            $params[':taille'] = $taille;
+        }
+
+        if ($type !== null && $type !== '') {
+            $conditions[] = 'type_terrain = :type';
+            $params[':type'] = $type;
+        }
+
+        $whereSql = implode(' AND ', $conditions);
+        $sql = "SELECT * FROM {$this->table} WHERE $whereSql ORDER BY localisation ASC";
+
+        $stmt = $this->db->prepare($sql);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
 }

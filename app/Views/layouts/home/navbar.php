@@ -8,7 +8,7 @@ $baseUrl = BASE_URL;
         <!-- Brand -->
         <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="<?= $baseUrl ?>">
             <div class="brand-icon">
-                <img src="<?= $baseUrl ?>images/téléchargement.jpeg" alt="Book&Play Logo">
+                <img src="<?= $baseUrl ?>images/logo.png" alt="Book&Play Logo">
             </div>
             <span class="brand-text">Book<span>&</span>Play</span>
         </a>
@@ -78,9 +78,11 @@ $baseUrl = BASE_URL;
         height: auto;
     }
     .brand-icon img {
-        max-height: 40px;
+        max-height: 60px;
+        height: 60px;
         width: auto;
         object-fit: contain;
+        display: block;
     }
     .nav-link {
         transition: all 0.3s ease;

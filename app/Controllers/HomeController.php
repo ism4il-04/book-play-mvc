@@ -22,8 +22,24 @@ class HomeController extends Controller {
     public function terrains() {
         require_once __DIR__ . '/../Models/terrain.php';
         $terrainModel = new Terrain();
-        $terrains = $terrainModel->getAvailableTerrains();
-        $this->view('home/terrains', ['terrains' => $terrains]);
+        $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+        $taille = isset($_GET['taille']) ? trim($_GET['taille']) : '';
+        $type = isset($_GET['type']) ? trim($_GET['type']) : '';
+
+        if ($search !== '' || $taille !== '' || $type !== '') {
+            $terrains = $terrainModel->getAvailableTerrainsFiltered($search, $taille, $type);
+        } else {
+            $terrains = $terrainModel->getAvailableTerrains();
+        }
+
+        $this->view('home/terrains', [
+            'terrains' => $terrains,
+            'filters' => [
+                'search' => $search,
+                'taille' => $taille,
+                'type' => $type,
+            ],
+        ]);
     }
     public function tournois() {
         require_once __DIR__ . '/../Models/Tournoi.php';
