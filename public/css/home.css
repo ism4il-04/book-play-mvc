@@ -1,0 +1,372 @@
+:root {
+    --green-primary: #28a745;
+    --green-dark: #064420;
+}
+
+body {
+    font-family: "Poppins", sans-serif;
+    color: #222;
+    background-color: #fff;
+}
+
+.navbar {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    color: var(--green-dark);
+    font-size: 1.5rem;
+}
+.navbar-brand span {
+    color: var(--green-primary);
+}
+.nav-link:hover {
+    color: var(--green-primary) !important;
+}
+
+/* Hero Section */
+.hero {
+    padding: 80px 0;
+    background: linear-gradient(135deg, #e9f5ec, #ffffff);
+}
+.hero h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--green-dark);
+}
+.hero p {
+    font-size: 1.1rem;
+    margin-top: 15px;
+    color: #333;
+}
+.btn-green {
+    background-color: var(--green-primary);
+    color: #fff;
+    border-radius: 30px;
+    padding: 12px 24px;
+    transition: 0.3s;
+}
+.btn-green:hover {
+    background-color: #1f8a37;
+    color: #fff;
+}
+.hero img {
+    border-radius: 20px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    max-width: 100%;
+}
+
+/* Features Section */
+#features {
+    background-color: #f6fff8;
+    padding: 80px 0;
+    text-align: center;
+}
+#features h2 {
+    color: var(--green-dark);
+    margin-bottom: 40px;
+    font-weight: 700;
+}
+.feature-card {
+    background-color: #fff;
+    border: none;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s;
+}
+.feature-card:hover {
+    transform: translateY(-5px);
+}
+
+.bi {
+    color: var(--green-primary);
+    font-size: 1.2em;
+    margin-right: 0.3em;
+}
+
+.navbar-brand .bi {
+    color: inherit;
+    margin-right: 0.1em;
+}
+
+/* Contact Section */
+#contact {
+    background: linear-gradient(135deg, var(--green-primary), #2ecc71);
+    color: #fff;
+    padding: 80px 0;
+    text-align: center;
+}
+#contact form input {
+    border-radius: 30px;
+    padding: 12px 15px;
+    width: 300px;
+    max-width: 90%;
+    border: none;
+}
+#contact form button {
+    border-radius: 30px;
+    padding: 12px 25px;
+    background: #fff;
+    color: var(--green-primary);
+    font-weight: 600;
+    border: none;
+    margin-left: 10px;
+    transition: 0.3s;
+}
+#contact form button:hover {
+    background: #e9f5ec;
+}
+
+footer {
+    background-color: var(--green-dark);
+    color: #fff;
+    text-align: center;
+    padding: 20px;
+    font-size: 0.9rem;
+}
+
+/* --- Terrain Card Grid Styles (maquette) --- */
+.card.shadow-sm.h-100 {
+    border-radius: 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.10);
+    border: none;
+    overflow: hidden;
+    background: #f5f9f6;
+    min-height: 415px;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0;
+}
+.card-img-top {
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    background: #eee;
+}
+.card-body {
+    padding-bottom: 0.2rem;
+}
+.card-title {
+    color: #258946;
+    font-weight: 600;
+}
+.card-footer {
+    padding: .2rem 0 0.8rem 0;
+}
+
+.badge.bg-primary, .badge.bg-info {
+    font-size: 0.83em;
+    font-weight: 500;
+    padding: 4px 8px;
+    margin-right: 3px;
+    border-radius: 8px;
+}
+.badge.bg-primary {
+    background: #258946 !important;
+    color: #fff !important;
+}
+.badge.bg-info {
+    background: #d9f0eb !important;
+    color: #258946 !important;
+}
+.card-footer .fw-bold.text-success {
+    font-weight: 600;
+    background: #f1ffd7;
+    color: #acd600!important;
+    padding: 7px 16px 7px 6px;
+    border-radius: 4px;
+    font-size: 1.03em;
+}
+.btn-outline-success.w-100 {
+    background: #ececec;
+    color: #999;
+    border: none;
+    font-weight: 500;
+    border-radius: 9px;
+    margin-top: 4px;
+    font-size: .97em;
+    transition: background .2s, color .2s;
+}
+.btn-outline-success.w-100:hover,
+.btn-outline-success.w-100:focus{
+    background: #b9ff00;
+    color: #064420;
+}
+.card .card-footer {
+    border-top: none;
+    background: transparent;
+}
+
+.card-text, .card-body .small {
+    color: #90b1a2;
+    font-size: 0.97em;
+}
+
+/* Card spacing adjustments */
+.row.g-4 > [class^='col-'] {
+    margin-bottom: 0; /* fix for equal card heights */
+}
+
+/* --- Filter/Search Section Styles --- */
+form.row.g-2.mb-4 {
+    background: #19403d;
+    border-radius: 12px;
+    padding: 24px 20px 8px 20px;
+    box-shadow: 0 2px 14px 2px rgba(35,70,56,.13);
+    margin-bottom: 32px !important;
+    margin-top: 11px;
+}
+form input, form select {
+    border-radius: 11px !important;
+    border: none !important;
+    font-weight: 500;
+}
+form input:focus, form select:focus {
+    background: #e7f9ee;
+    border: none;
+    box-shadow: none;
+}
+form .btn-success.w-100 {
+    background: #b9ff00;
+    color: #064420;
+    border-radius: 10px;
+    font-weight: 600;
+    border: none;
+    transition: background 0.18s, color 0.18s;
+}
+form .btn-success.w-100:hover,
+form .btn-success.w-100:focus {
+    background: #cfff14;
+    color: #064420;
+}
+
+/* Card grid padding and background for full page */
+body {
+    background: #cadfd6;
+}
+.container.mt-4 {
+    padding-bottom: 28px;
+}
+
+.terrains-page {
+    background: #cadfd6 !important;
+}
+.terrains-page .container.mt-4 {
+    padding-bottom: 28px;
+}
+.terrains-page .card.shadow-sm.h-100 {
+    border-radius: 16px !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.10);
+    border: none;
+    overflow: hidden;
+    background: #f5f9f6;
+    min-height: 440px;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0;
+}
+.terrains-page .card-img-top {
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    background: #eee;
+    min-height: 170px;
+    max-height: 210px;
+    object-fit: cover;
+}
+.terrains-page .card-body {
+    padding-bottom: 0.2rem;
+}
+.terrains-page .card-title {
+    color: #258946;
+    font-weight: 600;
+    font-size: 1.12rem;
+}
+.terrains-page .card-footer {
+    padding: .2rem 0 0.95rem 0;
+}
+.terrains-page .badge.bg-primary, .terrains-page .badge.bg-info {
+    font-size: 0.93em;
+    font-weight: 500;
+    padding: 4px 11px;
+    margin-right: 3px;
+    border-radius: 8px;
+}
+.terrains-page .badge.bg-primary {
+    background: #258946 !important;
+    color: #fff !important;
+}
+.terrains-page .badge.bg-info {
+    background: #e7fde9!important;
+    color: #258946 !important;
+}
+.terrains-page .card-footer .fw-bold.text-success {
+    font-weight: 600;
+    background: #f1ffd7;
+    color: #acd600 !important;
+    padding: 8px 16px 8px 6px;
+    border-radius: 4px;
+    font-size: 1.08em;
+}
+.terrains-page .btn-outline-success.w-100 {
+    background: #ececec;
+    color: #90b1a2;
+    border: none;
+    font-weight: 500;
+    border-radius: 8px;
+    margin-top: 4px;
+    font-size: .98em;
+    box-shadow: none !important;
+    transition: background .2s, color .2s;
+}
+.terrains-page .btn-outline-success.w-100:hover,
+.terrains-page .btn-outline-success.w-100:focus{
+    background: #b9ff00;
+    color: #064420;
+}
+.terrains-page .card .card-footer {
+    border-top: none;
+    background: transparent;
+}
+.terrains-page .card-text, .terrains-page .card-body .small {
+    color: #90b1a2;
+    font-size: 0.98em;
+}
+.terrains-page .row.g-4 > [class^='col-'] {
+    margin-bottom: 0;
+}
+.terrains-page form.row.g-2.mb-4 {
+    background: #19403d;
+    border-radius: 13px;
+    padding: 24px 20px 9px 20px !important;
+    box-shadow: 0 2px 14px 2px rgba(35,70,56,.13);
+    margin-bottom: 32px !important;
+    margin-top: 12px;
+}
+.terrains-page form input, .terrains-page form select {
+    border-radius: 12px !important;
+    border: none !important;
+    font-weight: 500;
+    min-height: 46px;
+    padding-top: 9px;
+    padding-bottom: 9px;
+}
+.terrains-page form input:focus, .terrains-page form select:focus {
+    background: #e7f9ee;
+    border: none;
+    box-shadow: none;
+}
+.terrains-page form .btn-success.w-100 {
+    background: #b9ff00;
+    color: #064420;
+    border-radius: 11px;
+    font-weight: 600;
+    border: none;
+    transition: background 0.18s, color 0.18s;
+    min-height: 46px;
+}
+.terrains-page form .btn-success.w-100:hover,
+.terrains-page form .btn-success.w-100:focus {
+    background: #cfff14;
+    color: #064420;
+}
