@@ -13,17 +13,10 @@ class Terrain extends Model {
         return $this->getById($this->table, $id);
     }
 
-    public function getAvailableTerrains($date, $time) {
-        // Custom query for available terrains
-        $stmt = $this->db->prepare("
-            SELECT t.* FROM terrain t
-            WHERE t.id NOT IN (
-                SELECT terrain_id FROM reservations 
-                WHERE date = ? AND time = ? AND status = 'confirmed'
-            )
-        ");
-        $stmt->execute([$date, $time]);
-
+    public function getAvailableTerrains() {
+        $stmt = $this->db->prepare("SELECT * FROM terrain WHERE statut = 'disponible'");
+        $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
 }
