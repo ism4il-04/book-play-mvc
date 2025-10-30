@@ -3,6 +3,7 @@ require_once __DIR__ . '/../../../../config/config.php';
 $baseUrl = BASE_URL;
 ?>
 <!-- Top Navbar -->
+<link rel="stylesheet" href="<?= BASE_URL ?>css/gestionnaire-modal.css">
 <nav class="navbar navbar-expand-lg shadow-sm">
     <div class="container d-flex justify-content-between align-items-center">
         <!-- Brand -->
@@ -22,7 +23,7 @@ $baseUrl = BASE_URL;
                 <a class="nav-link fw-semibold" href="<?= $baseUrl ?>home/tournois">Tournois</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link fw-semibold" href="<?= $baseUrl ?>home/gestionnaire">Gestionnaire</a>
+                <a class="nav-link fw-semibold" href="#" data-bs-toggle="modal" data-bs-target="#gestionnaireModal">Gestionnaire</a>
             </li>
         </ul>
 
@@ -100,3 +101,6 @@ $baseUrl = BASE_URL;
         background: linear-gradient(135deg, #b9ff00, #aaff00) !important;
     }
 </style>
+
+<!-- Ajouter à la fin du fichier, juste avant </nav> -->
+<?php include __DIR__ . '/../../components/gestionnaire-modal.php'; ?>

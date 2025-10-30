@@ -8,6 +8,10 @@ class User extends Model {
     /**
      * Try to authenticate a user by email and password.
      * Returns user array with role on success or false on failure.
+     * 
+     * SÉCURITÉ AMÉLIORÉE :
+     * - Accepte uniquement les mots de passe hachés avec password_verify()
+     * - Migration automatique des anciens mots de passe en clair (si activée)
      */
     public function authenticate($email, $password) {
         $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE email = ? LIMIT 1");
@@ -18,27 +22,55 @@ class User extends Model {
             return false;
         }
 
-        // Vérifier le mot de passe
-        $passwordValid = false;
-        
-        // Si le mot de passe ressemble à un hash, utiliser password_verify
-        if (isset($user['password']) && password_verify($password, $user['password'])) {
-            $passwordValid = true;
-        }
-        
-        // Sinon, comparaison en clair (pas recommandé en production)
-        if (!$passwordValid && isset($user['password']) && $user['password'] === $password) {
-            $passwordValid = true;
+        // Vérifier si le mot de passe existe
+        if (!isset($user['password']) || empty($user['password'])) {
+            return false;
         }
 
+        $passwordValid = false;
+        $needsRehash = false;
+
+        //Vérification avec password_verify
+        if (password_verify($password, $user['password'])) {
+            $passwordValid = true;
+            
+            // Vérifier si le hash doit être mis à jour (algorithme obsolète)
+            if (password_needs_rehash($user['password'], PASSWORD_BCRYPT)) {
+                $needsRehash = true;
+            }
+        } 
+ 
         if (!$passwordValid) {
             return false;
+        }
+
+        // Si le mot de passe doit être re-haché, le mettre à jour automatiquement
+        if ($needsRehash) {
+            $this->updatePassword($user['id'], $password);
         }
 
         // Ajouter le rôle à l'utilisateur
         $user['role'] = $this->determineRole($user['id']);
 
         return $user;
+    }
+
+    /**
+     * Met à jour le mot de passe d'un utilisateur avec un nouveau hash
+     * Utilisé pour la migration automatique des anciens mots de passe
+     */
+    private function updatePassword($userId, $plainPassword) {
+        $hashedPassword = password_hash($plainPassword, PASSWORD_BCRYPT);
+        $stmt = $this->db->prepare("UPDATE {$this->table} SET password = ? WHERE id = ?");
+        
+        try {
+            $stmt->execute([$hashedPassword, $userId]);
+            return true;
+        } catch (PDOException $e) {
+            // Log de l'erreur si nécessaire
+            error_log("Erreur mise à jour password pour user ID {$userId}: " . $e->getMessage());
+            return false;
+        }
     }
 
     /**
@@ -87,6 +119,7 @@ class User extends Model {
 
     /**
      * Enregistrer un nouvel utilisateur.
+     * Le mot de passe est automatiquement haché avec PASSWORD_BCRYPT
      */
     public function register(string $nom, string $prenom, string $email, string $password, string $num_tel = ''): bool {
         // Vérifier si l'email existe déjà
@@ -96,7 +129,7 @@ class User extends Model {
             return false; // email déjà pris
         }
 
-        // Hacher le mot de passe
+        // Hacher le mot de passe avec PASSWORD_BCRYPT
         $hashed = password_hash($password, PASSWORD_BCRYPT);
 
         // Insérer le nouvel utilisateur avec le numéro de téléphone
@@ -107,7 +140,23 @@ class User extends Model {
         try {
             return (bool) $insert->execute([$nom, $prenom, $email, $hashed, $num_tel]);
         } catch (PDOException $e) {
-            // Optionnel: log de l'erreur $e->getMessage()
+            // Log de l'erreur
+            error_log("Erreur lors de l'enregistrement de l'utilisateur : " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Changer le mot de passe d'un utilisateur (pour le profil par exemple)
+     */
+    public function changePassword($userId, $newPassword) {
+        $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
+        $stmt = $this->db->prepare("UPDATE {$this->table} SET password = ? WHERE id = ?");
+        
+        try {
+            return $stmt->execute([$hashedPassword, $userId]);
+        } catch (PDOException $e) {
+            error_log("Erreur changement password pour user ID {$userId}: " . $e->getMessage());
             return false;
         }
     }
