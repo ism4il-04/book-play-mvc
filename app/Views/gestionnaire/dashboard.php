@@ -4,14 +4,10 @@ require_once __DIR__ . '/../../../config/config.php';
 $baseUrl = BASE_URL;
 $currentUser = $user ?? null;
 
-// Charger le modèle pour récupérer les statistiques
+require_once __DIR__ . '/../../Core/Model.php';
 require_once __DIR__ . '/../../Models/Dashboard_gestionnaire.php';
 $dashboardModel = new Dashboard();
 $stats = $dashboardModel->getManagerStats($currentUser['id']);
-
-// Debug (à retirer en production)
-// echo "<!-- DEBUG: Terrains count = " . ($stats['terrains_count'] ?? 0) . " -->";
-// echo "<!-- DEBUG: Activities count = " . count($stats['recent_activities'] ?? []) . " -->";
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -23,6 +19,122 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/footer_gestionnaire.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/dashboard_gest.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .terrain-image {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-right: 20px;
+            border: 3px solid #e0e0e0;
+            flex-shrink: 0;
+        }
+        
+        .activity-item {
+            display: flex;
+            align-items: center;
+            padding: 25px;
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .activity-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        }
+        
+        .terrain-image-placeholder {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+        
+        .terrain-image-placeholder i {
+            font-size: 48px;
+            color: white;
+        }
+
+        .activity-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .activity-content h4 {
+            margin: 0 0 12px 0;
+            font-size: 20px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .activity-content p {
+            margin: 8px 0;
+            font-size: 15px;
+            color: #7f8c8d;
+        }
+
+        .terrain-info-row {
+            display: flex;
+            gap: 20px;
+            margin: 12px 0;
+            font-size: 14px;
+            color: #95a5a6;
+        }
+
+        .terrain-info-row span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .terrain-stats-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .badge {
+            padding: 6px 14px;
+            border-radius: 15px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .badge-warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px;
+            color: #95a5a6;
+        }
+    </style>
 </head>
 <body>
     <!-- Sidebar Navigation -->
@@ -96,7 +208,7 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
                         <a href="<?php echo $baseUrl; ?>profile"><i class="fas fa-user"></i> Mon Profil</a>
                         <a href="<?php echo $baseUrl; ?>settings"><i class="fas fa-cog"></i> Paramètres</a>
                         <hr>
-                        <a href="<?php echo $baseUrl; ?>auth/logout" class="logout"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+                        <a href="<?php echo $baseUrl; ?>logout" class="logout"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
                     </div>
                 </div>
             </div>
@@ -153,16 +265,41 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
 
             <!-- Recent Activities -->
             <div class="content-section">
-                <div class="section-header">
-                    <h2>Mes Terrains</h2>
-                </div>
+               
+
                 <div class="activities-list">
                     <?php if (!empty($stats['recent_activities'])): ?>
                         <?php foreach ($stats['recent_activities'] as $terrain): ?>
-                            <div class="activity-item terrain-item">
-                                <div class="activity-avatar" style="background-color: <?php echo htmlspecialchars($terrain['color'] ?? '#3498db'); ?>">
-                                    <i class="fas fa-futbol"></i>
-                                </div>
+                            <div class="activity-item">
+                                <!-- Image -->
+                                <?php if (!empty($terrain['image'])): ?>
+                                    <?php 
+                                        $imagePath = $baseUrl . 'uploads/terrains/' . $terrain['image'];
+                                        $rootDir = realpath(__DIR__ . '/../../../');
+                                        $absolutePath = $rootDir . '/public/uploads/terrains/' . $terrain['image'];
+                                        $imageExists = file_exists($absolutePath);
+                                    ?>
+                                    
+                                    <?php if ($imageExists): ?>
+                                        <img src="<?php echo htmlspecialchars($imagePath); ?>" 
+                                             alt="<?php echo htmlspecialchars($terrain['nom']); ?>" 
+                                             class="terrain-image"
+                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                        <div class="terrain-image-placeholder" style="display:none;">
+                                            <i class="fas fa-futbol"></i>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="terrain-image-placeholder">
+                                            <i class="fas fa-futbol"></i>
+                                        </div>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <div class="terrain-image-placeholder">
+                                        <i class="fas fa-futbol"></i>
+                                    </div>
+                                <?php endif; ?>
+                                
+                                <!-- Contenu -->
                                 <div class="activity-content">
                                     <h4><?php echo htmlspecialchars($terrain['nom']); ?></h4>
                                     <p><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($terrain['localisation']); ?></p>
@@ -171,15 +308,20 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
                                         <span><i class="fas fa-coins"></i> <?php echo htmlspecialchars($terrain['prix']); ?></span>
                                     </div>
                                     <div class="terrain-stats-row">
-                                        <span class="badge badge-warning"><?php echo (int)$terrain['reservations_en_attente']; ?> en attente</span>
-                                        <span class="badge badge-success"><?php echo (int)$terrain['reservations_acceptees']; ?> acceptées</span>
+                                        <span class="badge badge-warning">
+                                            <?php echo (int)$terrain['reservations_en_attente']; ?> en attente
+                                        </span>
+                                        <span class="badge badge-success">
+                                            <?php echo (int)$terrain['reservations_acceptees']; ?> acceptées
+                                        </span>
                                     </div>
                                 </div>
-                                <div class="activity-status">
-                                    <span class="status-badge" style="background-color: <?php echo htmlspecialchars($terrain['status_color']); ?>">
-                                        <i class="<?php echo htmlspecialchars($terrain['status_icon']); ?>"></i> <?php echo htmlspecialchars($terrain['statut']); ?>
-                                    </span>
-                                </div>
+                                
+                                <!-- Badge de statut uniquement -->
+                                <span class="status-badge" style="background-color: <?php echo htmlspecialchars($terrain['status_color']); ?>">
+                                    <i class="<?php echo htmlspecialchars($terrain['status_icon']); ?>"></i> 
+                                    <?php echo htmlspecialchars($terrain['statut']); ?>
+                                </span>
                             </div>
                         <?php endforeach; ?>
                     <?php else: ?>
