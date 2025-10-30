@@ -50,12 +50,10 @@ Notre application repose sur l’architecture MVC (Modèle – Vue – Contrôle
 │   ├── /Controllers
 │   ├── /Models
 │   ├── /Views
-│   ├── /Core
-│   │   ├── App.php
-│   │   ├── Controller.php
-│   │   └── Model.php
-│   ├── /Helpers
-│   └── /Database
+│   └── /Core
+│       ├── App.php
+│       ├── Controller.php
+│       ├── Model.php
 │       └── Database.php
 │
 ├── /config
