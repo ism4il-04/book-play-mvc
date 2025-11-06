@@ -4,8 +4,12 @@ class App {
     protected $controller = 'HomeController';
     protected $method = 'index';
     protected $params = [];
+    protected $db;
 
     public function __construct() {
+        // Initialize database connection
+        $this->db = Database::getInstance()->getConnection();
+        
         $url = $this->parseUrl();
 
         // --- Controller ---
@@ -18,7 +22,10 @@ class App {
         }
 
         require_once $controllerPath;
-        $this->controller = new $this->controller();
+        
+        // Pass database connection to the controller if it requires it
+        $controllerClass = $this->controller;
+        $this->controller = new $controllerClass($this->db);
 
         // --- Method ---
         if (isset($url[1]) && method_exists($this->controller, $url[1])) {

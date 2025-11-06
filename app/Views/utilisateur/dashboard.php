@@ -264,7 +264,7 @@ $upcoming = $upcoming ?? [];
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item">
-                        <a class="nav-link active" href="<?php echo $baseUrl; ?>dashboard">
+                        <a class="nav-link active" href="<?php echo $baseUrl; ?>utilisateur/dashboard">
                             <i class="fas fa-home me-1"></i> Tableau de bord
                         </a>
                     </li>

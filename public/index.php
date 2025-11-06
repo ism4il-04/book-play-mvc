@@ -4,7 +4,6 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-// Start the session (if you need it)
 session_start();
 
 // Load configuration
