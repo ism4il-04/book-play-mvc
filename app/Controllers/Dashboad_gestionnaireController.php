@@ -1,4 +1,5 @@
 <?php
+
 class Dashboad_gestionnaireController extends Controller {
     public function index() {
         // Check if user is logged in and is a manager
@@ -10,5 +11,3 @@ class Dashboad_gestionnaireController extends Controller {
         $this->view('gestionnaire/dashboard', ['user' => $_SESSION['user']]);
     }
 }
-
-

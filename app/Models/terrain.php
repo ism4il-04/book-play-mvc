@@ -16,6 +16,7 @@ class Terrain extends Model {
     public function getAvailableTerrains() {
         $stmt = $this->db->prepare("SELECT * FROM terrain WHERE statut = 'disponible'");
         $stmt->execute();
+
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -23,30 +24,31 @@ class Terrain extends Model {
         $conditions = ["statut = 'disponible'"];
         $params = [];
 
-        if ($search !== null && $search !== '') {
+        if (null !== $search && '' !== $search) {
             $conditions[] = '(localisation LIKE :search OR type_terrain LIKE :search OR format_terrain LIKE :search)';
             $params[':search'] = '%' . $search . '%';
         }
 
-        if ($taille !== null && $taille !== '') {
+        if (null !== $taille && '' !== $taille) {
             $conditions[] = 'format_terrain = :taille';
             $params[':taille'] = $taille;
         }
 
-        if ($type !== null && $type !== '') {
+        if (null !== $type && '' !== $type) {
             $conditions[] = 'type_terrain = :type';
             $params[':type'] = $type;
         }
 
         $whereSql = implode(' AND ', $conditions);
-        $sql = "SELECT * FROM {$this->table} WHERE $whereSql ORDER BY localisation ASC";
+        $sql = "SELECT * FROM {$this->table} WHERE {$whereSql} ORDER BY localisation ASC";
 
         $stmt = $this->db->prepare($sql);
+
         foreach ($params as $key => $value) {
             $stmt->bindValue($key, $value);
         }
         $stmt->execute();
+
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-
 }

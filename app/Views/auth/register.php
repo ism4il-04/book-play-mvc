@@ -24,13 +24,13 @@ $baseUrl = BASE_URL;
             Inscription
         </h1>
 
-        <?php if (isset($_GET['error'])): ?>
+        <?php if (isset($_GET['error'])) { ?>
             <div class="error-list">
                 <ul>
                     <li><?php echo htmlspecialchars($_GET['error']); ?></li>
                 </ul>
             </div>
-        <?php endif; ?>
+        <?php } ?>
 
         <form method="POST" action="<?php echo BASE_URL; ?>auth/register">
             <div class="form-row">

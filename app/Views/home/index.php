@@ -40,7 +40,7 @@ $baseUrl = BASE_URL;
             <div class="col-lg-6">
                 <h1>Book Your Football Field in Seconds!</h1>
                 <p>Easy booking, real-time availability, and flexible options — all at your fingertips.</p>
-                <a href="<?= $baseUrl ?>home/terrains" class="btn btn-green mt-3">Book a Field Now</a>
+                <a href="<?php echo $baseUrl; ?>home/terrains" class="btn btn-green mt-3">Book a Field Now</a>
             </div>
             <div class="col-lg-6 text-center">
                 <img src="<?php echo $baseUrl; ?>images/messi.jpg?v=<?php echo time(); ?>" alt="People playing football">

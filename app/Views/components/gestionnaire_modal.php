@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="<?= BASE_URL ?>css/gestionnaire-modal.css">
+<link rel="stylesheet" href="<?php echo BASE_URL; ?>css/gestionnaire-modal.css">
 <div class="modal fade" id="gestionnaireModal" tabindex="-1" aria-labelledby="gestionnaireModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">

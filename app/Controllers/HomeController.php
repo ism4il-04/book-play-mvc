@@ -8,17 +8,17 @@ class HomeController extends Controller {
         $tournoiModel = new Tournoi();
         $terrains = $terrainModel->getAvailableTerrains();
         $tournois = $tournoiModel->existedTournoi();
-        $this->view('home/index'
-//            , [
-//            'terrains' => $terrains,
-//            'tournois' => $tournois
-//        ]
+        $this->view(
+            'home/index'
+            //            , [
+            //            'terrains' => $terrains,
+            //            'tournois' => $tournois
+            //        ]
         );
     }
-    public function availableTerrains()
-    {
 
-    }
+    public function availableTerrains() {}
+
     public function terrains() {
         require_once __DIR__ . '/../Models/terrain.php';
         $terrainModel = new Terrain();
@@ -26,7 +26,7 @@ class HomeController extends Controller {
         $taille = isset($_GET['taille']) ? trim($_GET['taille']) : '';
         $type = isset($_GET['type']) ? trim($_GET['type']) : '';
 
-        if ($search !== '' || $taille !== '' || $type !== '') {
+        if ('' !== $search || '' !== $taille || '' !== $type) {
             $terrains = $terrainModel->getAvailableTerrainsFiltered($search, $taille, $type);
         } else {
             $terrains = $terrainModel->getAvailableTerrains();
@@ -41,12 +41,14 @@ class HomeController extends Controller {
             ],
         ]);
     }
+
     public function tournois() {
         require_once __DIR__ . '/../Models/Tournoi.php';
         $tournoiModel = new Tournoi();
         $tournois = $tournoiModel->existedTournoi();
         $this->view('home/tournois', ['tournois' => $tournois]);
     }
+
     public function subscribe() {
         if ('POST' === $_SERVER['REQUEST_METHOD'] && isset($_POST['email'])) {
             $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);

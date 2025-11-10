@@ -3,7 +3,7 @@
 class AuthController extends Controller {
     public function login() {
         // If the form was submitted, process authentication
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if ('POST' === $_SERVER['REQUEST_METHOD']) {
             $email = isset($_POST['email']) ? trim($_POST['email']) : '';
             $password = isset($_POST['password']) ? $_POST['password'] : '';
             $recaptchaResponse = $_POST['g-recaptcha-response'] ?? '';
@@ -51,7 +51,7 @@ class AuthController extends Controller {
 
     public function register() {
         // Si soumission du formulaire
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if ('POST' === $_SERVER['REQUEST_METHOD']) {
             $nom = trim($_POST['name'] ?? '');
             $prenom = trim($_POST['prenom'] ?? '');
             $email = strtolower(trim($_POST['email'] ?? ''));
@@ -61,7 +61,7 @@ class AuthController extends Controller {
             $recaptchaResponse = $_POST['g-recaptcha-response'] ?? '';
 
             // Validation basique
-            if ($nom === '' || $prenom === '' || $email === '' || $password === '') {
+            if ('' === $nom || '' === $prenom || '' === $email || '' === $password) {
                 header('Location: ' . BASE_URL . 'auth/register?error=' . urlencode('Tous les champs obligatoires'));
                 exit;
             }
@@ -80,11 +80,13 @@ class AuthController extends Controller {
             $secretKey = RECAPTCHA_SECRET_KEY;
             $verifyUrl = 'https://www.google.com/recaptcha/api/siteverify?secret=' . urlencode($secretKey) . '&response=' . urlencode($recaptchaResponse);
             $verifyResponse = @file_get_contents($verifyUrl);
-            if ($verifyResponse === false) {
+
+            if (false === $verifyResponse) {
                 header('Location: ' . BASE_URL . 'auth/register?error=' . urlencode('Erreur de vérification captcha'));
                 exit;
             }
             $responseData = json_decode($verifyResponse, true);
+
             if (empty($responseData['success'])) {
                 header('Location: ' . BASE_URL . 'auth/register?error=' . urlencode('Captcha invalide, veuillez réessayer'));
                 exit;
