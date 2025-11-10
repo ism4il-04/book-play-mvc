@@ -5,7 +5,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    justify-content: flex-start; /* Ensure content starts at the top */
     transition: margin-left 0.3s ease;
 }
 
