@@ -12,7 +12,52 @@ class App {
         
         $url = $this->parseUrl();
 
-        // --- Controller ---
+        // --- Gestion spéciale pour les routes avec underscore ---
+        if (isset($url[0])) {
+            // Route: auto_newsletter
+            if ($url[0] === 'auto_newsletter') {
+                $controllerPath = __DIR__ . '/../Controllers/AutoNewsletterController.php';
+                
+                if (file_exists($controllerPath)) {
+                    require_once $controllerPath;
+                    $this->controller = new AutoNewsletterController($this->db);
+                    
+                    // Méthode
+                    if (isset($url[1]) && method_exists($this->controller, $url[1])) {
+                        $this->method = $url[1];
+                        unset($url[1]);
+                    }
+                    
+                    unset($url[0]);
+                    $this->params = $url ? array_values($url) : [];
+                    call_user_func_array([$this->controller, $this->method], $this->params);
+                    return;
+                }
+            }
+            
+            // Route: newsletter (manuelle)
+            if ($url[0] === 'newsletter') {
+                $controllerPath = __DIR__ . '/../Controllers/NewsletterController.php';
+                
+                if (file_exists($controllerPath)) {
+                    require_once $controllerPath;
+                    $this->controller = new NewsletterController($this->db);
+                    
+                    // Méthode
+                    if (isset($url[1]) && method_exists($this->controller, $url[1])) {
+                        $this->method = $url[1];
+                        unset($url[1]);
+                    }
+                    
+                    unset($url[0]);
+                    $this->params = $url ? array_values($url) : [];
+                    call_user_func_array([$this->controller, $this->method], $this->params);
+                    return;
+                }
+            }
+        }
+
+        // --- Controller (logique existante) ---
         $controllerPath = __DIR__ . '/../Controllers/' . $this->controller . '.php';
 
         if (isset($url[0]) && file_exists(__DIR__ . '/../Controllers/' . ucfirst($url[0]) . 'Controller.php')) {

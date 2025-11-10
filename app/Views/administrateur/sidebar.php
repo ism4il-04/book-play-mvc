@@ -14,6 +14,7 @@
 
     <!-- Navigation Menu -->
     <ul class="nav nav-pills flex-column">
+      <!-- Dashboard -->
       <li class="nav-item">
         <a class="nav-link" href="<?= $baseUrl ?>Dashboad_Admin">
           <i class="bi bi-grid-3x3-gap nav-icon"></i>
@@ -21,26 +22,44 @@
         </a>
       </li>
       
+      <!-- Gestion des Gestionnaires -->
       <li class="nav-item">
         <a class="nav-link" href="<?= $baseUrl ?>Dashboad_Admin">
           <i class="bi bi-people nav-icon"></i>
           <span class="nav-text">Gestion des Gestionnaires</span>
-          <!-- <span class="nav-badge"></span> -->
         </a>
       </li>
       
+      <!-- Newsletter avec sous-menu -->
       <li class="nav-item">
-        <a class="nav-link " href="<?= $baseUrl ?>Dashboad_Admin">
+        <a class="nav-link" href="#newsletterMenu" data-bs-toggle="collapse" role="button" aria-expanded="false">
           <i class="bi bi-envelope nav-icon"></i>
-          <span class="nav-text">Envoyer Email</span>
+          <span class="nav-text">Newsletters</span>
+          <i class="bi bi-chevron-down ms-auto"></i>
         </a>
+        <div class="collapse show" id="newsletterMenu">
+          <ul class="nav flex-column ms-3">
+            <li class="nav-item">
+              <a class="nav-link" href="<?= $baseUrl ?>newsletter">
+                <i class="bi bi-pencil-square nav-icon"></i>
+                <span class="nav-text">Manuelle</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="<?= $baseUrl ?>auto_newsletter">
+                <i class="bi bi-robot nav-icon"></i>
+                <span class="nav-text">Automatique</span>
+              </a>
+            </li>
+          </ul>
+        </div>
       </li>
       
+      <!-- Notifications -->
       <li class="nav-item">
         <a class="nav-link" href="<?= $baseUrl ?>Dashboad_Admin">
           <i class="bi bi-bell nav-icon"></i>
           <span class="nav-text">Notifications</span>
-          <!-- <span class="nav-badge"></span> -->
         </a>
       </li>
     </ul>
@@ -98,6 +117,19 @@
         !sidebar.contains(event.target) && 
         !toggle.contains(event.target)) {
       sidebar.classList.remove('show');
+    }
+  });
+  
+  // Maintenir le sous-menu Newsletter ouvert si on est sur une page newsletter
+  document.addEventListener('DOMContentLoaded', function() {
+    const currentUrl = window.location.href;
+    const newsletterMenu = document.getElementById('newsletterMenu');
+    
+    // Si l'URL contient 'newsletter' ou 'auto_newsletter', garder le menu ouvert
+    if (currentUrl.includes('newsletter') || currentUrl.includes('auto_newsletter')) {
+      if (newsletterMenu && !newsletterMenu.classList.contains('show')) {
+        newsletterMenu.classList.add('show');
+      }
     }
   });
 </script>

@@ -1,6 +1,5 @@
 <?php
-
-require_once __DIR__ . '/Controller.php';
+require_once __DIR__ . '/../core/Controller.php';
 
 class Dashboad_AdminController extends Controller {
     public function index() {

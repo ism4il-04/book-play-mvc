@@ -13,6 +13,84 @@ $baseUrl = BASE_URL;
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <link href="<?php echo $baseUrl; ?>css/landing_style.css" rel="stylesheet">
+    <style>
+        /* Styles pour la section newsletter */
+        .newsletter-section {
+            background: linear-gradient(135deg, #064420 0%, #0a5c3c 100%);
+            padding: 80px 0;
+        }
+        .newsletter-content h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        .newsletter-form .form-control {
+            border-radius: 50px;
+            padding: 15px 25px;
+            border: none;
+            font-size: 1rem;
+        }
+        .newsletter-form .form-control:focus {
+            border-color: #CEFE24;
+            box-shadow: 0 0 0 0.25rem rgba(206, 254, 36, 0.25);
+        }
+        .newsletter-form .btn-subscribe {
+            background: #CEFE24;
+            color: #064420;
+            font-weight: 700;
+            border-radius: 50px;
+            padding: 15px 30px;
+            border: none;
+            transition: all 0.3s ease;
+        }
+        .newsletter-form .btn-subscribe:hover {
+            background: #b9ff00;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(206, 254, 36, 0.4);
+        }
+        .newsletter-benefits {
+            margin-top: 3rem;
+        }
+        .benefit-item {
+            display: flex;
+            align-items: start;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .benefit-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(206, 254, 36, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .benefit-icon i {
+            font-size: 24px;
+            color: #CEFE24;
+        }
+        .benefit-text h6 {
+            color: white;
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+        }
+        .benefit-text small {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .form-check-label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.875rem;
+        }
+        .form-check-label a {
+            color: white;
+            text-decoration: underline;
+        }
+        .toast {
+            min-width: 300px;
+        }
+    </style>
 </head>
 <body>
 
@@ -26,7 +104,7 @@ $baseUrl = BASE_URL;
         <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
             <ul class="navbar-nav align-items-center">
                 <li class="nav-item"><a class="nav-link px-3" href="#features">Features</a></li>
-                <li class="nav-item"><a class="nav-link px-3" href="#contact">Contact</a></li>
+                <li class="nav-item"><a class="nav-link px-3" href="#newsletter">Newsletter</a></li>
                 <li class="nav-item"><a class="btn btn-green ms-lg-3" href="<?php echo $baseUrl; ?>auth/login">Book a Field</a></li>
             </ul>
         </div>
@@ -82,21 +160,111 @@ $baseUrl = BASE_URL;
     </div>
 </section>
 
-<!-- Contact -->
-<section id="contact">
+<!-- Newsletter Section -->
+<section id="newsletter" class="newsletter-section">
     <div class="container">
-        <h2>Stay Updated</h2>
-        <p>Subscribe to get notified about new fields and special offers!</p>
-        <form method="POST" action="<?php echo $baseUrl; ?>home/subscribe" class="d-flex flex-column flex-sm-row justify-content-center align-items-center mt-4">
-            <input type="email" name="email" placeholder="Enter your email" required class="mb-2 mb-sm-0">
-            <button type="submit" name="subscribe">Subscribe</button>
-        </form>
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="newsletter-content text-white text-center">
+                    <h2>
+                        <i class="bi bi-envelope-heart-fill me-2"></i>
+                        Stay Updated!
+                    </h2>
+                    <p class="lead mb-4">
+                        Subscribe to receive the latest news, new fields, exclusive tournaments, and special promotions directly in your inbox
+                    </p>
 
-        <?php if (isset($_GET['subscribed'])) { ?>
-            <p class='mt-3 bg-white text-success rounded-pill px-4 py-2 d-inline-block'>
-                Thanks for subscribing!
-            </p>
-        <?php } ?>
+                    <!-- Formulaire d'abonnement -->
+                    <form action="<?php echo $baseUrl; ?>auto_newsletter/subscribe" 
+                          method="POST" 
+                          class="newsletter-form"
+                          onsubmit="return validateNewsletterForm()">
+                        
+                        <div class="row g-3 justify-content-center">
+                            <div class="col-md-5">
+                                <input type="text" 
+                                       class="form-control" 
+                                       name="nom" 
+                                       id="newsletter_name"
+                                       placeholder="Your name" 
+                                       required>
+                            </div>
+                            <div class="col-md-5">
+                                <input type="email" 
+                                       class="form-control" 
+                                       name="email" 
+                                       id="newsletter_email"
+                                       placeholder="your@email.com" 
+                                       required>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-subscribe w-100">
+                                    <i class="bi bi-send-fill me-2"></i>
+                                    Subscribe
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Checkbox Politique de confidentialité -->
+                        <div class="form-check mt-3 text-start" style="max-width: 800px; margin-left: auto; margin-right: auto;">
+                            <input class="form-check-input" 
+                                   type="checkbox" 
+                                   name="accept_terms" 
+                                   id="acceptTerms" 
+                                   required>
+                            <label class="form-check-label" for="acceptTerms">
+                                I agree to receive the Book&Play newsletter and have read the 
+                                <a href="<?php echo $baseUrl; ?>privacy">privacy policy</a>
+                            </label>
+                        </div>
+                    </form>
+
+                    <!-- Avantages de l'abonnement -->
+                    <div class="newsletter-benefits">
+                        <div class="row text-start">
+                            <div class="col-md-4">
+                                <div class="benefit-item">
+                                    <div class="benefit-icon">
+                                        <i class="bi bi-lightning-charge-fill"></i>
+                                    </div>
+                                    <div class="benefit-text">
+                                        <h6>Exclusive News</h6>
+                                        <small>Be the first to know</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="benefit-item">
+                                    <div class="benefit-icon">
+                                        <i class="bi bi-gift-fill"></i>
+                                    </div>
+                                    <div class="benefit-text">
+                                        <h6>Exclusive Promotions</h6>
+                                        <small>Promo codes for subscribers</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="benefit-item">
+                                    <div class="benefit-icon">
+                                        <i class="bi bi-trophy-fill"></i>
+                                    </div>
+                                    <div class="benefit-text">
+                                        <h6>Early Access to Tournaments</h6>
+                                        <small>Register first</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="mt-4 text-white-50 small mb-0">
+                        <i class="bi bi-shield-check me-2"></i>
+                        No spam. Unsubscribe in one click. Your data is protected.
+                    </p>
+                </div>
+            </div>
+        </div>
     </div>
 </section>
 
@@ -105,6 +273,74 @@ $baseUrl = BASE_URL;
     <p>© <?php echo date('Y'); ?> Book&Play. All rights reserved.</p>
 </footer>
 
+<!-- Toast Notifications -->
+<?php if (isset($_SESSION['newsletter_success'])): ?>
+<div class="position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+    <div class="toast show" role="alert">
+        <div class="toast-header bg-success text-white">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <strong class="me-auto">Success!</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body">
+            <?php echo htmlspecialchars($_SESSION['newsletter_success']); unset($_SESSION['newsletter_success']); ?>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+<?php if (isset($_SESSION['newsletter_error'])): ?>
+<div class="position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+    <div class="toast show" role="alert">
+        <div class="toast-header bg-danger text-white">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong class="me-auto">Error</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body">
+            <?php echo htmlspecialchars($_SESSION['newsletter_error']); unset($_SESSION['newsletter_error']); ?>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function validateNewsletterForm() {
+    const nom = document.getElementById('newsletter_name').value.trim();
+    const email = document.getElementById('newsletter_email').value.trim();
+    const terms = document.getElementById('acceptTerms').checked;
+
+    if (!nom || !email) {
+        alert('Please fill in all fields');
+        return false;
+    }
+
+    if (!terms) {
+        alert('Please accept the terms and conditions');
+        return false;
+    }
+
+    // Simple email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        alert('Please enter a valid email address');
+        return false;
+    }
+
+    return true;
+}
+
+// Auto-hide toasts after 5 seconds
+document.addEventListener('DOMContentLoaded', function() {
+    const toasts = document.querySelectorAll('.toast');
+    toasts.forEach(toast => {
+        setTimeout(() => {
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.hide();
+        }, 5000);
+    });
+});
+</script>
 </body>
 </html>
