@@ -327,6 +327,21 @@ class Facture extends Model {
     }
 
     /**
+     * Met à jour le chemin du PDF pour une facture
+     */
+    public function updatePdfPath($num_facture, $pdf_path) {
+        $query = "UPDATE {$this->table} SET facture_path = :pdf_path WHERE num_facture = :num_facture";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([
+            ':pdf_path' => $pdf_path,
+            ':num_facture' => $num_facture
+        ]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
      * Récupère les terrains d'un gestionnaire pour les filtres
      */
     public function getGestionnaireTerrains($gestionnaire_id) {
