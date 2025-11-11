@@ -422,14 +422,57 @@ $filters = $filters ?? [
                             Tournoi
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?php echo $baseUrl; ?>profil">
-                            Profile
-                        </a>
-                    </li>
                 </ul>
                 
                 <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item dropdown me-2">
+                        <a class="nav-link p-0" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Mon profil">
+                            <i class="bi bi-person-circle" style="font-size: 1.4rem;"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end p-3" aria-labelledby="profileDropdown" style="min-width: 280px;">
+                            <h6 class="mb-3" style="color:#2c3e50; font-weight:700;">Informations personnelles</h6>
+                            <div class="d-flex align-items-start mb-2" style="gap:.6rem; color:#7f8c8d;">
+                                <i class="bi bi-person" style="color:#00bcd4;"></i>
+                                <div>
+                                    <div style="font-size:.8rem; opacity:.8;">Nom complet</div>
+                                    <div style="font-weight:600; color:#2c3e50;">
+                                        <?php 
+                                        $prenom = $currentUser['prenom'] ?? '';
+                                        $nom = $currentUser['nom'] ?? '';
+                                        $name = trim($prenom . ' ' . $nom);
+                                        if ($name === '') { $name = $currentUser['name'] ?? 'Utilisateur'; }
+                                        echo htmlspecialchars($name);
+                                        ?>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-start mb-2" style="gap:.6rem; color:#7f8c8d;">
+                                <i class="bi bi-envelope" style="color:#00bcd4;"></i>
+                                <div>
+                                    <div style="font-size:.8rem; opacity:.8;">Email</div>
+                                    <div style="font-weight:600; color:#2c3e50;">
+                                        <?php echo htmlspecialchars($currentUser['email'] ?? ''); ?>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-start mb-3" style="gap:.6rem; color:#7f8c8d;">
+                                <i class="bi bi-telephone" style="color:#00bcd4;"></i>
+                                <div>
+                                    <div style="font-size:.8rem; opacity:.8;">Téléphone</div>
+                                    <div style="font-weight:600; color:#2c3e50;">
+                                        <?php 
+                                        $tel = $currentUser['telephone'] ?? ($currentUser['num_tel'] ?? '');
+                                        echo htmlspecialchars($tel);
+                                        ?>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <a class="btn btn-outline-secondary btn-sm" href="<?php echo $baseUrl; ?>utilisateur/changePassword">Changer mot de passe</a>
+                                <a class="btn btn-primary btn-sm" style="background:#b9ff00; color:#064420; border-color:#b9ff00;" href="<?php echo $baseUrl; ?>utilisateur/profil">Modifier mes informations</a>
+                            </div>
+                        </div>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link" href="<?php echo $baseUrl; ?>logout" title="Déconnexion">
                             <i class="bi bi-box-arrow-right" style="font-size: 1.2rem;"></i>

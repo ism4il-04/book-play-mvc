@@ -49,7 +49,7 @@ class User extends Model {
 
         // Si le mot de passe doit être re-haché, le mettre à jour automatiquement
         if ($needsRehash) {
-            $this->updatePassword($user['id'], $password);
+            $this->updatePasswordHash($user['id'], $password);
         }
 
         // Ajouter le rôle à l'utilisateur
@@ -107,12 +107,60 @@ class User extends Model {
     }
 
     /**
-     * Changer le mot de passe d'un utilisateur (pour le profil par exemple).
-     *
-     * @param mixed $userId
-     * @param mixed $newPassword
+     * Mettre à jour le profil utilisateur
+     * 
+     * @param array $data Tableau contenant id, prenom, nom, email, num_tel
+     * @return bool
      */
-    public function changePassword($userId, $newPassword) {
+    public function updateProfile($data) {
+        $stmt = $this->db->prepare(
+            "UPDATE {$this->table} 
+             SET prenom = ?, nom = ?, email = ?, num_tel = ? 
+             WHERE id = ?"
+        );
+
+        try {
+            return $stmt->execute([
+                $data['prenom'],
+                $data['nom'],
+                $data['email'],
+                $data['num_tel'],
+                $data['id']
+            ]);
+        } catch (PDOException $e) {
+            error_log("Erreur mise à jour profil pour user ID {$data['id']}: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Vérifier si un email existe déjà (sauf pour l'utilisateur spécifié)
+     * 
+     * @param string $email
+     * @param int|null $excludeUserId ID de l'utilisateur à exclure de la recherche
+     * @return bool
+     */
+    public function emailExists($email, $excludeUserId = null) {
+        if ($excludeUserId) {
+            $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM {$this->table} WHERE email = ? AND id != ?");
+            $stmt->execute([$email, $excludeUserId]);
+        } else {
+            $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM {$this->table} WHERE email = ?");
+            $stmt->execute([$email]);
+        }
+        
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['count'] > 0;
+    }
+
+    /**
+     * Mettre à jour le mot de passe d'un utilisateur
+     * 
+     * @param int $userId
+     * @param string $newPassword Mot de passe en clair (sera haché automatiquement)
+     * @return bool
+     */
+    public function updatePassword($userId, $newPassword) {
         $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
         $stmt = $this->db->prepare("UPDATE {$this->table} SET password = ? WHERE id = ?");
 
@@ -120,32 +168,56 @@ class User extends Model {
             return $stmt->execute([$hashedPassword, $userId]);
         } catch (PDOException $e) {
             error_log("Erreur changement password pour user ID {$userId}: " . $e->getMessage());
-
             return false;
         }
     }
 
     /**
-     * Met à jour le mot de passe d'un utilisateur avec un nouveau hash
-     * Utilisé pour la migration automatique des anciens mots de passe.
+     * Changer le mot de passe d'un utilisateur (alias de updatePassword pour compatibilité)
+     *
+     * @param mixed $userId
+     * @param mixed $newPassword
+     */
+    public function changePassword($userId, $newPassword) {
+        return $this->updatePassword($userId, $newPassword);
+    }
+
+    /**
+     * Met à jour le hash du mot de passe (pour migration automatique)
+     * Utilisé en interne par authenticate()
      *
      * @param mixed $userId
      * @param mixed $plainPassword
      */
-    private function updatePassword($userId, $plainPassword) {
+    private function updatePasswordHash($userId, $plainPassword) {
         $hashedPassword = password_hash($plainPassword, PASSWORD_BCRYPT);
         $stmt = $this->db->prepare("UPDATE {$this->table} SET password = ? WHERE id = ?");
 
         try {
             $stmt->execute([$hashedPassword, $userId]);
-
             return true;
         } catch (PDOException $e) {
-            // Log de l'erreur si nécessaire
-            error_log("Erreur mise à jour password pour user ID {$userId}: " . $e->getMessage());
-
+            error_log("Erreur mise à jour password hash pour user ID {$userId}: " . $e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * Récupérer un utilisateur par email
+     * 
+     * @param string $email
+     * @return array|false
+     */
+    public function getUserByEmail($email) {
+        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE email = ? LIMIT 1");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($user) {
+            $user['role'] = $this->determineRole($user['id']);
+        }
+
+        return $user;
     }
 
     /**

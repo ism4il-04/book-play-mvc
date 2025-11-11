@@ -10,3 +10,5 @@ RewriteCond %{REQUEST_FILENAME} !-d
 
 # Otherwise, redirect everything to index.php
 RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
+
+

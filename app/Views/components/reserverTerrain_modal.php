@@ -1,379 +1,263 @@
 <!-- Modal de réservation -->
 <div class="modal fade" id="reservationModal" tabindex="-1" aria-labelledby="reservationModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content" style="border-radius: 15px; border: none;">
-            <div class="modal-header" style="background: white; border-bottom: 1px solid #e0e0e0; padding: 1.5rem;">
-                <h5 class="modal-title" id="reservationModalLabel" style="color: #064420; font-weight: 700; font-size: 1.3rem;">
-                    Formulaire de Réservation
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content" style="border-radius: 15px; border: none;">
+      <div class="modal-header" style="background: white; border-bottom: 1px solid #e0e0e0; padding: 1.5rem;">
+        <h5 class="modal-title" id="reservationModalLabel" style="color: #064420; font-weight: 700;">
+          Formulaire de Réservation
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body" style="padding: 2rem; background: #f8f9fa;">
+        <form id="reservationForm" method="POST" action="<?php echo BASE_URL; ?>reservation/create">
+          <input type="hidden" name="terrain_id" id="modal_terrain_id">
+
+          <!-- 1️⃣ Date de réservation -->
+          <div class="mb-4">
+            <label class="form-label reservation-modal-label">Date de réservation *</label>
+            <input type="date" class="form-control reservation-modal-input" name="date_reservation" id="date_reservation" required>
+          </div>
+
+          <!-- 2️⃣ Créneaux disponibles -->
+          <div class="mb-4">
+            <label class="form-label reservation-modal-label">Créneaux horaires disponibles *</label>
+            <div id="creneauxList" class="alert alert-info">
+              Veuillez sélectionner une date pour voir les créneaux disponibles.
             </div>
-            <div class="modal-body" style="padding: 2rem; background: #f8f9fa;">
-                <form id="reservationForm" method="POST" action="<?php echo BASE_URL; ?>reservation/create">
-                    <input type="hidden" name="terrain_id" id="modal_terrain_id">
-                    
-                    <!-- Date de réservation -->
-                    <div class="mb-4">
-                        <label class="form-label reservation-modal-label">Date de réservation</label>
-                        <input type="date" class="form-control reservation-modal-input" name="date_reservation" required>
-                    </div>
-                    
-                    <!-- Heure de début et fin -->
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <label class="form-label reservation-modal-label">Heure de début</label>
-                            <input type="time" class="form-control reservation-modal-input" name="heure_debut" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label reservation-modal-label">Heure de fin</label>
-                            <input type="time" class="form-control reservation-modal-input" name="heure_fin" required>
-                        </div>
-                    </div>
-                    
-                    <!-- Options supplémentaires -->
-                    <div class="mb-4">
-                        <label class="form-label reservation-modal-label">Options supplémentaires</label>
-                        <div class="options-list-reservation">
-                            <div class="option-item-reservation">
-                                <input type="checkbox" id="ballon" name="options[]" value="ballon" data-price="20">
-                                <label for="ballon">Ballon</label>
-                                <span class="option-price-reservation">+20 MAD</span>
-                            </div>
-                            <div class="option-item-reservation">
-                                <input type="checkbox" id="maillots" name="options[]" value="maillots" data-price="50">
-                                <label for="maillots">Maillots</label>
-                                <span class="option-price-reservation">+50 MAD</span>
-                            </div>
-                            <div class="option-item-reservation">
-                                <input type="checkbox" id="douche" name="options[]" value="douche" data-price="30">
-                                <label for="douche">Douche</label>
-                                <span class="option-price-reservation">+30 MAD</span>
-                            </div>
-                            <div class="option-item-reservation">
-                                <input type="checkbox" id="bouteille" name="options[]" value="bouteille_eau" data-price="10">
-                                <label for="bouteille">Bouteille d'eau</label>
-                                <span class="option-price-reservation">+10 MAD</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Commentaire -->
-                    <div class="mb-4">
-                        <label class="form-label reservation-modal-label">Commentaire et demandes spécifiques</label>
-                        <textarea class="form-control reservation-modal-input" name="commentaire" rows="4" 
-                                  placeholder="Ajoutez vos commentaires ou demandes spécifiques..."
-                                  style="resize: none;"></textarea>
-                    </div>
-                    
-                    <!-- Informations du client -->
-                    <div class="mb-4">
-                        <h6 style="color: #666; font-weight: 600; margin-bottom: 1rem;">Informations du client</h6>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label reservation-modal-label-light">Nom</label>
-                                <input type="text" class="form-control reservation-modal-input" name="nom" 
-                                       value="<?php echo htmlspecialchars($currentUser['nom'] ?? ''); ?>" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label reservation-modal-label-light">Prénom</label>
-                                <input type="text" class="form-control reservation-modal-input" name="prenom" 
-                                       value="<?php echo htmlspecialchars($currentUser['prenom'] ?? ''); ?>" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label reservation-modal-label-light">Email</label>
-                                <input type="email" class="form-control reservation-modal-input" name="email" 
-                                       value="<?php echo htmlspecialchars($currentUser['email'] ?? ''); ?>" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label reservation-modal-label-light">Téléphone</label>
-                                <input type="tel" class="form-control reservation-modal-input" name="telephone" 
-                                       value="<?php echo htmlspecialchars($currentUser['telephone'] ?? ''); ?>" required>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Prix total -->
-                    <div class="mb-4" id="prixTotalSection" style="display: none;">
-                        <div class="alert alert-info d-flex justify-content-between align-items-center" 
-                             style="background: #e8f5e9; border: 1px solid #4caf50; border-radius: 10px;">
-                            <span style="font-weight: 600; color: #2e7d32;">Prix total estimé:</span>
-                            <span style="font-size: 1.2rem; font-weight: 700; color: #1b5e20;" id="prixTotalDisplay">0 MAD</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Boutons -->
-                    <div class="d-flex gap-3">
-                        <button type="button" class="btn-reservation-modal-cancel" data-bs-dismiss="modal">
-                            Annuler
-                        </button>
-                        <button type="submit" class="btn-reservation-modal-confirm">
-                            Confirmer la réservation
-                        </button>
-                    </div>
-                </form>
+            <input type="hidden" name="creneau_id" id="selected_creneau" required>
+          </div>
+
+          <!-- 3️⃣ Options supplémentaires -->
+          <div class="mb-4" id="optionsSection" style="display: none;">
+            <label class="form-label reservation-modal-label">Options supplémentaires</label>
+            <div id="optionsList" class="options-list-reservation"></div>
+          </div>
+
+          <!-- 4️⃣ Informations du client -->
+          <div class="mb-4">
+            <label class="form-label reservation-modal-label">Informations du client</label>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <input type="text" class="form-control reservation-modal-input" name="nom_client" placeholder="Nom *" required>
+              </div>
+              <div class="col-md-6">
+                <input type="text" class="form-control reservation-modal-input" name="prenom_client" placeholder="Prénom *" required>
+              </div>
+              <div class="col-md-6">
+                <input type="email" class="form-control reservation-modal-input" name="email_client" placeholder="Email *" required>
+              </div>
+              <div class="col-md-6">
+                <input type="tel" class="form-control reservation-modal-input" name="telephone_client" placeholder="Téléphone *" required>
+              </div>
             </div>
-        </div>
+          </div>
+
+          <!-- 5️⃣ Prix total -->
+          <div class="mb-4" id="prixTotalSection" style="display: none;">
+            <div class="alert alert-info d-flex justify-content-between align-items-center"
+              style="background: #e8f5e9; border: 1px solid #4caf50; border-radius: 10px;">
+              <span style="font-weight: 600; color: #2e7d32;">Prix total estimé:</span>
+              <span style="font-size: 1.2rem; font-weight: 700; color: #1b5e20;" id="prixTotalDisplay">0 MAD</span>
+            </div>
+          </div>
+
+          <!-- Boutons -->
+          <div class="d-flex gap-3">
+            <button type="button" class="btn-reservation-modal-cancel" data-bs-dismiss="modal">Annuler</button>
+            <button type="submit" class="btn-reservation-modal-confirm">Confirmer la réservation</button>
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
 </div>
 
 <style>
-/* Styles spécifiques au modal de réservation */
 .reservation-modal-label {
-    color: #666;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-    display: block;
+  color: #666;
+  font-weight: 600;
 }
-
-.reservation-modal-label-light {
-    color: #666;
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-    display: block;
-}
-
 .reservation-modal-input {
-    padding: 0.8rem;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    transition: all 0.3s;
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  transition: 0.3s;
 }
-
 .reservation-modal-input:focus {
-    border-color: #00bcd4;
-    box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1);
-    outline: none;
+  border-color: #00bcd4;
+  box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1);
 }
-
-.options-list-reservation {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-}
-
 .option-item-reservation {
-    display: flex;
-    align-items: center;
-    padding: 0.8rem 1rem;
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    transition: all 0.3s;
-    cursor: pointer;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1rem;
+  transition: 0.3s;
 }
-
 .option-item-reservation:hover {
-    border-color: #00bcd4;
-    background: #f8f9fa;
+  border-color: #00bcd4;
+  background: #f8f9fa;
 }
-
-.option-item-reservation input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    margin-right: 1rem;
-    cursor: pointer;
-    accent-color: #064420;
+.option-comment {
+  margin-top: 0.8rem;
+  display: none;
 }
-
-.option-item-reservation label {
-    flex: 1;
-    margin: 0;
-    cursor: pointer;
-    font-weight: 500;
-    color: #333;
+.option-comment textarea {
+  width: 100%;
+  resize: none;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  padding: 0.5rem;
 }
-
-.option-price-reservation {
-    color: #999;
-    font-size: 0.9rem;
-    font-weight: 500;
+.creneau-item {
+  padding: 1rem;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-bottom: 0.6rem;
 }
-
+.creneau-item.selected {
+  border-color: #064420;
+  background: #e8f5e9;
+}
+.btn-reservation-modal-cancel, .btn-reservation-modal-confirm {
+  flex: 1;
+  padding: 0.9rem;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+}
 .btn-reservation-modal-cancel {
-    flex: 1;
-    padding: 0.9rem;
-    background: #1a4d3e;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: all 0.3s;
+  background: #6c757d;
 }
-
-.btn-reservation-modal-cancel:hover {
-    background: #0f3d2f;
-}
-
 .btn-reservation-modal-confirm {
-    flex: 1;
-    padding: 0.9rem;
-    background: #b9ff00;
-    color: #064420;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.btn-reservation-modal-confirm:hover {
-    background: #a5d600;
-}
-
-@media (max-width: 768px) {
-    .modal-body {
-        padding: 1.5rem !important;
-    }
-    
-    .d-flex.gap-3 {
-        flex-direction: column;
-    }
-    
-    .btn-reservation-modal-cancel,
-    .btn-reservation-modal-confirm {
-        width: 100%;
-    }
+  background: #064420;
 }
 </style>
 
 <script>
-// Déclaration globale de la fonction
+let currentTerrainId = null;
+let currentPrixHeure = 0;
+let selectedCreneauData = null;
+
 window.openReservationModal = function(terrainId, terrainNom, prixHeure) {
-    console.log('=== OUVERTURE MODAL ===');
-    console.log('Terrain ID:', terrainId);
-    console.log('Terrain Nom:', terrainNom);
-    console.log('Prix Heure:', prixHeure);
-    
-    const modalElement = document.getElementById('reservationModal');
-    
-    if (!modalElement) {
-        console.error('ERREUR: Modal element "reservationModal" non trouvé!');
-        alert('Erreur: Le formulaire de réservation n\'est pas disponible.');
-        return;
-    }
-    
-    console.log('Modal trouvé:', modalElement);
-    
-    // Remplir l'ID du terrain
-    const terrainIdInput = document.getElementById('modal_terrain_id');
-    if (terrainIdInput) {
-        terrainIdInput.value = terrainId;
-        console.log('Terrain ID rempli:', terrainIdInput.value);
-    } else {
-        console.error('Input modal_terrain_id non trouvé!');
-    }
-    
-    // Stocker le prix horaire
-    modalElement.dataset.prixHeure = prixHeure || 0;
-    console.log('Prix horaire stocké:', modalElement.dataset.prixHeure);
-    
-    // Ouvrir le modal
-    try {
-        const bsModal = new bootstrap.Modal(modalElement, {
-            backdrop: 'static',
-            keyboard: false
-        });
-        bsModal.show();
-        console.log('Modal ouvert avec succès!');
-    } catch(error) {
-        console.error('ERREUR lors de l\'ouverture du modal:', error);
-        alert('Erreur lors de l\'ouverture du formulaire: ' + error.message);
-    }
-    
-    // Calculer le prix initial
-    setTimeout(function() {
-        if (typeof window.calculateTotalPrice === 'function') {
-            window.calculateTotalPrice();
-        }
-    }, 100);
+  currentTerrainId = terrainId;
+  currentPrixHeure = parseFloat(prixHeure) || 0;
+  document.getElementById('modal_terrain_id').value = terrainId;
+  resetForm();
+  loadTerrainOptions(terrainId);
+
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('date_reservation').min = today;
+
+  new bootstrap.Modal(document.getElementById('reservationModal')).show();
 };
 
-// Fonction de calcul du prix
-window.calculateTotalPrice = function() {
-    const modal = document.getElementById('reservationModal');
-    if (!modal) return;
-    
-    const prixHeure = parseFloat(modal.dataset.prixHeure) || 0;
-    const heureDebut = document.querySelector('input[name="heure_debut"]')?.value;
-    const heureFin = document.querySelector('input[name="heure_fin"]')?.value;
-    
-    let total = 0;
-    
-    // Calculer les heures
-    if (heureDebut && heureFin && prixHeure > 0) {
-        const debut = new Date('2000-01-01 ' + heureDebut);
-        const fin = new Date('2000-01-01 ' + heureFin);
-        const diffHeures = (fin - debut) / (1000 * 60 * 60);
-        
-        if (diffHeures > 0) {
-            total = prixHeure * diffHeures;
-        }
-    }
-    
-    // Ajouter les options
-    const checkboxes = modal.querySelectorAll('input[type="checkbox"]:checked');
-    checkboxes.forEach(cb => {
-        const price = parseFloat(cb.dataset.price) || 0;
-        total += price;
-    });
-    
-    // Afficher le prix
-    const prixSection = document.getElementById('prixTotalSection');
-    const prixDisplay = document.getElementById('prixTotalDisplay');
-    
-    if (prixSection && prixDisplay) {
-        if (total > 0) {
-            prixSection.style.display = 'block';
-            prixDisplay.textContent = total.toFixed(2) + ' MAD';
-        } else {
-            prixSection.style.display = 'none';
-        }
-    }
-};
+function resetForm() {
+  document.getElementById('reservationForm').reset();
+  document.getElementById('creneauxList').innerHTML = '<div class="alert alert-info">Veuillez sélectionner une date.</div>';
+  document.getElementById('optionsSection').style.display = 'none';
+  document.getElementById('prixTotalSection').style.display = 'none';
+  selectedCreneauData = null;
+}
 
-// Initialisation
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('=== INITIALISATION MODAL ===');
-    
-    const modal = document.getElementById('reservationModal');
-    
-    if (!modal) {
-        console.error('ERREUR: Modal "reservationModal" non trouvé dans le DOM!');
-        return;
-    }
-    
-    console.log('Modal trouvé et prêt!');
-    
-    // Écouter les changements
-    modal.addEventListener('change', window.calculateTotalPrice);
-    modal.addEventListener('input', function(e) {
-        if (e.target.type === 'time') {
-            window.calculateTotalPrice();
-        }
-    });
-    
-    // Validation du formulaire
-    const form = document.getElementById('reservationForm');
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            const heureDebut = document.querySelector('input[name="heure_debut"]')?.value;
-            const heureFin = document.querySelector('input[name="heure_fin"]')?.value;
-            
-            if (heureDebut && heureFin) {
-                const debut = new Date('2000-01-01 ' + heureDebut);
-                const fin = new Date('2000-01-01 ' + heureFin);
-                
-                if (fin <= debut) {
-                    e.preventDefault();
-                    alert('L\'heure de fin doit être après l\'heure de début');
-                    return false;
-                }
-            }
+function loadTerrainOptions(terrainId) {
+  fetch(`<?php echo BASE_URL; ?>api/terrain/options?id=${terrainId}`)
+    .then(r => r.json())
+    .then(data => {
+      const list = document.getElementById('optionsList');
+      if (data.success && data.options.length > 0) {
+        list.innerHTML = '';
+        data.options.forEach(o => {
+          const div = document.createElement('div');
+          div.className = 'option-item-reservation';
+          div.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <input type="checkbox" id="opt_${o.id_option}" value="${o.id_option}" data-price="${o.prix_option}" onchange="toggleOptionComment(this)">
+                <label for="opt_${o.id_option}"><strong>${o.nom_option}</strong></label>
+              </div>
+              <span class="text-success fw-bold">+${parseFloat(o.prix_option).toFixed(2)} MAD</span>
+            </div>
+            <div class="option-comment" id="comment_${o.id_option}">
+              <label class="form-label mt-2">Commentaire sur "${o.nom_option}" :</label>
+              <textarea name="comment_option[${o.id_option}]" rows="3" placeholder="${o.description || 'Votre commentaire...'}"></textarea>
+            </div>
+          `;
+          list.appendChild(div);
         });
-        console.log('Validation formulaire configurée');
-    }
+        document.getElementById('optionsSection').style.display = 'block';
+      }
+    });
+}
+
+function toggleOptionComment(checkbox) {
+  const comment = document.getElementById('comment_' + checkbox.value);
+  if (checkbox.checked) {
+    comment.style.display = 'block';
+  } else {
+    comment.style.display = 'none';
+  }
+  calculateTotalPrice();
+}
+
+function loadCreneaux(terrainId, date) {
+  const list = document.getElementById('creneauxList');
+  list.innerHTML = '<div class="alert alert-info">Chargement...</div>';
+  fetch(`<?php echo BASE_URL; ?>api/terrain/creneaux?id=${terrainId}&date=${date}`)
+    .then(r => r.json())
+    .then(data => {
+      list.innerHTML = '';
+      if (data.success && data.creneaux.length > 0) {
+        data.creneaux.forEach(c => {
+          const div = document.createElement('div');
+          div.className = 'creneau-item ' + (c.disponible == 1 ? '' : 'disabled');
+          div.innerHTML = `<strong>${c.heure_ouverture.substring(0,5)} - ${c.heure_fermeture.substring(0,5)}</strong>`;
+          if (c.disponible == 1) {
+            div.onclick = () => selectCreneau(div, c);
+          }
+          list.appendChild(div);
+        });
+      } else {
+        list.innerHTML = '<div class="alert alert-warning">Aucun créneau disponible.</div>';
+      }
+    });
+}
+
+function selectCreneau(el, c) {
+  document.querySelectorAll('.creneau-item').forEach(i => i.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('selected_creneau').value = c.id_horaires;
+  selectedCreneauData = c;
+  calculateTotalPrice();
+}
+
+function calculateTotalPrice() {
+  let total = 0;
+  if (selectedCreneauData) {
+    const debut = new Date('2000-01-01 ' + selectedCreneauData.heure_ouverture);
+    const fin = new Date('2000-01-01 ' + selectedCreneauData.heure_fermeture);
+    const diff = (fin - debut) / (1000 * 60 * 60);
+    total += currentPrixHeure * diff;
+  }
+  document.querySelectorAll('#optionsList input:checked').forEach(cb => total += parseFloat(cb.dataset.price));
+  const section = document.getElementById('prixTotalSection');
+  const display = document.getElementById('prixTotalDisplay');
+  if (total > 0) {
+    section.style.display = 'block';
+    display.textContent = total.toFixed(2) + ' MAD';
+  } else {
+    section.style.display = 'none';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('date_reservation').addEventListener('change', function() {
+    const id = document.getElementById('modal_terrain_id').value;
+    if (id && this.value) loadCreneaux(id, this.value);
+  });
 });
 </script>
