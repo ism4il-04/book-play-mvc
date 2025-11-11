@@ -65,19 +65,37 @@ class Admin extends Model {
     public function getAllGestionnaires() {
         try {
             $sql = "
-                SELECT 
-                    g.id,
-                    g.RIB,
-                    g.status,
-                    g.date_demande,
-                    u.nom,
-                    u.prenom,
-                    u.email,
-                    u.num_tel
-                FROM gestionnaire g
-                INNER JOIN utilisateur u ON g.id = u.id
-                ORDER BY g.date_demande DESC
-            ";
+                    SELECT 
+                        g.id,
+                        g.RIB,
+                        g.status AS statut_gestionnaire,
+                        g.date_demande,
+                        u.nom,
+                        u.prenom,
+                        u.email,
+                        u.num_tel,
+
+                        -- Informations terrain
+                        t.id_terrain,
+                        t.nom_terrain,
+                        t.statut AS statut_terrain,
+                        t.etat AS etat_demande_terrain,
+                        t.type_terrain,
+                        t.format_terrain,
+                        t.prix_heure,
+                        t.localisation,
+                        t.image,
+                        t.justificatif
+
+                    FROM gestionnaire g
+
+                    INNER JOIN utilisateur u 
+                        ON g.id = u.id
+
+                    LEFT JOIN terrain t
+                        ON t.id_gestionnaire = g.id
+                    ORDER BY g.date_demande DESC
+                ";
             $stmt = $this->db->prepare($sql);
             $stmt->execute();
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -92,21 +110,40 @@ class Admin extends Model {
     // Récupérer tous les gestionnaires en attente
     public function getAllGestionnairesEnAttente() {
         try {
-            $sql = "
-                SELECT 
-                    g.id,
-                    g.RIB,
-                    g.status,
-                    g.date_demande,
-                    u.nom,
-                    u.prenom,
-                    u.email,
-                    u.num_tel
-                FROM gestionnaire g
-                INNER JOIN utilisateur u ON g.id = u.id
-                WHERE g.status = 'en attente'
-                ORDER BY g.date_demande DESC
-            ";
+             $sql = "
+                    SELECT 
+                        g.id,
+                        g.RIB,
+                        g.status AS statut_gestionnaire,
+                        g.date_demande,
+                        u.nom,
+                        u.prenom,
+                        u.email,
+                        u.num_tel,
+
+                        -- Informations terrain
+                        t.id_terrain,
+                        t.nom_terrain,
+                        t.statut AS statut_terrain,
+                        t.etat AS etat_demande_terrain,
+                        t.type_terrain,
+                        t.format_terrain,
+                        t.prix_heure,
+                        t.localisation,
+                        t.image,
+                        t.justificatif
+
+                    FROM gestionnaire g
+
+                    INNER JOIN utilisateur u 
+                        ON g.id = u.id
+
+                    LEFT JOIN terrain t
+                        ON t.id_gestionnaire = g.id
+
+                    WHERE g.status = 'en attente'
+                    ORDER BY g.date_demande DESC
+                ";
             $stmt = $this->db->prepare($sql);
             $stmt->execute();
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -122,20 +159,39 @@ class Admin extends Model {
     public function getAllGestionnairesAccepte() {
         try {
             $sql = "
-                SELECT 
-                    g.id,
-                    g.RIB,
-                    g.status,
-                    g.date_demande,
-                    u.nom,
-                    u.prenom,
-                    u.email,
-                    u.num_tel
-                FROM gestionnaire g
-                INNER JOIN utilisateur u ON g.id = u.id
-                WHERE g.status = 'accepté'
-                ORDER BY g.date_demande DESC
-            ";
+                    SELECT 
+                        g.id,
+                        g.RIB,
+                        g.status AS statut_gestionnaire,
+                        g.date_demande,
+                        u.nom,
+                        u.prenom,
+                        u.email,
+                        u.num_tel,
+
+                        -- Informations terrain
+                        t.id_terrain,
+                        t.nom_terrain,
+                        t.statut AS statut_terrain,
+                        t.etat AS etat_demande_terrain,
+                        t.type_terrain,
+                        t.format_terrain,
+                        t.prix_heure,
+                        t.localisation,
+                        t.image,
+                        t.justificatif
+
+                    FROM gestionnaire g
+
+                    INNER JOIN utilisateur u 
+                        ON g.id = u.id
+
+                    LEFT JOIN terrain t
+                        ON t.id_gestionnaire = g.id
+
+                    WHERE g.status = 'accepté'
+                    ORDER BY g.date_demande DESC
+                ";
             $stmt = $this->db->prepare($sql);
             $stmt->execute();
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -151,20 +207,39 @@ class Admin extends Model {
     public function getAllGestionnairesRefuse() {
         try {
             $sql = "
-                SELECT 
-                    g.id,
-                    g.RIB,
-                    g.status,
-                    g.date_demande,
-                    u.nom,
-                    u.prenom,
-                    u.email,
-                    u.num_tel
-                FROM gestionnaire g
-                INNER JOIN utilisateur u ON g.id = u.id
-                WHERE g.status = 'refusé'
-                ORDER BY g.date_demande DESC
-            ";
+                    SELECT 
+                        g.id,
+                        g.RIB,
+                        g.status AS statut_gestionnaire,
+                        g.date_demande,
+                        u.nom,
+                        u.prenom,
+                        u.email,
+                        u.num_tel,
+
+                        -- Informations terrain
+                        t.id_terrain,
+                        t.nom_terrain,
+                        t.statut AS statut_terrain,
+                        t.etat AS etat_demande_terrain,
+                        t.type_terrain,
+                        t.format_terrain,
+                        t.prix_heure,
+                        t.localisation,
+                        t.image,
+                        t.justificatif
+
+                    FROM gestionnaire g
+
+                    INNER JOIN utilisateur u 
+                        ON g.id = u.id
+
+                    LEFT JOIN terrain t
+                        ON t.id_gestionnaire = g.id
+
+                    WHERE g.status = 'refusé'
+                    ORDER BY g.date_demande DESC
+                ";
             $stmt = $this->db->prepare($sql);
             $stmt->execute();
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);

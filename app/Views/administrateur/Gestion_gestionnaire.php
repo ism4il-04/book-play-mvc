@@ -85,6 +85,10 @@
                                     <span><?php echo htmlspecialchars($gestionnaire['num_tel'] ?? 'N/A'); ?></span>
                                 </div>
                                 <div class="info-item">
+                                    <i class="bi bi-telephone"></i>
+                                    <span><?php echo htmlspecialchars($gestionnaire['nom_terrain'] ?? 'N/A'); ?></span>
+                                </div>
+                                <div class="info-item">
                                     <i class="bi bi-calendar"></i>
                                     <span>Demande le: <?php echo htmlspecialchars($gestionnaire['date_demande'] ?? ''); ?></span>
                                 </div>
