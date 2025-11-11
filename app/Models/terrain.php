@@ -350,4 +350,24 @@ class Terrain extends Model {
 
         return json_encode($lastId ?: ['lastId' => 0]);
     }
+    public function getRecentTerrains($limit = 5) {
+        try {
+            $sql = "SELECT t.*, u.nom, u.prenom 
+                FROM terrain t
+                LEFT JOIN gestionnaire g ON t.id_gestionnaire = g.id
+                LEFT JOIN utilisateur u ON g.id = u.id
+                WHERE t.statut = 'disponible'
+                ORDER BY t.id_terrain DESC
+                LIMIT ?";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindValue(1, $limit, PDO::PARAM_INT);
+            $stmt->execute();
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Erreur getRecentTerrains: " . $e->getMessage());
+            return [];
+        }
+    }
 }
