@@ -1,0 +1,367 @@
+/* Main Content */
+.main-content {
+    background-color: #f8f9fa;
+    min-height: 100vh;
+}
+
+/* Header Section */
+.header-section {
+    margin-bottom: 30px;
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.page-subtitle {
+    font-size: 14px;
+    color: #7f8c8d;
+    margin: 0;
+}
+
+/* Search and Filter Section */
+.search-filter-section {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background-color: white;
+    border-radius: 8px;
+    padding: 0 15px;
+    border: 1px solid #e0e0e0;
+    transition: all 0.3s ease;
+}
+
+.search-box:focus-within {
+    border-color: #17a2b8;
+    box-shadow: 0 0 0 3px rgba(23, 162, 184, 0.1);
+}
+
+.search-box i {
+    color: #bdc3c7;
+    margin-right: 10px;
+}
+
+.search-box .form-control {
+    border: none;
+    padding: 10px 0;
+    font-size: 14px;
+}
+
+.search-box .form-control:focus {
+    box-shadow: none;
+    border: none;
+}
+
+.btn-filter {
+    background-color: white;
+    color: #2c3e50;
+    border: 1px solid #e0e0e0;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-filter:hover {
+    background-color: #f8f9fa;
+    border-color: #17a2b8;
+    color: #17a2b8;
+}
+
+/* Status Tabs */
+.status-tabs {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.status-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 8px 12px;
+    border-radius: 6px;
+}
+
+.status-tab.active {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.status-badge.pending {
+    background-color: #c8ff00;
+    color: #333;
+}
+
+.status-badge.active-tab {
+    background-color: #28a745;
+    color: white;
+}
+
+.status-badge.rejected {
+    background-color: #dc3545;
+    color: white;
+}
+
+.count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background-color: #17a2b8;
+    color: white;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Gestionnaires Grid */
+.gestionnaires-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 25px;
+    margin-top: 30px;
+}
+
+/* Gestionnaire Card */
+.gestionnaire-card {
+    background-color: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.gestionnaire-card:hover {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+/* Card Avatar */
+.card-avatar {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.avatar-circle {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Card Content */
+.card-content {
+    flex: 1;
+    margin-bottom: 20px;
+}
+
+.gestionnaire-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #7f8c8d;
+    margin-bottom: 10px;
+}
+
+.info-item i {
+    color: #17a2b8;
+    font-size: 14px;
+    width: 16px;
+}
+
+.info-item span {
+    word-break: break-word;
+}
+
+/* Card Actions */
+.card-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.btn-accept,
+.btn-reject {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.btn-accept {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-accept:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
+}
+
+.btn-reject {
+    background-color: #f8f9fa;
+    color: #dc3545;
+    border: 1px solid #dc3545;
+}
+
+.btn-reject:hover {
+    background-color: #dc3545;
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* Details Button */
+.btn-details {
+    width: 100%;
+    padding: 10px 15px;
+    background-color: #17a2b8;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.btn-details:hover {
+    background-color: #138496;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(23, 162, 184, 0.3);
+}
+
+/* Alert */
+.alert {
+    border-radius: 8px;
+    padding: 15px 20px;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.alert i {
+    font-size: 18px;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .main-content {
+        margin-left: 0;
+        padding: 20px 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .gestionnaires-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .search-filter-section {
+        flex-direction: column;
+    }
+
+    .search-box,
+    .btn-filter {
+        width: 100%;
+    }
+
+    .page-title {
+        font-size: 24px;
+    }
+
+    .status-tabs {
+        justify-content: flex-start;
+        overflow-x: auto;
+        padding-bottom: 10px;
+    }
+
+    .status-tab {
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-content {
+        padding: 15px 10px;
+    }
+
+    .gestionnaire-card {
+        padding: 15px;
+    }
+
+    .page-title {
+        font-size: 20px;
+    }
+
+    .card-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .avatar-circle {
+        width: 60px;
+        height: 60px;
+        font-size: 20px;
+    }
+}
