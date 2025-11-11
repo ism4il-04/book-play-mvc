@@ -113,7 +113,7 @@ class NewsletterTrigger {
             self::log("Démarrage envoi newsletter automatique");
             
             require_once __DIR__ . '/../../vendor/autoload.php';
-            require_once __DIR__ . '/../Controllers/Controller.php';
+            require_once __DIR__ . '/../core/Controller.php';
             require_once __DIR__ . '/../Controllers/AutoNewsletterController.php';
             require_once __DIR__ . '/../Models/Terrain.php';
             require_once __DIR__ . '/../Models/Tournoi.php';

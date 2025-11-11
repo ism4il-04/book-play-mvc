@@ -175,7 +175,7 @@ $baseUrl = rtrim(BASE_URL, '/') . '/';
                     </p>
 
                     <!-- Formulaire d'abonnement -->
-                    <form action="<?php echo $baseUrl; ?>auto_newsletter/subscribe" 
+                    <form action="index.php?url=auto_newsletter/subscribe" 
                           method="POST" 
                           class="newsletter-form"
                           onsubmit="return validateNewsletterForm()">
