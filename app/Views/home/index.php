@@ -1,7 +1,7 @@
 <?php
 // Load configuration
 require_once __DIR__ . '/../../../config/config.php';
-$baseUrl = BASE_URL;
+$baseUrl = rtrim(BASE_URL, '/') . '/';
 ?>
 
 <!DOCTYPE html>
