@@ -8,18 +8,31 @@ class HomeController extends Controller {
         $tournoiModel = new Tournoi();
         $terrains = $terrainModel->getAvailableTerrains();
         $tournois = $tournoiModel->existedTournoi();
-        $this->view(
-            'home/index'
-            //            , [
-            //            'terrains' => $terrains,
-            //            'tournois' => $tournois
-            //        ]
-        );
+        
+        // Récupérer le message de succès
+        $subscribed = isset($_GET['subscribed']) && $_GET['subscribed'] == 1;
+        $error = isset($_GET['error']) ? $_GET['error'] : null;
+        
+        $this->view('home/index', [
+            'terrains' => $terrains,
+            'tournois' => $tournois,
+            'subscribed' => $subscribed,
+            'error' => $error
+        ]);
     }
+    
+    public function availableTerrains()
+    {
 
-    public function availableTerrains() {}
-
+    }
+    
     public function terrains() {
+        // Prevent all forms of caching
+        header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+        header("Cache-Control: post-check=0, pre-check=0", false);
+        header("Pragma: no-cache");
+        header("Expires: Sat, 26 Jul 1997 05:00:00 GMT"); // Date in the past
+        
         require_once __DIR__ . '/../Models/terrain.php';
         $terrainModel = new Terrain();
         $search = isset($_GET['search']) ? trim($_GET['search']) : '';
@@ -41,26 +54,47 @@ class HomeController extends Controller {
             ],
         ]);
     }
-
+    
     public function tournois() {
         require_once __DIR__ . '/../Models/Tournoi.php';
         $tournoiModel = new Tournoi();
         $tournois = $tournoiModel->existedTournoi();
         $this->view('home/tournois', ['tournois' => $tournois]);
     }
-
+    
     public function subscribe() {
-        if ('POST' === $_SERVER['REQUEST_METHOD'] && isset($_POST['email'])) {
-            $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);
-
-            // Here you can save the email to database if needed
-            // For now, just redirect back with success message
-
-            header('Location: ' . BASE_URL . 'home?subscribed=1');
+        // Vérifier que c'est une requête POST
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ' . BASE_URL . 'home?error=invalid_request');
             exit;
         }
 
-        header('Location: ' . BASE_URL . 'home');
+        // Vérifier que l'email est présent
+        if (!isset($_POST['email']) || empty(trim($_POST['email']))) {
+            header('Location: ' . BASE_URL . 'home?error=email_required');
+            exit;
+        }
+
+        // Nettoyer et valider l'email
+        $email = filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL);
+        
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            header('Location: ' . BASE_URL . 'home?error=invalid_email');
+            exit;
+        }
+
+        // TODO: Sauvegarder l'email dans la base de données
+        // Exemple:
+        // require_once __DIR__ . '/../Models/Newsletter.php';
+        // $newsletterModel = new Newsletter();
+        // $result = $newsletterModel->subscribe($email);
+        // if (!$result) {
+        //     header('Location: ' . BASE_URL . 'home?error=db_error');
+        //     exit;
+        // }
+
+        // Redirection avec message de succès
+        header('Location: ' . BASE_URL . 'home?subscribed=1');
         exit;
     }
 }

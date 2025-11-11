@@ -10,4 +10,14 @@ class Dashboad_gestionnaireController extends Controller {
 
         $this->view('gestionnaire/dashboard', ['user' => $_SESSION['user']]);
     }
+
+    public function createTerrain() {
+        // Check if user is logged in and is a manager
+        if (!isset($_SESSION['user']) || 'gestionnaire' !== ($_SESSION['user']['role'] ?? null)) {
+            header('Location: ' . BASE_URL . 'auth/login');
+            exit;
+        }
+
+        $this->view('gestionnaire/ajouter_terrain', ['user' => $_SESSION['user']]);
+    }
 }

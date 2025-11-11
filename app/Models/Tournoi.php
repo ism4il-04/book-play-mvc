@@ -17,4 +17,30 @@ class Tournoi extends Model {
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+// À ajouter dans app/Models/Tournoi.php
+
+/**
+ * Récupérer les tournois à venir pour la newsletter
+ */
+public function getUpcomingTournois($limit = 3) {
+    try {
+        $sql = "SELECT t.*, ter.nom_terrain, ter.localisation
+                FROM tournoi t
+                LEFT JOIN terrain ter ON t.id_terrain = ter.id_terrain
+                WHERE t.date_debut >= CURDATE()
+                AND t.id_gestionnaire IS NOT NULL
+                ORDER BY t.date_debut ASC
+                LIMIT ?";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(1, $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Erreur getUpcomingTournois: " . $e->getMessage());
+        return [];
+    }
+}
 }

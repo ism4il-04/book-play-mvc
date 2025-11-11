@@ -1,0 +1,272 @@
+<?php
+
+require_once __DIR__ . '/../Models/Terrain.php';
+
+class TerrainController extends Controller{
+
+    private $db;
+    private $uploadDir = __DIR__ . '/../../public/images/';
+
+    public function __construct($db)
+    {
+        $this->db = $db;
+        // Create upload directory if it doesn't exist
+        if (!file_exists($this->uploadDir)) {
+            mkdir($this->uploadDir, 0777, true);
+        }
+        
+        // Start session if not already started
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+    }
+
+
+
+    public function gestionnaireTerrains() {
+        // Check if user is logged in and is a manager
+        if (!isset($_SESSION['user']) || 'gestionnaire' !== ($_SESSION['user']['role'] ?? null)) {
+            header('Location: ' . BASE_URL . 'auth/login');
+            exit;
+        }
+
+        require_once __DIR__ . '/../Models/Terrain.php';
+        $terrainModel = new Terrain($_SESSION['user']['id']);
+        $terrains = $terrainModel->getGestionnaireTerrains();
+        $this->view('gestionnaire/gestion_terrains', ['terrains' => $terrains, 'user' => $_SESSION['user']]);
+    }
+    public function create() {
+        // Check if user is logged in and is a manager
+        if (!isset($_SESSION['user']) || 'gestionnaire' !== ($_SESSION['user']['role'] ?? null)) {
+            header('Location: ' . BASE_URL . 'auth/login');
+            exit;
+        }
+
+        // Load the view for adding a new terrain
+        $this->view('gestionnaire/ajouter_terrain', ['user' => $_SESSION['user']]);
+    }
+
+    private function uploadImage($file) {
+        $targetFile = $this->uploadDir . basename($file['name']);
+        $imageFileType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
+        
+        // Check if image file is an actual image
+        $check = getimagesize($file['tmp_name']);
+        if ($check === false) {
+            throw new Exception("File is not an image.");
+        }
+
+        // Check file size (max 5MB)
+        if ($file['size'] > 5000000) {
+            throw new Exception("Sorry, your file is too large. Maximum size is 5MB.");
+        }
+
+        // Allow certain file formats
+        $allowedTypes = ['jpg', 'jpeg', 'png', 'gif'];
+        if (!in_array($imageFileType, $allowedTypes)) {
+            throw new Exception("Sorry, only JPG, JPEG, PNG & GIF files are allowed.");
+        }
+
+        // Generate unique filename
+        $newFilename = uniqid() . '.' . $imageFileType;
+        $targetFile = $this->uploadDir . $newFilename;
+
+        if (move_uploaded_file($file['tmp_name'], $targetFile)) {
+            return $newFilename; // Return relative path
+        } else {
+            throw new Exception("Sorry, there was an error uploading your file.");
+        }
+    }
+
+    public function store()
+    {
+        header('Content-Type: application/json');
+        try {
+            $imagePath = '';
+            if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+                $imagePath = $this->uploadImage($_FILES['image']);
+            } else {
+                echo json_encode(["success" => false, "message" => "Image is required"]);
+                exit;
+            }
+
+            // Get posted form data
+            $data = [
+                'nom_terrain'    => htmlspecialchars($_POST['nom_terrain'] ?? ''),
+                'image'          => $imagePath,
+                'prix'           => htmlspecialchars($_POST['prix'] ?? ''),
+                'localisation'   => htmlspecialchars($_POST['localisation'] ?? ''),
+                'type_terrain'   => htmlspecialchars($_POST['type_terrain'] ?? ''),
+                'format_terrain' => htmlspecialchars($_POST['format_terrain'] ?? ''),
+                'heure_ouverture' => $_POST['heure_ouverture'] ?? null,
+                'heure_fermeture' => $_POST['heure_fermeture'] ?? null,
+                'options' => $_POST['options'] ?? []
+            ];
+
+            // Validate required fields
+            foreach ($data as $key => $value) {
+                if (empty($value) && $key !== 'image' && $key !== 'heure_ouverture' && $key !== 'heure_fermeture' && $key !== 'options') {
+                    echo json_encode(["success" => false, "message" => "All fields are required"]);
+                    exit;
+                }
+            }
+
+            if (!isset($_SESSION['user']['id'])) {
+                echo json_encode(["success" => false, "message" => "User not authenticated"]);
+                exit;
+            }
+
+            $terrain = new Terrain($_SESSION['user']['id']);
+
+            if ($terrain->create($data)) {
+                $newTerrain = $terrain->getLastInserted();
+                echo json_encode(["success" => true, "terrain" => $newTerrain]);
+            } else {
+                echo json_encode(["success" => false, "message" => "Erreur lors de l'ajout"]);
+            }
+
+        } catch (Exception $e) {
+            error_log("Error in store: " . $e->getMessage());
+            echo json_encode(["success" => false, "message" => "Erreur serveur: " . $e->getMessage()]);
+        }
+
+        exit;
+    }
+
+
+
+    public function delete($id) {
+        header('Content-Type: application/json');
+        try {
+            // Check if user is logged in and is a manager
+            if (!isset($_SESSION['user']) || 'gestionnaire' !== ($_SESSION['user']['role'] ?? null)) {
+                echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+                exit;
+            }
+
+            $terrainModel = new Terrain($_SESSION['user']['id']);
+            $deletedTerrain = $terrainModel->getLastDeleted($id);
+            if ($terrainModel->delete($id)) {
+                echo json_encode(["success" => true, "terrain" => $deletedTerrain]);
+            } else {
+                echo json_encode(["success" => false, "message" => "Erreur lors de la supprission"]);
+            }
+        } catch (Exception $e) {
+            error_log("Error in delete: " . $e->getMessage());
+            echo json_encode(["success" => false, "message" => "Erreur serveur: " . $e->getMessage()]);
+        }
+    }
+
+    public function checkNewTerrains() {
+        // Check if user is logged in and is a manager
+        if (!isset($_SESSION['user']) || 'gestionnaire' !== ($_SESSION['user']['role'] ?? null)) {
+            echo json_encode(['error' => 'Unauthorized']);
+            exit;
+        }
+
+        header('Content-Type: application/json');
+        
+        $terrainModel = new Terrain($_SESSION['user']['id']);
+        echo $terrainModel->checkLastId();
+        exit;
+    }
+
+    public function getTerrainById($id) {
+        if (!isset($_SESSION['user']) || 'gestionnaire' !== ($_SESSION['user']['role'] ?? null)) {
+            echo json_encode(['error' => 'Unauthorized']);
+            exit;
+        }
+
+        header('Content-Type: application/json');
+        
+        $terrainModel = new Terrain($_SESSION['user']['id']);
+        $terrain = $terrainModel->getTerrainById($id);
+        
+        if ($terrain) {
+            echo json_encode(['success' => true, 'terrain' => $terrain]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Terrain not found', 'removed' => true]);
+        }
+        exit;
+    }
+    
+    public function getAvailableTerrainById($id) {
+        // Public endpoint - no authentication required
+        header('Content-Type: application/json');
+        
+        $terrainModel = new Terrain();
+        $terrain = $terrainModel->getTerrainById($id);
+        
+        // Only return if terrain is available AND accepted
+        if ($terrain && $terrain['statut'] === 'disponible' && $terrain['etat'] === 'acceptée') {
+            echo json_encode(['success' => true, 'terrain' => $terrain]);
+        } else {
+            // Terrain not found, not available, or not accepted
+            echo json_encode(['success' => false, 'message' => 'Terrain not available', 'removed' => true]);
+        }
+        exit;
+    }
+
+    /**
+     * Update terrain information
+     */
+    public function updateTerrain($terrainId) {
+        header('Content-Type: application/json');
+
+        try {
+            // Validate terrain ID
+            if (!$terrainId || !is_numeric($terrainId)) {
+                echo json_encode(['success' => false, 'message' => 'ID terrain invalide']);
+                exit;
+            }
+
+            // Get posted form data
+            $data = [
+                'nom_terrain'    => htmlspecialchars($_POST['nom_terrain'] ?? ''),
+                'localisation'   => htmlspecialchars($_POST['localisation'] ?? ''),
+                'prix'           => htmlspecialchars($_POST['prix'] ?? ''),
+                'type_terrain'   => htmlspecialchars($_POST['type_terrain'] ?? ''),
+                'format_terrain' => htmlspecialchars($_POST['format_terrain'] ?? ''),
+                'statut'         => htmlspecialchars($_POST['statut'] ?? ''),
+                'heure_ouverture' => $_POST['heure_ouverture'] ?? null,
+                'heure_fermeture' => $_POST['heure_fermeture'] ?? null,
+                'options' => $_POST['options'] ?? []
+            ];
+
+            // Validate required fields
+            foreach ($data as $key => $value) {
+                if (empty($value) && $key !== 'heure_ouverture' && $key !== 'heure_fermeture' && $key !== 'options') {
+                    echo json_encode(['success' => false, 'message' => "Le champ $key est requis"]);
+                    exit;
+                }
+            }
+
+            if (!isset($_SESSION['user']['id'])) {
+                echo json_encode(['success' => false, 'message' => 'Utilisateur non authentifié']);
+                exit;
+            }
+
+            // Handle image upload if provided
+            if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+                $data['image'] = $this->uploadImage($_FILES['image']);
+            }
+
+            $terrain = new Terrain($_SESSION['user']['id']);
+
+            if ($terrain->update($terrainId, $data)) {
+                $updatedTerrain = $terrain->getTerrainById($terrainId);
+                echo json_encode(['success' => true, 'terrain' => $updatedTerrain]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Erreur lors de la mise à jour']);
+            }
+
+        } catch (Exception $e) {
+            error_log("Error in updateTerrain: " . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'message' => 'Erreur serveur: ' . $e->getMessage()
+            ]);
+        }
+        exit;
+    }
+}

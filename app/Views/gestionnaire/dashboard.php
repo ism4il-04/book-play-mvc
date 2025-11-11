@@ -1,5 +1,5 @@
 <?php
-// app/views/gestionnaire/dashboard.php
+// app/views/gestionnaire/dashboard.php - Tableau de bord du gestionnaire
 require_once __DIR__ . '/../../../config/config.php';
 $baseUrl = BASE_URL;
 $currentUser = $user ?? null;
@@ -134,6 +134,45 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
             padding: 60px;
             color: #95a5a6;
         }
+        
+        /* Animations for notifications */
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+        
+        /* Animation for new terrain items */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .activity-item.new-item {
+            animation: fadeInDown 0.5s ease-out;
+        }
     </style>
 </head>
 <body>
@@ -151,11 +190,15 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
                 <i class="fas fa-home"></i>
                 <span>Dashboard</span>
             </a>
-            <a href="<?php echo $baseUrl; ?>terrains" class="nav-item">
+            <a href="<?php echo $baseUrl; ?>terrain/gestionnaireTerrains" class="nav-item">
                 <i class="fas fa-map-marked-alt"></i>
                 <span>Gestion des Terrains</span>
             </a>
-            <a href="<?php echo $baseUrl; ?>reservations" class="nav-item">
+            <a href="<?php echo $baseUrl; ?>facture" class="nav-item">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <span>Gestion des Factures</span>
+            </a>
+            <a href="<?php echo $baseUrl; ?>factures" class="nav-item">
                 <i class="fas fa-calendar-check"></i>
                 <span>Demandes de Réservation</span>
             </a>
@@ -216,6 +259,21 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
 
         <!-- Dashboard Content -->
         <div class="dashboard-container">
+            <!-- Success/Error Messages -->
+            <?php if (isset($_SESSION['success'])): ?>
+                <div class="alert alert-success" style="padding: 15px; margin-bottom: 20px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 8px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-check-circle"></i>
+                    <span><?php echo htmlspecialchars($_SESSION['success']); unset($_SESSION['success']); ?></span>
+                </div>
+            <?php endif; ?>
+            
+            <?php if (isset($_SESSION['error'])): ?>
+                <div class="alert alert-danger" style="padding: 15px; margin-bottom: 20px; background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; border-radius: 8px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span><?php echo htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?></span>
+                </div>
+            <?php endif; ?>
+            
             <!-- Statistics Cards -->
             <div class="stats-grid">
                 <div class="stat-card blue">
@@ -267,15 +325,15 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
             <div class="content-section">
                 <div class="section-header">
                     <h2>Mes Terrains</h2>
-                    <a href="<?php echo $baseUrl; ?>terrains/create" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Ajouter un terrain
-                    </a>
+<!--                    <button onclick="openAddModal()" class="btn btn-primary">-->
+<!--                        <i class="fas fa-plus"></i> Ajouter un terrain-->
+<!--                    </button>-->
                 </div>
 
                 <div class="activities-list">
-                    <?php if (!empty($stats['recent_activities'])) { ?>
-                        <?php foreach ($stats['recent_activities'] as $terrain) { ?>
-                            <div class="activity-item">
+                    <?php if (!empty($stats['recent_activities'])): ?>
+                        <?php foreach ($stats['recent_activities'] as $terrain): ?>
+                            <div class="activity-item" data-terrain-id="<?php echo $terrain['id']; ?>">
                                 <!-- Image -->
                                 <?php if (!empty($terrain['image'])) { ?>
                                     <?php
@@ -328,14 +386,14 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
                                     <?php echo htmlspecialchars($terrain['statut']); ?>
                                 </span>
                             </div>
-                        <?php } ?>
-                    <?php } else { ?>
-                        <div class="no-data">
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <a class="no-data">
                             <i class="fas fa-map-marked-alt" style="font-size: 48px; color: #ccc; margin-bottom: 15px;"></i>
                             <p>Aucun terrain trouvé</p>
-                            <a href="<?php echo $baseUrl; ?>terrains/create" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Créer un terrain
-                            </a>
+<!--                            <a href="--><?php //echo $baseUrl; ?><!--terrain/gestionnaireTerrains"><button class="btn btn-primary">-->
+<!--                                <i class="fas fa-plus"></i> gérer vos terrain-->
+<!--                            </button></a>-->
                         </div>
                     <?php } ?>
                 </div>
@@ -355,6 +413,222 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
         </footer>
     </main>
 
+    <!-- Modal Ajouter Terrain -->
+    <div id="addTerrainModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
+        <div class="modal-content" style="background-color: #fefefe; margin: 2% auto; padding: 0; border-radius: 12px; width: 90%; max-width: 700px; box-shadow: 0 5px 30px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header" style="padding: 20px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="margin: 0; font-size: 24px;">Ajouter un nouveau terrain</h2>
+                <button class="close" onclick="closeAddModal()" style="color: white; font-size: 32px; font-weight: bold; cursor: pointer; background: none; border: none; padding: 0; line-height: 1;">&times;</button>
+            </div>
+            <form action="<?= BASE_URL ?>terrain/store" method="POST" enctype="multipart/form-data" id="addTerrainForm">
+                <div class="modal-body" style="padding: 30px;">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="nom_terrain" class="form-label" style="display: block; margin-bottom: 8px; font-weight: 500; color: #2c3e50;">Nom du terrain <span style="color: #dc3545;">*</span></label>
+                        <input type="text" class="form-control" id="nom_terrain" name="nom_terrain" 
+                               placeholder="Ex: Complexe Sportif..." required maxlength="255" style="width: 100%; padding: 10px 15px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="localisation" class="form-label" style="display: block; margin-bottom: 8px; font-weight: 500; color: #2c3e50;">Localisation <span style="color: #dc3545;">*</span></label>
+                        <input type="text" class="form-control" id="localisation" name="localisation" 
+                               placeholder="Adresse complète" required style="width: 100%; padding: 10px 15px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="prix" class="form-label" style="display: block; margin-bottom: 8px; font-weight: 500; color: #2c3e50;">Prix/heure <span style="color: #dc3545;">*</span></label>
+                        <input type="number" class="form-control" id="prix" name="prix"
+                               placeholder="Prix/heure" required style="width: 100%; padding: 10px 15px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="image" class="form-label" style="display: block; margin-bottom: 8px; font-weight: 500; color: #2c3e50;">Image du terrain <span style="color: #dc3545;">*</span></label>
+                        <input type="file" class="form-control" id="image" name="image" accept="image/*" required style="width: 100%; padding: 10px 15px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                        <div style="font-size: 12px; color: #6c757d; margin-top: 5px;">Formats acceptés: JPG, JPEG, PNG, GIF (max 5MB)</div>
+                    </div>
+
+                    <div style="display: flex; gap: 20px; margin: 0 -10px;">
+                        <div style="flex: 1; padding: 0 10px;">
+                            <div class="form-group" style="margin-bottom: 20px;">
+                                <label for="type_terrain" class="form-label" style="display: block; margin-bottom: 8px; font-weight: 500; color: #2c3e50;">Type de terrain <span style="color: #dc3545;">*</span></label>
+                                <select class="form-select" id="type_terrain" name="type_terrain" required style="width: 100%; padding: 10px 15px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                                    <option value="" disabled selected>Sélectionner un type</option>
+                                    <option value="Gazon naturel">Gazon naturel</option>
+                                    <option value="Gazon synthétique">Gazon synthétique</option>
+                                    <option value="Terre / Sol">Terre / Sol</option>
+                                    <option value="Terrain couvert / Salle">Terrain couvert / Salle</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="flex: 1; padding: 0 10px;">
+                            <div class="form-group" style="margin-bottom: 20px;">
+                                <label for="format_terrain" class="form-label" style="display: block; margin-bottom: 8px; font-weight: 500; color: #2c3e50;">Format du terrain <span style="color: #dc3545;">*</span></label>
+                                <select class="form-select" id="format_terrain" name="format_terrain" required style="width: 100%; padding: 10px 15px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                                    <option value="" disabled selected>Sélectionner un format</option>
+                                    <option value="5v5">5v5</option>
+                                    <option value="6v6">6v6</option>
+                                    <option value="7v7">7v7</option>
+                                    <option value="8v8">8v8</option>
+                                    <option value="9v9">9v9</option>
+                                    <option value="10v10">10v10</option>
+                                    <option value="11v11">11v11</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="padding: 20px 30px; background-color: #f8f9fa; border-radius: 0 0 12px 12px; display: flex; justify-content: space-between; gap: 10px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddModal()" style="padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; border: none; cursor: pointer; background-color: #6c757d; color: white;">Annuler</button>
+                    <button type="submit" class="btn btn-primary" style="padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; border: none; cursor: pointer;">
+                        <i class="fas fa-plus-circle"></i> Ajouter le terrain
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="<?php echo $baseUrl; ?>js/dashboard_gest.js"></script>
+    <script src="<?php echo $baseUrl; ?>js/terrain-realtime.js?v=<?php echo time(); ?>"></script>
+    <script>
+    // Fonctions pour gérer la modale d'ajout
+    function openAddModal() {
+        document.getElementById('addTerrainModal').style.display = 'block';
+        document.getElementById('addTerrainForm').reset();
+    }
+
+    function closeAddModal() {
+        document.getElementById('addTerrainModal').style.display = 'none';
+    }
+
+    // Fermer la modale en cliquant en dehors
+    window.onclick = function(event) {
+        const addModal = document.getElementById('addTerrainModal');
+        if (event.target == addModal) {
+            closeAddModal();
+        }
+    }
+
+    // Fermer avec la touche Échap
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeAddModal();
+        }
+    });
+
+    // Fonction utilitaire pour échapper le HTML
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Fonction de rendu pour les éléments de terrain du tableau de bord
+    function renderDashboardTerrain(terrain) {
+        const div = document.createElement('div');
+        div.classList.add('activity-item', 'new-item');
+        div.setAttribute('data-terrain-id', terrain.id_terrain);
+        
+        let imageHtml = '';
+        if (terrain.image) {
+            imageHtml = `
+                <img src="<?= BASE_URL ?>images/${terrain.image}" 
+                     alt="${escapeHtml(terrain.nom_terrain)}" 
+                     class="terrain-image"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="terrain-image-placeholder" style="display:none;">
+                    <i class="fas fa-futbol"></i>
+                </div>
+            `;
+        } else {
+            imageHtml = `
+                <div class="terrain-image-placeholder">
+                    <i class="fas fa-futbol"></i>
+                </div>
+            `;
+        }
+        
+        const statusColor = terrain.statut === 'disponible' ? '#28a745' : '#dc3545';
+        const statusIcon = terrain.statut === 'disponible' ? 'fas fa-check-circle' : 'fas fa-times-circle';
+        
+        div.innerHTML = `
+            ${imageHtml}
+            <div class="activity-content">
+                <h4>${escapeHtml(terrain.nom_terrain)}</h4>
+                <p><i class="fas fa-map-marker-alt"></i> ${escapeHtml(terrain.localisation)}</p>
+                <div class="terrain-info-row">
+                    <span><i class="fas fa-layer-group"></i> ${escapeHtml(terrain.type_terrain)}</span>
+                    <span><i class="fas fa-coins"></i> ${escapeHtml(terrain.prix_heure)} DH/h</span>
+                </div>
+                <div class="terrain-stats-row">
+                    <span class="badge badge-warning">0 en attente</span>
+                    <span class="badge badge-success">0 acceptées</span>
+                </div>
+            </div>
+            <span class="status-badge" style="background-color: ${statusColor}">
+                <i class="${statusIcon}"></i> 
+                ${escapeHtml(terrain.statut)}
+            </span>
+        `;
+        
+        return div;
+    }
+
+    // Initialiser la surveillance en temps réel
+    const terrainMonitor = new TerrainRealtimeMonitor({
+        baseUrl: '<?= BASE_URL ?>',
+        containerSelector: '.activities-list',
+        renderFunction: renderDashboardTerrain,
+        pollingInterval: 3000
+    });
+
+    // Initialiser au chargement de la page
+    document.addEventListener('DOMContentLoaded', function() {
+        <?php if (!empty($stats['recent_activities'])): ?>
+            const terrainIds = [<?php echo implode(',', array_column($stats['recent_activities'], 'id')); ?>];
+            const maxId = Math.max(...terrainIds);
+            terrainMonitor.init(maxId);
+        <?php else: ?>
+            terrainMonitor.init(0);
+        <?php endif; ?>
+        
+        // Démarrer le polling pour la surveillance en temps réel
+        terrainMonitor.demarrerPolling();
+    });
+
+    // Gérer la soumission du formulaire via AJAX
+    document.getElementById('addTerrainForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        fetch('<?= BASE_URL ?>terrain/store', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                terrainMonitor.afficherNotification('Terrain ajouté avec succès !');
+                closeAddModal();
+                
+                // Ajouter au DOM
+                const container = document.querySelector('.activities-list');
+                const noData = container.querySelector('.no-data');
+                if (noData) noData.remove();
+                
+                const element = renderDashboardTerrain(data.terrain);
+                container.insertBefore(element, container.firstChild);
+                
+                // Mettre à jour le dernier ID
+                terrainMonitor.mettreAJourDernierId(data.terrain.id_terrain);
+            } else {
+                alert('Erreur : ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erreur AJAX :', error);
+            alert('Erreur lors de l\'ajout du terrain');
+        });
+    });
+    </script>
 </body>
 </html>
