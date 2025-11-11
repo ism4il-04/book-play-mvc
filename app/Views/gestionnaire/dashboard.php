@@ -198,7 +198,7 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
                 <i class="fas fa-file-invoice-dollar"></i>
                 <span>Gestion des Factures</span>
             </a>
-            <a href="<?php echo $baseUrl; ?>factures" class="nav-item">
+            <a href="<?php echo $baseUrl; ?>reservations" class="nav-item">
                 <i class="fas fa-calendar-check"></i>
                 <span>Demandes de Réservation</span>
             </a>
@@ -335,15 +335,15 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
                         <?php foreach ($stats['recent_activities'] as $terrain): ?>
                             <div class="activity-item" data-terrain-id="<?php echo $terrain['id']; ?>">
                                 <!-- Image -->
-                                <?php if (!empty($terrain['image'])) { ?>
-                                    <?php
+                                <?php if (!empty($terrain['image'])): ?>
+                                    <?php 
                                         $imagePath = $baseUrl . 'images/' . $terrain['image'];
-                                    $rootDir = realpath(__DIR__ . '/../../../');
-                                    $absolutePath = $rootDir . '/public/images/' . $terrain['image'];
-                                    $imageExists = file_exists($absolutePath);
+                                        $rootDir = realpath(__DIR__ . '/../../../');
+                                        $absolutePath = $rootDir . '/public/images/' . $terrain['image'];
+                                        $imageExists = file_exists($absolutePath);
                                     ?>
                                     
-                                    <?php if ($imageExists) { ?>
+                                    <?php if ($imageExists): ?>
                                         <img src="<?php echo htmlspecialchars($imagePath); ?>" 
                                              alt="<?php echo htmlspecialchars($terrain['nom']); ?>" 
                                              class="terrain-image"
@@ -351,16 +351,16 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
                                         <div class="terrain-image-placeholder" style="display:none;">
                                             <i class="fas fa-futbol"></i>
                                         </div>
-                                    <?php } else { ?>
+                                    <?php else: ?>
                                         <div class="terrain-image-placeholder">
                                             <i class="fas fa-futbol"></i>
                                         </div>
-                                    <?php } ?>
-                                <?php } else { ?>
+                                    <?php endif; ?>
+                                <?php else: ?>
                                     <div class="terrain-image-placeholder">
                                         <i class="fas fa-futbol"></i>
                                     </div>
-                                <?php } ?>
+                                <?php endif; ?>
                                 
                                 <!-- Contenu -->
                                 <div class="activity-content">
@@ -372,10 +372,10 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
                                     </div>
                                     <div class="terrain-stats-row">
                                         <span class="badge badge-warning">
-                                            <?php echo (int) $terrain['reservations_en_attente']; ?> en attente
+                                            <?php echo (int)$terrain['reservations_en_attente']; ?> en attente
                                         </span>
                                         <span class="badge badge-success">
-                                            <?php echo (int) $terrain['reservations_acceptees']; ?> acceptées
+                                            <?php echo (int)$terrain['reservations_acceptees']; ?> acceptées
                                         </span>
                                     </div>
                                 </div>
@@ -395,7 +395,7 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
 <!--                                <i class="fas fa-plus"></i> gérer vos terrain-->
 <!--                            </button></a>-->
                         </div>
-                    <?php } ?>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

@@ -57,8 +57,6 @@ header("Pragma: no-cache");
     </form>
     <?php if (!empty($terrains)) { ?>
         <div class="row g-4">
-            <?php foreach ($terrains as $terrain) { ?>
-                <div class="col-md-6 col-lg-4">
             <?php foreach ($terrains as $terrain): ?>
                 <div class="col-md-6 col-lg-4" data-terrain-id="<?php echo $terrain['id_terrain']; ?>">
                     <div class="card shadow-sm h-100">
@@ -94,7 +92,7 @@ header("Pragma: no-cache");
                         </div>
                     </div>
                 </div>
-            <?php } ?>
+            <?php endforeach; ?>
         </div>
     <?php } else { ?>
         <div class="alert alert-info mt-4">Aucun terrain disponible pour le moment.</div>
