@@ -3,7 +3,7 @@
 require_once __DIR__ . '/../Core/Model.php';
 
 class Admin extends Model {
-    protected $table = 'administrateur';
+    //protected $table = 'administrateur';
 
     // Total gestionnaires
     private function getTotal() {
@@ -19,7 +19,7 @@ class Admin extends Model {
         }
     }
 
-    // Gestionnaires actifs (acceptés)
+    // nbr Gestionnaires acceptés
     private function getActifs() {
         try {
             $sql = "SELECT COUNT(*) as actif FROM gestionnaire WHERE status = 'accepté'";
@@ -33,7 +33,7 @@ class Admin extends Model {
         }
     }
 
-    // Demandes en attente
+    // nbr Demandes en attente
     private function getDemandesEnAttente() {
         try {
             $sql = "SELECT COUNT(*) as attente FROM gestionnaire WHERE status = 'en attente'";
@@ -47,7 +47,7 @@ class Admin extends Model {
         }
     }
 
-    // Demandes refusées
+    //nbr Demandes refusées
     private function getDemandesRefusees() {
         try {
             $sql = "SELECT COUNT(*) as refuse FROM gestionnaire WHERE status = 'refusé'";
@@ -61,22 +61,22 @@ class Admin extends Model {
         }
     }
 
-    // Récupérer tous les gestionnaires acceptés
-    public function getAllGestionnairesAcceptes() {
+    // Récupérer tous les gestionnaires
+    public function getAllGestionnaires() {
         try {
             $sql = "
                 SELECT 
                     g.id,
                     g.RIB,
                     g.status,
+                    g.date_demande,
                     u.nom,
                     u.prenom,
                     u.email,
                     u.num_tel
                 FROM gestionnaire g
                 INNER JOIN utilisateur u ON g.id = u.id
-                WHERE g.status = 'accepté'
-                ORDER BY u.nom, u.prenom
+                ORDER BY g.date_demande DESC
             ";
             $stmt = $this->db->prepare($sql);
             $stmt->execute();
@@ -84,10 +84,98 @@ class Admin extends Model {
             
             return $results;
         } catch (PDOException $e) {
-            error_log("Erreur getAllGestionnairesAcceptes: " . $e->getMessage());
+            error_log("Erreur getAllGestionnaires: " . $e->getMessage());
             return [];
         }
     }
+
+    // Récupérer tous les gestionnaires en attente
+    public function getAllGestionnairesEnAttente() {
+        try {
+            $sql = "
+                SELECT 
+                    g.id,
+                    g.RIB,
+                    g.status,
+                    g.date_demande,
+                    u.nom,
+                    u.prenom,
+                    u.email,
+                    u.num_tel
+                FROM gestionnaire g
+                INNER JOIN utilisateur u ON g.id = u.id
+                WHERE g.status = 'en attente'
+                ORDER BY g.date_demande DESC
+            ";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            return $results;
+        } catch (PDOException $e) {
+            error_log("Erreur getAllGestionnairesEnAttente: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    // Récupérer tous les gestionnaires en attente
+    public function getAllGestionnairesAccepte() {
+        try {
+            $sql = "
+                SELECT 
+                    g.id,
+                    g.RIB,
+                    g.status,
+                    g.date_demande,
+                    u.nom,
+                    u.prenom,
+                    u.email,
+                    u.num_tel
+                FROM gestionnaire g
+                INNER JOIN utilisateur u ON g.id = u.id
+                WHERE g.status = 'accepté'
+                ORDER BY g.date_demande DESC
+            ";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            return $results;
+        } catch (PDOException $e) {
+            error_log("Erreur getAllGestionnairesAccepte: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    // Récupérer tous les gestionnaires en attente
+    public function getAllGestionnairesRefuse() {
+        try {
+            $sql = "
+                SELECT 
+                    g.id,
+                    g.RIB,
+                    g.status,
+                    g.date_demande,
+                    u.nom,
+                    u.prenom,
+                    u.email,
+                    u.num_tel
+                FROM gestionnaire g
+                INNER JOIN utilisateur u ON g.id = u.id
+                WHERE g.status = 'refusé'
+                ORDER BY g.date_demande DESC
+            ";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            return $results;
+        } catch (PDOException $e) {
+            error_log("Erreur getAllGestionnairesRefuse: " . $e->getMessage());
+            return [];
+        }
+    }
+    
 
     // Récupérer un gestionnaire par son ID
     public function getGestionnaireById($id) {
@@ -99,6 +187,7 @@ class Admin extends Model {
                     g.status,
                     g.justificatif,
                     g.date_validation,
+                    g.date_demande,
                     u.nom,
                     u.prenom,
                     u.email,

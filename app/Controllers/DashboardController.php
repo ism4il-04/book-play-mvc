@@ -35,7 +35,7 @@ class DashboardController extends Controller {
         $stats = $adminModel->getStats();
         
         // Récupérer les gestionnaires acceptés
-        $gestionnaires = $adminModel->getAllGestionnairesAcceptes();
+        $gestionnaires = $adminModel->getAllGestionnaires();
 
         // Préparer les données pour la vue
         $viewData = [
