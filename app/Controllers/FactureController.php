@@ -30,7 +30,7 @@ class FactureController extends Controller {
         // Récupérer les terrains pour le filtre
         $terrains = $factureModel->getGestionnaireTerrains($gestionnaire_id);
 
-        $this->view('gestionnaire/reservations', [
+        $this->view('gestionnaire/factures', [
             'reservations' => $reservations,
             'terrains' => $terrains,
             'filters' => $filters,
