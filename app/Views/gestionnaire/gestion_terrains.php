@@ -364,90 +364,24 @@ $terrains = $terrains ?? [];
     </style>
 </head>
 <body>
-<!-- Sidebar Navigation -->
-<aside class="sidebar">
-    <div class="sidebar-header">
-        <img src="<?php echo $baseUrl; ?>images/logo.png" alt="Logo" class="logo">
-        <button class="sidebar-toggle" id="sidebarToggle">
-            <i class="fas fa-bars"></i>
-        </button>
-    </div>
-
-    <nav class="sidebar-nav">
-        <a href="<?php echo $baseUrl; ?>dashboard/gestionnaire" class="nav-item">
-            <i class="fas fa-home"></i>
-            <span>Dashboard</span>
-        </a>
-        <a href="<?php echo $baseUrl; ?>terrain/gestionnaireTerrains" class="nav-item active">
-            <i class="fas fa-map-marked-alt"></i>
-            <span>Gestion des Terrains</span>
-        </a>
-        <a href="<?php echo $baseUrl; ?>facture" class="nav-item">
-            <i class="fas fa-file-invoice-dollar"></i>
-            <span>Gestion des Factures</span>
-        </a>
-        <a href="<?php echo $baseUrl; ?>factures" class="nav-item">
-            <i class="fas fa-calendar-check"></i>
-            <span>Demandes de Réservation</span>
-        </a>
-        <a href="<?php echo $baseUrl; ?>tournois" class="nav-item">
-            <i class="fas fa-trophy"></i>
-            <span>Gestion des Tournois</span>
-        </a>
-    </nav>
-
-    <div class="sidebar-footer">
-        <div class="user-info">
-            <div class="user-avatar">
-                <?php echo strtoupper(substr($currentUser['name'], 0, 1)); ?>
-            </div>
-            <div class="user-details">
-                <span class="user-name"><?php echo htmlspecialchars($currentUser['name']); ?></span>
-                <span class="user-role">Gestionnaire</span>
-            </div>
-        </div>
-    </div>
-</aside>
+    <!-- Sidebar Navigation -->
+    <?php
+    $activeItem = 'terrains';
+    include __DIR__ . '/../components/nav_gestionnaire.php';
+    ?>
 <!-- Main Content -->
 <main class="main-content">
     <!-- Top Navbar -->
-    <header class="top-navbar">
-        <div class="navbar-left">
-            <h1>Gestion des Terrains</h1>
-            <p class="subtitle">Gérez vos terrains de sport</p>
-        </div>
-        <div class="navbar-right">
-            <button onclick="openAddModal()" class="btn btn-primary" style="margin-right: 15px;">
-                <i class="fas fa-plus"></i> Ajouter un terrain
-            </button>
-            <div class="search-box">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Rechercher...">
-            </div>
-            <div class="notifications">
-                <button class="notification-btn">
-                    <i class="fas fa-bell"></i>
-                    <span class="badge"><?php echo $stats['notifications_count'] ?? 0; ?></span>
-                </button>
-            </div>
-            <div class="user-menu">
-                <button class="user-menu-btn">
-                    <div class="user-avatar-small">
-                        <?php echo strtoupper(substr($currentUser['name'], 0, 1)); ?>
-                    </div>
-                    <i class="fas fa-chevron-down"></i>
-                </button>
-                <div class="dropdown-menu">
-                    <a href="<?php echo $baseUrl; ?>profile"><i class="fas fa-user"></i> Mon Profil</a>
-                    <a href="<?php echo $baseUrl; ?>settings"><i class="fas fa-cog"></i> Paramètres</a>
-                    <hr>
-                    <a href="<?php echo $baseUrl; ?>logout" class="logout"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
-                </div>
-            </div>
-        </div>
-    </header>
-    
+    <?php
+    $title = 'Gestion des Terrains';
+    $subtitle = 'Gérez vos terrains de sport';
+    include __DIR__ . '/../components/top_navbar_gestionnaire.php';
+    ?>
+
     <div class="dashboard-container" style="padding: 20px;">
+        <button onclick="openAddModal()" class="btn btn-primary" style="margin-bottom: 20px;">
+            <i class="fas fa-plus"></i> Ajouter un terrain
+        </button>
         <!-- Success/Error Messages -->
         <?php if (isset($_SESSION['success'])): ?>
             <div class="alert alert-success" style="padding: 15px; margin-bottom: 20px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 8px; display: flex; align-items: center; gap: 10px;">

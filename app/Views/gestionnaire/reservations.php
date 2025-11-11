@@ -15,53 +15,19 @@ $currentUser = $user ?? null;
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <img src="<?php echo $baseUrl; ?>images/logo.png" alt="Logo" class="logo">
-            <button class="sidebar-toggle" id="sidebarToggle">
-                <i class="fas fa-bars"></i>
-            </button>
-        </div>
-
-        <nav class="sidebar-nav">
-            <a href="<?php echo $baseUrl; ?>dashboard/gestionnaire" class="nav-item">
-                <i class="fas fa-home"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="<?php echo $baseUrl; ?>terrain/gestionnaireTerrains" class="nav-item">
-                <i class="fas fa-map-marked-alt"></i>
-                <span>Gestion des Terrains</span>
-            </a>
-            <a href="<?php echo $baseUrl; ?>reservations" class="nav-item active">
-                <i class="fas fa-calendar-check"></i>
-                <span>Demandes de Réservation</span>
-            </a>
-            <a href="<?php echo $baseUrl; ?>tournois" class="nav-item">
-                <i class="fas fa-trophy"></i>
-                <span>Gestion des Tournois</span>
-            </a>
-        </nav>
-
-        <div class="sidebar-footer">
-            <div class="user-info">
-                <div class="user-avatar">
-                    <?php echo strtoupper(substr($currentUser['name'] ?? '', 0, 1)); ?>
-                </div>
-                <div class="user-details">
-                    <span class="user-name"><?php echo htmlspecialchars($currentUser['name'] ?? ''); ?></span>
-                    <span class="user-role">Gestionnaire</span>
-                </div>
-            </div>
-        </div>
-    </aside>
+    <!-- Sidebar Navigation -->
+    <?php
+    $activeItem = 'reservations';
+    include __DIR__ . '/../components/nav_gestionnaire.php';
+    ?>
 
     <main class="main-content">
-        <header class="top-navbar">
-            <div class="navbar-left">
-                <h1>Demandes de réservation</h1>
-                <p class="subtitle">Acceptez ou refusez les demandes en attente</p>
-            </div>
-        </header>
+        <!-- Top Navbar -->
+        <?php
+        $title = 'Demandes de réservation';
+        $subtitle = 'Acceptez ou refusez les demandes en attente';
+        include __DIR__ . '/../components/top_navbar_gestionnaire.php';
+        ?>
 
         <div class="dashboard-container">
             <?php if (isset($_SESSION['success'])): ?>
