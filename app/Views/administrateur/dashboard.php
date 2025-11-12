@@ -12,24 +12,13 @@
     $error = $error ?? null;
 
     $currentUser = $user;
-?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - <?php echo APP_NAME; ?></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/dashboard_admin.css">
-</head>
-<body>
-    <?php
+
     $currentPage = 'dashboard';
-    $userName = $currentUser['name'] ?? ($currentUser['nom'] ?? 'Admin');
     include __DIR__ . '/sidebar.php';
-    ?>
-    
+?>
+
+<link rel="stylesheet" href="<?php echo $baseUrl; ?>css/dashboard_admin.css">
+
     <div class="main-content">
         <div class="container-fluid">
             <!-- Page Header -->
@@ -54,7 +43,7 @@
                             <i class="bi bi-people-fill"></i>
                         </div>
                         <div class="stat-number"><?php echo $total; ?></div>
-                        <div class="stat-label">Total Gestionnaires</div>
+                        <div class="stat-label">Total Proprietaires</div>
                     </div>
                 </div>
                 
@@ -89,16 +78,11 @@
                 </div>
             </div>
 
-            <!-- Gestionnaires acceptés -->
+            <!-- Gestionnaires-->
             <div class="row">
                 <div class="col-12 mb-4">
                     <div class="dashboard-card">
-                        <div class="card-header">
-                            <h2 class="card-title mb-0">
-                                <i class="bi bi-people me-2"></i>
-                                Gestionnaires Acceptés
-                            </h2>
-                        </div>
+                        
                         <div class="card-body p-0">
                             <div class="table-container">
                                 <table class="table table-striped table-hover align-middle mb-0">
@@ -126,8 +110,34 @@
                                             <td><?php echo htmlspecialchars($g['email'] ?? ''); ?></td>
                                             <td><?php echo htmlspecialchars($g['num_tel'] ?? ''); ?></td>
                                             <td>
-                                                <span class="badge bg-success">
-                                                    <i class="bi bi-check-circle me-1"></i>Accepté
+                                                <?php
+                                                $statut = strtolower(trim($g['status'] ?? ''));
+                                                
+                                                // Déterminer le badge selon le statut
+                                                switch ($statut) {
+                                                    case 'accepté':
+                                                        $badgeClass = 'bg-success';
+                                                        $icon = 'bi-check-circle';
+                                                        $label = 'Accepté';
+                                                        break;
+                                                    case 'en attente':
+                                                        $badgeClass = 'bg-warning';
+                                                        $icon = 'bi-clock';
+                                                        $label = 'En attente';
+                                                        break;
+                                                    case 'refusé':
+                                                        $badgeClass = 'bg-danger';
+                                                        $icon = 'bi-x-circle';
+                                                        $label = 'Refusé';
+                                                        break;
+                                                    default:
+                                                        $badgeClass = 'bg-secondary';
+                                                        $icon = 'bi-question-circle';
+                                                        $label = htmlspecialchars($g['status'] ?? 'Non défini');
+                                                }
+                                                ?>
+                                                <span class="badge <?php echo $badgeClass; ?>">
+                                                    <i class="bi <?php echo $icon; ?> me-1"></i><?php echo $label; ?>
                                                 </span>
                                             </td>
                                         </tr>
@@ -136,7 +146,7 @@
                                         <tr>
                                             <td colspan="4" class="text-center text-muted py-4">
                                                 <i class="bi bi-inbox display-4 d-block mb-2"></i>
-                                                Aucun gestionnaire accepté pour le moment
+                                                Aucun Proprietaires trouvé
                                             </td>
                                         </tr>
                                     <?php endif; ?>
@@ -150,6 +160,4 @@
         </div>
     </div>
 
-    <?php include __DIR__ . '/footer.php'; ?>
-</body>
-</html>
+<?php include __DIR__ . '/footer.php'; ?>

@@ -134,6 +134,45 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
             padding: 60px;
             color: #95a5a6;
         }
+        
+        /* Animations for notifications */
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+        
+        /* Animation for new terrain items */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .activity-item.new-item {
+            animation: fadeInDown 0.5s ease-out;
+        }
     </style>
 </head>
 <body>
@@ -155,13 +194,17 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
                 <i class="fas fa-map-marked-alt"></i>
                 <span>Gestion des Terrains</span>
             </a>
-            <a href="<?php echo $baseUrl; ?>reservations" class="nav-item">
+            <a href="<?php echo $baseUrl; ?>facture" class="nav-item">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <span>Gestion des Factures</span>
+            </a>
+            <a href="<?php echo $baseUrl; ?>factures" class="nav-item">
                 <i class="fas fa-calendar-check"></i>
                 <span>Demandes de Réservation</span>
             </a>
-            <a href="<?php echo $baseUrl; ?>tournois" class="nav-item">
+            <a href="<?php echo $baseUrl; ?>tournoi" class="nav-item">
                 <i class="fas fa-trophy"></i>
-                <span>Gestion des Tournois</span>
+                <span>Tournois & Demandes</span>
             </a>
         </nav>
 
@@ -278,19 +321,69 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
                 </div>
             </div>
 
+            <!-- Demandes de Tournois Récentes -->
+            <?php
+            // Récupérer les demandes de tournois récentes
+            require_once __DIR__ . '/../../Controllers/TournoiController.php';
+            require_once __DIR__ . '/../../Core/Database.php';
+            try {
+                $db = Database::getInstance()->getConnection();
+                $sql = "SELECT t.*, u.prenom AS client_prenom, u.nom AS client_nom
+                        FROM tournoi t
+                        INNER JOIN demande d ON t.id_tournoi = d.id_tournoi
+                        INNER JOIN utilisateur u ON d.id_client = u.id
+                        WHERE t.id_gestionnaire = ?
+                        ORDER BY t.date_debut DESC
+                        LIMIT 3";
+                $stmt = $db->prepare($sql);
+                $stmt->execute([$currentUser['id']]);
+                $demandesTournois = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (Exception $e) {
+                $demandesTournois = [];
+            }
+            ?>
+            
+            <?php if (!empty($demandesTournois)): ?>
+            <div class="content-section" style="margin-bottom: 30px;">
+                <div class="section-header">
+                    <h2><i class="fas fa-trophy"></i> Demandes de Tournois Récentes</h2>
+                    <a href="<?php echo $baseUrl; ?>tournoi?section=demandes" class="btn btn-primary" style="text-decoration: none; padding: 10px 20px; background: #064420; color: white; border-radius: 8px;">
+                        Voir les demandes
+                    </a>
+                </div>
+                <div class="activities-list">
+                    <?php foreach ($demandesTournois as $demande): ?>
+                        <div class="activity-item">
+                            <div class="activity-content">
+                                <h4><?= htmlspecialchars($demande['nom_tournoi']) ?></h4>
+                                <p><i class="fas fa-user"></i> Client: <?= htmlspecialchars($demande['client_prenom'] . ' ' . $demande['client_nom']) ?></p>
+                                <div class="terrain-info-row">
+                                    <span><i class="fas fa-calendar-alt"></i> <?= date('d/m/Y', strtotime($demande['date_debut'])) ?></span>
+                                    <span><i class="fas fa-users"></i> <?= htmlspecialchars($demande['nb_equipes']) ?> équipes</span>
+                                </div>
+                            </div>
+                            <span class="status-badge" style="background-color: <?= $demande['status'] === 'en attente' ? '#ffc107' : ($demande['status'] === 'accepté' ? '#28a745' : '#dc3545') ?>">
+                                <?= htmlspecialchars($demande['status']) ?>
+                            </span>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <!-- Recent Activities -->
             <div class="content-section">
                 <div class="section-header">
                     <h2>Mes Terrains</h2>
-                    <button onclick="openAddModal()" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Ajouter un terrain
-                    </button>
+<!--                    <button onclick="openAddModal()" class="btn btn-primary">-->
+<!--                        <i class="fas fa-plus"></i> Ajouter un terrain-->
+<!--                    </button>-->
                 </div>
 
                 <div class="activities-list">
                     <?php if (!empty($stats['recent_activities'])): ?>
                         <?php foreach ($stats['recent_activities'] as $terrain): ?>
-                            <div class="activity-item">
+                            <div class="activity-item" data-terrain-id="<?php echo $terrain['id']; ?>">
                                 <!-- Image -->
                                 <?php if (!empty($terrain['image'])): ?>
                                     <?php 
@@ -345,12 +438,12 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
                             </div>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <div class="no-data">
+                        <a class="no-data">
                             <i class="fas fa-map-marked-alt" style="font-size: 48px; color: #ccc; margin-bottom: 15px;"></i>
                             <p>Aucun terrain trouvé</p>
-                            <button onclick="openAddModal()" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Créer un terrain
-                            </button>
+<!--                            <a href="--><?php //echo $baseUrl; ?><!--terrain/gestionnaireTerrains"><button class="btn btn-primary">-->
+<!--                                <i class="fas fa-plus"></i> gérer vos terrain-->
+<!--                            </button></a>-->
                         </div>
                     <?php endif; ?>
                 </div>
@@ -444,6 +537,7 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
     </div>
 
     <script src="<?php echo $baseUrl; ?>js/dashboard_gest.js"></script>
+    <script src="<?php echo $baseUrl; ?>js/terrain-realtime.js?v=<?php echo time(); ?>"></script>
     <script>
     // Fonctions pour gérer la modale d'ajout
     function openAddModal() {
@@ -468,6 +562,122 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
         if (event.key === 'Escape') {
             closeAddModal();
         }
+    });
+
+    // Fonction utilitaire pour échapper le HTML
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Fonction de rendu pour les éléments de terrain du tableau de bord
+    function renderDashboardTerrain(terrain) {
+        const div = document.createElement('div');
+        div.classList.add('activity-item', 'new-item');
+        div.setAttribute('data-terrain-id', terrain.id_terrain);
+        
+        let imageHtml = '';
+        if (terrain.image) {
+            imageHtml = `
+                <img src="<?= BASE_URL ?>images/${terrain.image}" 
+                     alt="${escapeHtml(terrain.nom_terrain)}" 
+                     class="terrain-image"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="terrain-image-placeholder" style="display:none;">
+                    <i class="fas fa-futbol"></i>
+                </div>
+            `;
+        } else {
+            imageHtml = `
+                <div class="terrain-image-placeholder">
+                    <i class="fas fa-futbol"></i>
+                </div>
+            `;
+        }
+        
+        const statusColor = terrain.statut === 'disponible' ? '#28a745' : '#dc3545';
+        const statusIcon = terrain.statut === 'disponible' ? 'fas fa-check-circle' : 'fas fa-times-circle';
+        
+        div.innerHTML = `
+            ${imageHtml}
+            <div class="activity-content">
+                <h4>${escapeHtml(terrain.nom_terrain)}</h4>
+                <p><i class="fas fa-map-marker-alt"></i> ${escapeHtml(terrain.localisation)}</p>
+                <div class="terrain-info-row">
+                    <span><i class="fas fa-layer-group"></i> ${escapeHtml(terrain.type_terrain)}</span>
+                    <span><i class="fas fa-coins"></i> ${escapeHtml(terrain.prix_heure)} DH/h</span>
+                </div>
+                <div class="terrain-stats-row">
+                    <span class="badge badge-warning">0 en attente</span>
+                    <span class="badge badge-success">0 acceptées</span>
+                </div>
+            </div>
+            <span class="status-badge" style="background-color: ${statusColor}">
+                <i class="${statusIcon}"></i> 
+                ${escapeHtml(terrain.statut)}
+            </span>
+        `;
+        
+        return div;
+    }
+
+    // Initialiser la surveillance en temps réel
+    const terrainMonitor = new TerrainRealtimeMonitor({
+        baseUrl: '<?= BASE_URL ?>',
+        containerSelector: '.activities-list',
+        renderFunction: renderDashboardTerrain,
+        pollingInterval: 3000
+    });
+
+    // Initialiser au chargement de la page
+    document.addEventListener('DOMContentLoaded', function() {
+        <?php if (!empty($stats['recent_activities'])): ?>
+            const terrainIds = [<?php echo implode(',', array_column($stats['recent_activities'], 'id')); ?>];
+            const maxId = Math.max(...terrainIds);
+            terrainMonitor.init(maxId);
+        <?php else: ?>
+            terrainMonitor.init(0);
+        <?php endif; ?>
+        
+        // Démarrer le polling pour la surveillance en temps réel
+        terrainMonitor.demarrerPolling();
+    });
+
+    // Gérer la soumission du formulaire via AJAX
+    document.getElementById('addTerrainForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        fetch('<?= BASE_URL ?>terrain/store', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                terrainMonitor.afficherNotification('Terrain ajouté avec succès !');
+                closeAddModal();
+                
+                // Ajouter au DOM
+                const container = document.querySelector('.activities-list');
+                const noData = container.querySelector('.no-data');
+                if (noData) noData.remove();
+                
+                const element = renderDashboardTerrain(data.terrain);
+                container.insertBefore(element, container.firstChild);
+                
+                // Mettre à jour le dernier ID
+                terrainMonitor.mettreAJourDernierId(data.terrain.id_terrain);
+            } else {
+                alert('Erreur : ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erreur AJAX :', error);
+            alert('Erreur lors de l\'ajout du terrain');
+        });
     });
     </script>
 </body>

@@ -278,6 +278,11 @@ $upcoming = $upcoming ?? [];
                             <i class="fas fa-trophy me-1"></i> Tournois
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<?php echo $baseUrl; ?>tournoi/create">
+                            <i class="fas fa-plus-circle me-1"></i> Demander un tournoi
+                        </a>
+                    </li>
                     <li class="nav-item me-3">
                         <a class="nav-link" href="<?php echo $baseUrl; ?>compte">
                             <i class="far fa-user me-1"></i> Mon Compte
@@ -307,9 +312,14 @@ $upcoming = $upcoming ?? [];
         <div class="welcome-card">
             <h1>Bonjour, <?php echo htmlspecialchars($currentUser['name'] ?? 'Utilisateur'); ?> </h1>
             <p>Bienvenue sur votre tableau de bord. Gérez facilement vos réservations et restez informé de vos activités.</p>
-            <a href="<?php echo $baseUrl; ?>home/terrains" class="btn">
-                <i class="fas fa-plus me-2"></i>Nouvelle réservation
-            </a>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <a href="<?php echo $baseUrl; ?>home/terrains" class="btn">
+                    <i class="fas fa-plus me-2"></i>Nouvelle réservation
+                </a>
+                <a href="<?php echo $baseUrl; ?>tournoi/create" class="btn" style="background: rgba(255,255,255,0.2); border: 2px solid white;">
+                    <i class="fas fa-trophy me-2"></i>Demander un tournoi
+                </a>
+            </div>
         </div>
 
         <!-- Stats Overview -->
@@ -428,9 +438,14 @@ $upcoming = $upcoming ?? [];
                 <div class="text-center py-4">
                     <i class="fas fa-trophy fa-3x text-muted mb-3"></i>
                     <p class="text-muted">Aucun tournoi prévu pour le moment</p>
-                    <a href="<?php echo $baseUrl; ?>tournois" class="btn btn-outline-primary">
-                        <i class="fas fa-calendar-plus me-2"></i>Voir le calendrier
-                    </a>
+                    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                        <a href="<?php echo $baseUrl; ?>tournoi/create" class="btn btn-primary">
+                            <i class="fas fa-plus-circle me-2"></i>Demander un tournoi
+                        </a>
+                        <a href="<?php echo $baseUrl; ?>tournois" class="btn btn-outline-primary">
+                            <i class="fas fa-calendar-plus me-2"></i>Voir le calendrier
+                        </a>
+                    </div>
                 </div>
             <?php endif; ?>
         </div>
