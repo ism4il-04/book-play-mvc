@@ -61,7 +61,7 @@ class Admin extends Model {
         }
     }
 
-    // Récupérer tous les gestionnaires
+    // Récupérer tous les gestionnaires acceptés
     public function getAllGestionnaires() {
         try {
             $sql = "
@@ -73,27 +73,10 @@ class Admin extends Model {
                         u.nom,
                         u.prenom,
                         u.email,
-                        u.num_tel,
-
-                        -- Informations terrain
-                        t.id_terrain,
-                        t.nom_terrain,
-                        t.statut AS statut_terrain,
-                        t.etat AS etat_demande_terrain,
-                        t.type_terrain,
-                        t.format_terrain,
-                        t.prix_heure,
-                        t.localisation,
-                        t.image,
-                        t.justificatif
-
+                        u.num_tel
                     FROM gestionnaire g
-
-                    INNER JOIN utilisateur u 
-                        ON g.id = u.id
-
-                    LEFT JOIN terrain t
-                        ON t.id_gestionnaire = g.id
+                    INNER JOIN utilisateur u ON g.id = u.id
+                    WHERE g.status = 'accepté'
                     ORDER BY g.date_demande DESC
                 ";
             $stmt = $this->db->prepare($sql);
@@ -155,7 +138,7 @@ class Admin extends Model {
         }
     }
 
-    // Récupérer tous les gestionnaires en attente
+    // Récupérer tous les demandes gestionnaires aceeptés
     public function getAllGestionnairesAccepte() {
         try {
             $sql = "
@@ -164,6 +147,7 @@ class Admin extends Model {
                         g.RIB,
                         g.status AS statut_gestionnaire,
                         g.date_demande,
+                        g.date_validation,
                         u.nom,
                         u.prenom,
                         u.email,
@@ -203,7 +187,7 @@ class Admin extends Model {
         }
     }
 
-    // Récupérer tous les gestionnaires en attente
+    // Récupérer tous les demandes gestionnaires refusés
     public function getAllGestionnairesRefuse() {
         try {
             $sql = "
@@ -279,20 +263,203 @@ class Admin extends Model {
         }
     }
 
-    // Mettre à jour le statut d'un gestionnaire
-    public function updateGestionnaireStatus($id, $status) {
+    // Mettre à jour le statut d'un gestionnaire et terrains associés a la demande pour devenir un gestionnaire
+    public function updateGestionnaireStatus($id, $status, $etatterrain, $idTerrain = null) {
         try {
-            $stmt = $this->db->prepare("
+            error_log("updateGestionnaireStatus appelée avec: ID=$id, status=$status, etatterrain=$etatterrain, idTerrain=$idTerrain");
+            
+            // Vérifier d'abord si le gestionnaire existe
+            $checkSql = "SELECT COUNT(*) as count FROM gestionnaire WHERE id = ?";
+            $checkStmt = $this->db->prepare($checkSql);
+            $checkStmt->execute([$id]);
+            $exists = $checkStmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($exists['count'] == 0) {
+                error_log("Gestionnaire avec ID $id n'existe pas");
+                return false;
+            }
+            
+            // Mettre à jour le statut du gestionnaire
+            $sqlGestionnaire = "
                 UPDATE gestionnaire 
-                SET status = ?, date_validation = CURDATE() 
+                SET status = ?, date_validation = NOW() 
                 WHERE id = ?
-            ");
-            return $stmt->execute([$status, $id]);
+            ";
+            $stmtGestionnaire = $this->db->prepare($sqlGestionnaire);
+            $resultGest = $stmtGestionnaire->execute([$status, $id]);
+            
+            if (!$resultGest) {
+                error_log("Échec de la mise à jour du gestionnaire");
+                return false;
+            }
+            
+            $rowsAffectedGest = $stmtGestionnaire->rowCount();
+            error_log("Gestionnaire mis à jour: $rowsAffectedGest lignes affectées");
+
+            // Mettre à jour l'état du terrain spécifique ou tous les terrains du gestionnaire
+            if ($idTerrain !== null) {
+                // Mettre à jour uniquement le terrain spécifique
+                $sqlTerrain = "
+                    UPDATE terrain
+                    SET etat = ?
+                    WHERE id_terrain = ? AND id_gestionnaire = ?
+                ";
+                $stmtTerrain = $this->db->prepare($sqlTerrain);
+                $resultTerrain = $stmtTerrain->execute([$etatterrain, $idTerrain, $id]);
+                $rowsAffectedTerrain = $stmtTerrain->rowCount();
+                error_log("Terrain spécifique mis à jour: $rowsAffectedTerrain lignes affectées");
+            } else {
+                // Mettre à jour tous les terrains du gestionnaire
+                $sqlTerrain = "
+                    UPDATE terrain
+                    SET etat = ?
+                    WHERE id_gestionnaire = ?
+                ";
+                $stmtTerrain = $this->db->prepare($sqlTerrain);
+                $resultTerrain = $stmtTerrain->execute([$etatterrain, $id]);
+                $rowsAffectedTerrain = $stmtTerrain->rowCount();
+                error_log("Tous les terrains mis à jour: $rowsAffectedTerrain lignes affectées");
+            }
+            
+            return true;
         } catch (PDOException $e) {
             error_log("Erreur updateGestionnaireStatus: " . $e->getMessage());
+            error_log("SQL Error Info: " . print_r($e->errorInfo, true));
             return false;
         }
     }
+
+    // Récupérer les détails complets d'un gestionnaire par son ID
+    public function getGestionnaireDetailsById($id) {
+        try {
+            $sql = "
+                SELECT 
+                    g.id AS id_gestionnaire,
+                    u.prenom, 
+                    u.nom, 
+                    u.email, 
+                    u.num_tel, 
+                    g.RIB,
+                    g.status, 
+                    g.date_demande, 
+                    t.id_terrain,
+                    t.nom_terrain, 
+                    t.localisation, 
+                    t.format_terrain,
+                    t.type_terrain,
+                    t.prix_heure,
+                    t.etat AS etat_terrain,
+                    t.statut AS statut_terrain,
+                    t.justificatif,
+                    h.heure_ouverture,
+                    h.heure_fermeture
+                FROM gestionnaire g
+                INNER JOIN utilisateur u ON g.id = u.id
+                LEFT JOIN terrain t ON g.id = t.id_gestionnaire
+                LEFT JOIN horaires h ON t.id_terrain = h.id_terrain
+                WHERE g.id = ?
+            ";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$id]);
+            $gestionnaire = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // --- Si on a trouvé un terrain, récupérer ses options ---
+            if ($gestionnaire && !empty($gestionnaire['id_terrain'])) {
+                $sqlOptions = "
+                    SELECT 
+                        o.id_option,
+                        o.nom_option,
+                        o.description AS description_option,
+                        p.prix_option,
+                        p.disponible
+                    FROM posseder p
+                    INNER JOIN options o ON p.id_option = o.id_option
+                    WHERE p.id_terrain = ?
+                ";
+
+                $stmtOptions = $this->db->prepare($sqlOptions);
+                $stmtOptions->execute([$gestionnaire['id_terrain']]);
+                $options = $stmtOptions->fetchAll(PDO::FETCH_ASSOC);
+
+                // Ajouter les options au tableau final
+                $gestionnaire['options'] = $options;
+            } else {
+                $gestionnaire['options'] = [];
+            }
+            return $gestionnaire;
+        } catch (PDOException $e) {
+            error_log("Erreur getGestionnaireDetailsById: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // Supprimer un gestionnaire et toutes ses données associées
+    public function supprimerGestionnaire($id) {
+        try {
+            // Commencer une transaction
+            $this->db->beginTransaction();
+
+            //1.Récupérer l'ID du terrain associé
+            $sqlTerrain = "SELECT id_terrain FROM terrain WHERE id_gestionnaire = ?";
+            $stmtTerrain = $this->db->prepare($sqlTerrain);
+            $stmtTerrain->execute([$id]);
+            $terrain = $stmtTerrain->fetch(PDO::FETCH_ASSOC);
+
+            if ($terrain) {
+                $idTerrain = $terrain['id_terrain'];
+
+                //2.Récupérer toutes les réservations liées à ce terrain
+                $sqlRes = "SELECT id_reservation FROM reservation WHERE id_terrain = ?";
+                $stmtRes = $this->db->prepare($sqlRes);
+                $stmtRes->execute([$idTerrain]);
+                $reservations = $stmtRes->fetchAll(PDO::FETCH_COLUMN);
+
+                if (!empty($reservations)) {
+                    //3.Supprimer les options associées à ces réservations
+                    $sqlResOptions = "DELETE FROM reservation_option WHERE id_reservation IN (" . str_repeat('?,', count($reservations) - 1) . "?)";
+                    $stmtResOptions = $this->db->prepare($sqlResOptions);
+                    $stmtResOptions->execute($reservations);
+
+                    //4.Supprimer les réservations elles-mêmes
+                    $sqlReservations = "DELETE FROM reservation WHERE id_terrain = ?";
+                    $stmtReservations = $this->db->prepare($sqlReservations);
+                    $stmtReservations->execute([$idTerrain]);
+                }
+
+                //5.Supprimer les relations posseder (terrain-options)
+                $sqlPosseder = "DELETE FROM posseder WHERE id_terrain = ?";
+                $stmtPosseder = $this->db->prepare($sqlPosseder);
+                $stmtPosseder->execute([$idTerrain]);
+
+                //6.Supprimer les horaires du terrain
+                $sqlHoraires = "DELETE FROM horaires WHERE id_terrain = ?";
+                $stmtHoraires = $this->db->prepare($sqlHoraires);
+                $stmtHoraires->execute([$idTerrain]);
+
+                //7.Supprimer le terrain
+                $sqlDeleteTerrain = "DELETE FROM terrain WHERE id_gestionnaire = ?";
+                $stmtDeleteTerrain = $this->db->prepare($sqlDeleteTerrain);
+                $stmtDeleteTerrain->execute([$id]);
+            }
+
+            //8.Supprimer le gestionnaire
+            $sqlDeleteGestionnaire = "DELETE FROM gestionnaire WHERE id = ?";
+            $stmtDeleteGestionnaire = $this->db->prepare($sqlDeleteGestionnaire);
+            $stmtDeleteGestionnaire->execute([$id]);
+
+            // Valider la transaction
+            $this->db->commit();
+            return true;
+
+        } catch (PDOException $e) {
+            //Annuler en cas d’erreur
+            $this->db->rollBack();
+            error_log("Erreur supprimerGestionnaire: " . $e->getMessage());
+            return false;
+        }
+    }
+
 
     // Récupérer les statistiques globales
     public function getStats() {

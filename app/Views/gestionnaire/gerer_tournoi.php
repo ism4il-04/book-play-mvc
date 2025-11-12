@@ -32,6 +32,10 @@ $currentUser = $user ?? null;
                 <i class="fas fa-map-marked-alt"></i>
                 <span>Gestion des Terrains</span>
             </a>
+            <a href="<?php echo $baseUrl; ?>facture" class="nav-item">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <span>Gestion des Factures</span>
+            </a>
             <a href="<?php echo $baseUrl; ?>reservations" class="nav-item">
                 <i class="fas fa-calendar-check"></i>
                 <span>Demandes de Réservation</span>

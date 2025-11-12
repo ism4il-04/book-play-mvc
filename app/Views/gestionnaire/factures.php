@@ -480,8 +480,8 @@ if ($user) {
                                 <div>
                                     <?php if ($reservation['num_facture']): ?>
                                         <!-- Facture existe déjà -->
-                                        <a href="<?= BASE_URL ?>facture/showFacture/<?= $reservation['num_facture'] ?>"
-                                           class="btn btn-view">
+                                        <a href="<?= BASE_URL ?>facture/download/<?= $reservation['num_facture'] ?>"
+                                           class="btn btn-view" target="_blank">
                                             <i class="fas fa-eye"></i> Voir Facture #<?= $reservation['num_facture'] ?>
                                         </a>
                                     <?php elseif ($reservation['status'] === 'accepté'): ?>
@@ -534,8 +534,72 @@ if ($user) {
 <script>
     function generateFacture(reservationId) {
         if (confirm('Êtes-vous sûr de vouloir générer une facture pour cette réservation ?')) {
-            window.location.href = '<?= BASE_URL ?>facture/generate/' + reservationId;
+            // Désactiver le bouton pendant la génération
+            const button = document.querySelector(`button[onclick="generateFacture(${reservationId})"]`);
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Génération...';
+            button.disabled = true;
+
+            // Faire la requête AJAX
+            fetch('<?= BASE_URL ?>facture/generate/' + reservationId, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Mettre à jour le bouton pour devenir "Voir Facture"
+                    const container = button.parentElement;
+                    container.innerHTML = `
+                        <a href="${data.download_url}"
+                           class="btn btn-view" target="_blank">
+                            <i class="fas fa-eye"></i> Voir Facture #${data.num_facture}
+                        </a>
+                    `;
+
+                    // Ouvrir le PDF dans un nouvel onglet
+                    window.open(data.download_url, '_blank');
+
+                    // Afficher un message de succès
+                    showMessage('Facture générée avec succès!', 'success');
+                } else {
+                    showMessage(data.message || 'Erreur lors de la génération de la facture', 'error');
+                    // Réactiver le bouton
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                showMessage('Erreur lors de la génération de la facture', 'error');
+                // Réactiver le bouton
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
         }
+    }
+
+    function showMessage(message, type) {
+        // Créer un élément de message temporaire
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
+        messageDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+        messageDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        document.body.appendChild(messageDiv);
+
+        // Auto-supprimer après 5 secondes
+        setTimeout(() => {
+            if (messageDiv.parentElement) {
+                messageDiv.remove();
+            }
+        }, 5000);
     }
 
     // Auto-submit form on filter change (optionnel)
