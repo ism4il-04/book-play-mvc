@@ -61,7 +61,7 @@ class Admin extends Model {
         }
     }
 
-    // Récupérer tous les gestionnaires
+    // Récupérer tous les gestionnaires acceptés
     public function getAllGestionnaires() {
         try {
             $sql = "
@@ -73,27 +73,10 @@ class Admin extends Model {
                         u.nom,
                         u.prenom,
                         u.email,
-                        u.num_tel,
-
-                        -- Informations terrain
-                        t.id_terrain,
-                        t.nom_terrain,
-                        t.statut AS statut_terrain,
-                        t.etat AS etat_demande_terrain,
-                        t.type_terrain,
-                        t.format_terrain,
-                        t.prix_heure,
-                        t.localisation,
-                        t.image,
-                        t.justificatif
-
+                        u.num_tel
                     FROM gestionnaire g
-
-                    INNER JOIN utilisateur u 
-                        ON g.id = u.id
-
-                    LEFT JOIN terrain t
-                        ON t.id_gestionnaire = g.id
+                    INNER JOIN utilisateur u ON g.id = u.id
+                    WHERE g.status = 'accepté'
                     ORDER BY g.date_demande DESC
                 ";
             $stmt = $this->db->prepare($sql);
@@ -155,7 +138,7 @@ class Admin extends Model {
         }
     }
 
-    // Récupérer tous les gestionnaires en attente
+    // Récupérer tous les demandes gestionnaires aceeptés
     public function getAllGestionnairesAccepte() {
         try {
             $sql = "
@@ -203,7 +186,7 @@ class Admin extends Model {
         }
     }
 
-    // Récupérer tous les gestionnaires en attente
+    // Récupérer tous les demandes gestionnaires refusés
     public function getAllGestionnairesRefuse() {
         try {
             $sql = "
@@ -279,20 +262,87 @@ class Admin extends Model {
         }
     }
 
-    // Mettre à jour le statut d'un gestionnaire
-    public function updateGestionnaireStatus($id, $status) {
+    // Mettre à jour le statut d'un gestionnaire et terrains associés a la demande pour devenir un gestionnaire
+    public function updateGestionnaireStatus($id, $status, $etatterrain, $idTerrain = null) {
         try {
-            $stmt = $this->db->prepare("
+            // Mettre à jour le statut du gestionnaire
+            $sqlGestionnaire = "
                 UPDATE gestionnaire 
                 SET status = ?, date_validation = CURDATE() 
                 WHERE id = ?
-            ");
-            return $stmt->execute([$status, $id]);
+            ";
+            $stmtGestionnaire = $this->db->prepare($sqlGestionnaire);
+            $stmtGestionnaire->execute([$status, $id]);
+
+            // Mettre à jour l'état du terrain spécifique ou tous les terrains du gestionnaire
+            if ($idTerrain !== null) {
+                // Mettre à jour uniquement le terrain spécifique
+                $sqlTerrain = "
+                    UPDATE terrain
+                    SET etat = ?
+                    WHERE id_terrain = ? AND id_gestionnaire = ?
+                ";
+                $stmtTerrain = $this->db->prepare($sqlTerrain);
+                $stmtTerrain->execute([$etatterrain, $idTerrain, $id]);
+            } else {
+                // Mettre à jour tous les terrains du gestionnaire
+                $sqlTerrain = "
+                    UPDATE terrain
+                    SET etat = ?
+                    WHERE id_gestionnaire = ?
+                ";
+                $stmtTerrain = $this->db->prepare($sqlTerrain);
+                $stmtTerrain->execute([$etatterrain, $id]);
+            }
+
+            return true;
         } catch (PDOException $e) {
             error_log("Erreur updateGestionnaireStatus: " . $e->getMessage());
             return false;
         }
     }
+
+    // Récupérer les détails complets d'un gestionnaire par son ID
+    public function getGestionnaireDetailsById($id) {
+        try {
+            $sql = "
+                SELECT 
+                    g.id, 
+                    u.prenom, 
+                    u.nom, 
+                    u.email, 
+                    u.num_tel, 
+                    g.RIB,
+                    g.status, 
+                    g.date_demande, 
+
+                    -- Informations du terrain
+                    t.id_terrain,
+                    t.nom_terrain, 
+                    t.localisation, 
+                    t.format_terrain,
+                    t.type_terrain,
+                    t.prix_heure,
+                    t.etat AS etat_terrain,
+                    t.statut AS statut_terrain,
+                    t.justificatif
+                FROM gestionnaire g
+                INNER JOIN utilisateur u ON g.id = u.id
+                LEFT JOIN terrain t ON g.id = t.id_gestionnaire 
+                WHERE g.id = ?
+            ";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$id]);
+            $gestionnaire = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $gestionnaire;
+        } catch (PDOException $e) {
+            error_log("Erreur getGestionnaireDetailsById: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    
 
     // Récupérer les statistiques globales
     public function getStats() {
