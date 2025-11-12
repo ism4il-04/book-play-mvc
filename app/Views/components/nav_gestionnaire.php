@@ -38,7 +38,7 @@ $baseUrl = $baseUrl ?? BASE_URL;
             <i class="fas fa-calendar-check"></i>
             <span>Demandes de Réservation</span>
         </a>
-        <a href="<?php echo $baseUrl; ?>tournois" class="nav-item <?php echo $activeItem === 'tournois' ? 'active' : ''; ?>">
+        <a href="<?php echo $baseUrl; ?>tournoi" class="nav-item <?php echo $activeItem === 'tournoi' ? 'active' : ''; ?>">
             <i class="fas fa-trophy"></i>
             <span>Gestion des Tournois</span>
         </a>

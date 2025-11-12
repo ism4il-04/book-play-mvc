@@ -62,7 +62,7 @@ $pendingDemandes = array_filter($demandes, static function ($demande) {
                 <i class="fas fa-file-invoice-dollar"></i>
                 <span>Gestion des Factures</span>
             </a>
-            <a href="<?php echo $baseUrl; ?>factures" class="nav-item">
+            <a href="<?php echo $baseUrl; ?>reservations" class="nav-item">
                 <i class="fas fa-calendar-check"></i>
                 <span>Demandes de Réservation</span>
             </a>
