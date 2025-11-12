@@ -41,7 +41,7 @@ class App {
                 
                 if (file_exists($controllerPath)) {
                     require_once $controllerPath;
-                    $this->controller = new NewsletterController($this->db);
+                    $this->controller = new NewsletterController();
                     
                     // Méthode
                     if (isset($url[1]) && method_exists($this->controller, $url[1])) {
