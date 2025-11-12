@@ -116,21 +116,26 @@ $baseUrl = BASE_URL;
           <td><?= htmlspecialchars($t['nom_tournoi']) ?></td>
           <td><?= htmlspecialchars($t['date_debut']) ?><?= ($t['date_fin']) ? ' - '.htmlspecialchars($t['date_fin']) : '' ?></td>
           <td>
-            <?= htmlspecialchars($t['terrain'] ?? $t['localisation'] ?? '—') ?>
+            <?= htmlspecialchars($t['nom_terrain'] ?? '—') ?>
+            <?php if (!empty($t['localisation'])): ?>
+              <small class="text-muted"> — <?= htmlspecialchars($t['localisation']) ?></small>
+            <?php endif; ?>
           </td>
-          <td><?= htmlspecialchars($t['nb_equipes'] ?? '-') ?></td>
+          <td><?= (int)($t['equipes_inscrites'] ?? 0) ?> / <?= (int)($t['nb_equipes'] ?? 0) ?></td>
           <td>
-            <?php if (isset($t['status']) && strtolower($t['status']) === 'accepté'): ?>
-              <span class="badge-vert">Ouvert</span>
-            <?php elseif (isset($t['status']) && strtolower($t['status']) === 'complet'): ?>
-              <span class="badge-orange">Complet</span>
+            <?php if (($t['statut_inscription'] ?? '') === 'disponible'): ?>
+              <span class="badge-vert">Disponible</span>
             <?php else: ?>
-              <span class="badge-vert">Ouvert</span>
+              <span class="badge-orange">Complet</span>
             <?php endif; ?>
           </td>
           <td class="text-end pe-3">
-            <a class="btn-action" href="#"><i class="bi bi-eye"></i> Détails</a>
-            <a class="btn-inscrire" href="#">S'inscrire</a>
+            <?php if (($t['statut_inscription'] ?? '') === 'disponible'): ?>
+              <a class="btn-action" href="<?= $baseUrl ?>tournoi/inscriptionForm/<?= (int)$t['id_tournoi'] ?>"><i class="bi bi-eye"></i> Détails</a>
+              <a class="btn-inscrire" href="<?= $baseUrl ?>tournoi/inscriptionForm/<?= (int)$t['id_tournoi'] ?>">S'inscrire</a>
+            <?php else: ?>
+              <button class="btn-inscrire" type="button" disabled>Complet</button>
+            <?php endif; ?>
           </td>
         </tr>
         <?php endforeach; ?>
