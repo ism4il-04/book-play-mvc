@@ -134,13 +134,22 @@
                                     <span><?php echo htmlspecialchars($gestionnaire['num_tel'] ?? 'N/A'); ?></span>
                                 </div>
                                 <div class="info-item">
+                                    <i class="bi bi-buildings"></i>
+                                    <span><?php echo htmlspecialchars($gestionnaire['nom_terrain'] ?? 'N/A'); ?></span>
+                                </div>
+                                <div class="info-item">
                                     <i class="bi bi-calendar-check"></i>
-                                    <span>Actif depuis: <?php echo htmlspecialchars($gestionnaire['date_demande'] ?? ''); ?></span>
+                                    <span>Actif depuis: <?php echo htmlspecialchars($gestionnaire['date_validation'] ?? 'N/A'); ?></span>
                                 </div>
                             </div>
-                            <button class="btn btn-details" style="width: 100%;" onclick="voirDetails(<?php echo $gestionnaire['id']; ?>)">
-                                <i class="bi bi-eye"></i> Voir détails
-                            </button>
+                            <div class="card-actions">
+                                <button class="btn btn-details" onclick="voirDetails(<?php echo $gestionnaire['id']; ?>)">
+                                    <i class="bi bi-eye"></i>Détails
+                                </button>
+                                <button class="btn btn-danger" onclick="supprimerGestionnaire(<?php echo $gestionnaire['id']; ?>, '<?php echo htmlspecialchars($gestionnaire['prenom'] . ' ' . $gestionnaire['nom']); ?>')">
+                                    <i class="bi bi-trash"></i> Supprimer
+                                </button>
+                            </div>
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -171,12 +180,12 @@
                                     <span><?php echo htmlspecialchars($gestionnaire['num_tel'] ?? 'N/A'); ?></span>
                                 </div>
                                 <div class="info-item">
-                                    <i class="bi bi-x-circle"></i>
-                                    <span>Refusé le: <?php echo htmlspecialchars($gestionnaire['date_demande'] ?? ''); ?></span>
-                                </div>
-                                <div class="info-item">
                                     <i class="bi bi-buildings"></i>
                                     <span><?php echo htmlspecialchars($gestionnaire['nom_terrain'] ?? 'N/A'); ?></span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="bi bi-calendar"></i>
+                                    <span>Demande le: <?php echo htmlspecialchars($gestionnaire['date_demande'] ?? ''); ?></span>
                                 </div>
                             </div>
                             <div class="card-actions">
@@ -202,11 +211,153 @@
                     <h5 class="modal-title" id="detailsModalLabel">Détails de la demande</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body" id="modalBody">
-                    <!-- Le contenu sera chargé dynamiquement -->
+                <div class="modal-body">
+                    <!-- Profile Section -->
+                    <div class="profile-section">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-circle" id="avatarCircle">
+                                <!-- Initiales -->
+                            </div>
+                            <div class="profile-info ms-3">
+                                <h4 id="fullName"><!-- Nom complet --></h4>
+                                <p class="profile-role mb-0">Gestionnaire de terrain</p>
+                                <span class="status-badge" id="statusBadge"><!-- Statut --></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Informations Cards Row -->
+                    <div class="row">
+                        <!-- Contact Information -->
+                        <div class="col-md-6 mb-3">
+                            <div class="info-card">
+                                <h5 class="info-card-title">
+                                    <i class="bi bi-person-circle"></i>
+                                    Informations de contact
+                                </h5>
+                                
+                                <div class="info-item">
+                                    <div class="info-label">
+                                        <i class="bi bi-envelope"></i>
+                                        <span>Email</span>
+                                    </div>
+                                    <div class="info-value" id="emailValue"><!-- Email --></div>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <div class="info-label">
+                                        <i class="bi bi-telephone"></i>
+                                        <span>Téléphone</span>
+                                    </div>
+                                    <div class="info-value" id="telephoneValue"><!-- Téléphone --></div>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <div class="info-label">
+                                        <i class="bi bi-calendar"></i>
+                                        <span>Date de demande</span>
+                                    </div>
+                                    <div class="info-value" id="dateDemandeValue"><!-- Date --></div>
+                                </div>
+                                
+                                <div class="info-item" id="ribItem" style="display: none;">
+                                    <div class="info-label">
+                                        <i class="bi bi-credit-card"></i>
+                                        <span>RIB</span>
+                                    </div>
+                                    <div class="info-value rib-value" id="ribValue"><!-- RIB --></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Terrain Information -->
+                        <div class="col-md-6 mb-3">
+                            <div class="info-card">
+                                <h5 class="info-card-title">
+                                    <i class="bi bi-buildings"></i>
+                                    Informations du terrain
+                                </h5>
+                                
+                                <div class="info-item" id="nomTerrainItem" style="display: none;">
+                                    <div class="info-label">
+                                        <i class="bi bi-building"></i>
+                                        <span>Nom du terrain</span>
+                                    </div>
+                                    <div class="info-value" id="nomTerrainValue"><!-- Nom terrain --></div>
+                                </div>
+                                
+                                <div class="info-item" id="localisationItem" style="display: none;">
+                                    <div class="info-label">
+                                        <i class="bi bi-geo-alt"></i>
+                                        <span>Localisation</span>
+                                    </div>
+                                    <div class="info-value" id="localisationValue"><!-- Localisation --></div>
+                                </div>
+                                
+                                <div class="info-item" id="formatTerrainItem" style="display: none;">
+                                    <div class="info-label">
+                                        <i class="bi bi-arrows-angle-expand"></i>
+                                        <span>Format du terrain</span>
+                                    </div>
+                                    <div class="info-value" id="formatTerrainValue"><!-- Format --></div>
+                                </div>
+                                
+                                <div class="info-item" id="typeTerrainItem" style="display: none;">
+                                    <div class="info-label">
+                                        <i class="bi bi-grid-3x3-gap"></i>
+                                        <span>Type de terrain</span>
+                                    </div>
+                                    <div class="info-value" id="typeTerrainValue"><!-- Type terrain --></div>
+                                </div>
+                                
+                                <div class="info-item" id="prixHeureItem" style="display: none;">
+                                    <div class="info-label">
+                                        <i class="bi bi-currency-dollar"></i>
+                                        <span>Prix par heure</span>
+                                    </div>
+                                    <div class="info-value" id="prixHeureValue"><!-- Prix --></div>
+                                </div>
+                                
+                                <div class="info-item" id="heureOuvertureItem" style="display: none;">
+                                    <div class="info-label">
+                                        <i class="bi bi-clock"></i>
+                                        <span>Heure d'ouverture</span>
+                                    </div>
+                                    <div class="info-value" id="heureOuvertureValue"><!-- Heure ouverture --></div>
+                                </div>
+                                
+                                <div class="info-item" id="heureFermetureItem" style="display: none;">
+                                    <div class="info-label">
+                                        <i class="bi bi-clock-fill"></i>
+                                        <span>Heure de fermeture</span>
+                                    </div>
+                                    <div class="info-value" id="heureFermetureValue"><!-- Heure fermeture --></div>
+                                </div>
+                                
+                                <div class="info-item" id="optionsItem" style="display: none;">
+                                    <div class="info-label">
+                                        <i class="bi bi-plus-circle"></i>
+                                        <span>Options disponibles</span>
+                                    </div>
+                                    <div class="info-value" id="optionsValue"><!-- Options --></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Documents Section -->
+                    <div class="documents-card" id="documentsCard" style="display: none;">
+                        <h5 class="info-card-title">
+                            <i class="bi bi-file-earmark-text"></i>
+                            Documents d'enregistrement
+                        </h5>
+                        <div class="documents-list">
+                            <!-- Les documents seront ajoutés dynamiquement ici -->
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                    <button type="button" class="btn-fermer" data-bs-dismiss="modal">Fermer</button>
                 </div>
             </div>
         </div>
@@ -245,6 +396,13 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    // Afficher le message de succès et le statut de l'email
+                    let message = data.message;
+                    if (data.email_status) {
+                        message += '\n' + data.email_status;
+                    }
+                    alert(message);
+                    
                     // Recharger la page pour mettre à jour les listes
                     window.location.reload();
                 } else {
@@ -269,6 +427,13 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    // Afficher le message de succès et le statut de l'email
+                    let message = data.message;
+                    if (data.email_status) {
+                        message += '\n' + data.email_status;
+                    }
+                    alert(message);
+                    
                     // Recharger la page pour mettre à jour les listes
                     window.location.reload();
                 } else {
@@ -317,8 +482,8 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Remplir la modal avec les données
-                    document.getElementById('modalBody').innerHTML = generateDetailsHTML(data.gestionnaire);
+                    // Remplir le template avec les données
+                    remplirTemplate(data.gestionnaire);
                     // Afficher la modal
                     new bootstrap.Modal(document.getElementById('detailsModal')).show();
                 } else {
@@ -331,163 +496,195 @@
             });
         }
 
-        function generateDetailsHTML(gestionnaire) {
-            return `
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="d-flex align-items-center mb-4">
-                            <div class="avatar-circle me-3" style="background-color: #17a2b8; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px;">
-                                ${gestionnaire.prenom.charAt(0).toUpperCase()}${gestionnaire.nom.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                                <h4 class="mb-1">${gestionnaire.prenom} ${gestionnaire.nom}</h4>
-                                <p class="text-muted mb-0">Gestionnaire de terrain</p>
-                                <span class="badge ${getStatusBadgeClass(gestionnaire.status)}">${gestionnaire.status}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        function supprimerGestionnaire(id, nom) {
+            // Confirmation avant suppression
+            if (confirm(`Êtes-vous sûr de vouloir supprimer définitivement le gestionnaire "${nom}" ?\n\nCette action est irréversible et supprimera :\n- Le gestionnaire\n- Son terrain\n- Toutes les données associées`)) {
+                
+                // Appel AJAX pour supprimer
+                fetch('<?php echo BASE_URL; ?>Gestion_gestionnaire/supprimer', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id: id })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Gestionnaire supprimé avec succès');
+                        // Recharger la page pour mettre à jour l'affichage
+                        location.reload();
+                    } else {
+                        alert('Erreur: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    alert('Une erreur est survenue lors de la suppression');
+                });
+            }
+        }
 
-                <div class="row">
-                    <div class="col-md-6">
-                        <h5 class="text-primary mb-3"><i class="bi bi-person-circle me-2"></i>Informations de contact</h5>
-                        <div class="mb-3">
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="bi bi-envelope text-primary me-2"></i>
-                                <strong>Email:</strong>
-                            </div>
-                            <p class="ms-4">${gestionnaire.email}</p>
-                        </div>
-                        <div class="mb-3">
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="bi bi-telephone text-primary me-2"></i>
-                                <strong>Téléphone:</strong>
-                            </div>
-                            <p class="ms-4">${gestionnaire.num_tel || 'N/A'}</p>
-                        </div>
-                        <div class="mb-3">
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="bi bi-calendar text-primary me-2"></i>
-                                <strong>Date de demande:</strong>
-                            </div>
-                            <p class="ms-4">${gestionnaire.date_demande || 'N/A'}</p>
-                        </div>
-                        ${gestionnaire.RIB ? `
-                        <div class="mb-3">
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="bi bi-credit-card text-primary me-2"></i>
-                                <strong>RIB:</strong>
-                            </div>
-                            <p class="ms-4 font-monospace">${gestionnaire.RIB}</p>
-                        </div>
-                        ` : ''}
-                        ${gestionnaire.date_validation ? `
-                        <div class="mb-3">
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="bi bi-calendar-check text-primary me-2"></i>
-                                <strong>Date de validation:</strong>
-                            </div>
-                            <p class="ms-4">${gestionnaire.date_validation}</p>
-                        </div>
-                        ` : ''}
-                    </div>
-                    <div class="col-md-6">
-                        <h5 class="text-primary mb-3"><i class="bi bi-buildings me-2"></i>Informations du terrain</h5>
-                        ${gestionnaire.nom_terrain ? `
-                        <div class="mb-3">
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="bi bi-building text-primary me-2"></i>
-                                <strong>Nom du terrain:</strong>
-                            </div>
-                            <p class="ms-4">${gestionnaire.nom_terrain}</p>
-                        </div>
-                        ` : ''}
-                        ${gestionnaire.localisation ? `
-                        <div class="mb-3">
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="bi bi-geo-alt text-primary me-2"></i>
-                                <strong>Localisation:</strong>
-                            </div>
-                            <p class="ms-4">${gestionnaire.localisation}</p>
-                        </div>
-                        ` : ''}
-                        ${gestionnaire.format_terrain ? `
-                        <div class="mb-3">
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="bi bi-rulers text-primary me-2"></i>
-                                <strong>Format du terrain:</strong>
-                            </div>
-                            <p class="ms-4">${gestionnaire.format_terrain}</p>
-                        </div>
-                        ` : ''}
-                        ${gestionnaire.type_terrain ? `
-                        <div class="mb-3">
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="bi bi-tag text-primary me-2"></i>
-                                <strong>Type de terrain:</strong>
-                            </div>
-                            <p class="ms-4">${gestionnaire.type_terrain}</p>
-                        </div>
-                        ` : ''}
-                        ${gestionnaire.prix_heure ? `
-                        <div class="mb-3">
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="bi bi-currency-dollar text-primary me-2"></i>
-                                <strong>Prix par heure:</strong>
-                            </div>
-                            <p class="ms-4">${gestionnaire.prix_heure} dh/h</p>
-                        </div>
-                        ` : ''}
-                        ${gestionnaire.statut_terrain ? `
-                        <div class="mb-3">
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="bi bi-flag text-primary me-2"></i>
-                                <strong>Statut du terrain:</strong>
-                            </div>
-                            <p class="ms-4">${gestionnaire.statut_terrain}</p>
-                        </div>
-                        ` : ''}
-                    </div>
-                </div>
-
-                ${gestionnaire.justificatif ? `
-                <div class="row mt-4">
-                    <div class="col-md-12">
-                        <h5 class="text-primary mb-3"><i class="bi bi-file-earmark-text me-2"></i>Documents d'enregistrement</h5>
-                        <div class="card">
-                            <div class="card-body">
+        function remplirTemplate(gestionnaire) {
+            // Avatar et nom
+            document.getElementById('avatarCircle').textContent = 
+                gestionnaire.prenom.charAt(0).toUpperCase() + gestionnaire.nom.charAt(0).toUpperCase();
+            document.getElementById('fullName').textContent = gestionnaire.prenom + ' ' + gestionnaire.nom;
+            
+            // Badge de statut
+            const statusBadge = document.getElementById('statusBadge');
+            statusBadge.textContent = gestionnaire.status;
+            statusBadge.className = 'status-badge ' + getStatusBadgeClass(gestionnaire.status);
+            
+            // Informations de contact
+            document.getElementById('emailValue').textContent = gestionnaire.email;
+            document.getElementById('telephoneValue').textContent = gestionnaire.num_tel || 'N/A';
+            document.getElementById('dateDemandeValue').textContent = gestionnaire.date_demande || 'N/A';
+            
+            // RIB (afficher/masquer selon disponibilité)
+            const ribItem = document.getElementById('ribItem');
+            if (gestionnaire.RIB) {
+                document.getElementById('ribValue').textContent = gestionnaire.RIB;
+                ribItem.style.display = 'block';
+            } else {
+                ribItem.style.display = 'none';
+            }
+            
+            // Informations du terrain
+            afficherSiExiste('nomTerrainItem', 'nomTerrainValue', gestionnaire.nom_terrain);
+            afficherSiExiste('localisationItem', 'localisationValue', gestionnaire.localisation);
+            afficherSiExiste('formatTerrainItem', 'formatTerrainValue', gestionnaire.format_terrain);
+            afficherSiExiste('typeTerrainItem', 'typeTerrainValue', gestionnaire.type_terrain);
+            
+            // Prix par heure
+            const prixItem = document.getElementById('prixHeureItem');
+            if (gestionnaire.prix_heure) {
+                document.getElementById('prixHeureValue').textContent = gestionnaire.prix_heure + ' dh/h';
+                prixItem.style.display = 'block';
+            } else {
+                prixItem.style.display = 'none';
+            }
+            
+            // Heure d'ouverture
+            afficherSiExiste('heureOuvertureItem', 'heureOuvertureValue', gestionnaire.heure_ouverture);
+            
+            // Heure de fermeture
+            afficherSiExiste('heureFermetureItem', 'heureFermetureValue', gestionnaire.heure_fermeture);
+            
+            // Options disponibles
+            const optionsItem = document.getElementById('optionsItem');
+            if (gestionnaire.options && gestionnaire.options.length > 0) {
+                const optionsText = gestionnaire.options.map(option => 
+                    `${option.nom_option} (${option.prix_option} dh)`
+                ).join(', ');
+                document.getElementById('optionsValue').textContent = optionsText;
+                optionsItem.style.display = 'block';
+            } else {
+                optionsItem.style.display = 'none';
+            }
+            
+            // Documents
+            const documentsCard = document.getElementById('documentsCard');
+            if (gestionnaire.justificatif) {
+                try {
+                    // Parser le JSON pour récupérer les noms de fichiers
+                    const fichiers = JSON.parse(gestionnaire.justificatif);
+                    if (Array.isArray(fichiers) && fichiers.length > 0) {
+                        // Vider le contenu existant
+                        const documentsContainer = document.querySelector('#documentsCard .documents-list');
+                        if (documentsContainer) {
+                            documentsContainer.innerHTML = '';
+                        }
+                        
+                        // Créer un élément pour chaque fichier
+                        fichiers.forEach((fichier, index) => {
+                            const documentItem = document.createElement('div');
+                            documentItem.className = 'document-item mb-3';
+                            documentItem.innerHTML = `
                                 <div class="d-flex align-items-center justify-content-between">
-                                    <div class="d-flex align-items-center">
-                                        <i class="bi bi-file-earmark-pdf text-danger me-3 fs-4"></i>
-                                        <div>
-                                            <h6 class="mb-1">${gestionnaire.justificatif}</h6>
-                                            <small class="text-muted">Document justificatif</small>
+                                    <div class="d-flex align-items-center flex-grow-1">
+                                        <i class="bi bi-file-earmark-pdf document-icon me-3"></i>
+                                        <div class="document-info">
+                                            <h6 class="mb-1">${fichier}</h6>
+                                            <small class="document-type text-muted">Document justificatif</small>
                                         </div>
                                     </div>
-                                    <div class="btn-group" role="group">
-                                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="consulterDocument('${gestionnaire.justificatif}')">
-                                            <i class="bi bi-eye me-1"></i>Consulter
+                                    <div class="document-actions ms-4">
+                                        <button type="button" class="btn-document btn-consulter me-4" onclick="consulterDocument('${fichier}')">
+                                            <i class="bi bi-eye"></i>
+                                            <span>Consulter</span>
                                         </button>
-                                        <button type="button" class="btn btn-outline-success btn-sm" onclick="telechargerDocument('${gestionnaire.justificatif}')">
-                                            <i class="bi bi-download me-1"></i>Télécharger
+                                        <button type="button" class="btn-document btn-telecharger" onclick="telechargerDocument('${fichier}')">
+                                            <i class="bi bi-download"></i>
+                                            <span>Télécharger</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            if (documentsContainer) {
+                                documentsContainer.appendChild(documentItem);
+                            }
+                        });
+                        
+                        documentsCard.style.display = 'block';
+                    } else {
+                        documentsCard.style.display = 'none';
+                    }
+                } catch (e) {
+                    // Si ce n'est pas du JSON valide, afficher tel quel (fallback)
+                    const documentsContainer = document.querySelector('#documentsCard .documents-list');
+                    if (documentsContainer) {
+                        documentsContainer.innerHTML = `
+                            <div class="document-item mb-3">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center flex-grow-1">
+                                        <i class="bi bi-file-earmark-pdf document-icon me-3"></i>
+                                        <div class="document-info">
+                                            <h6 class="mb-1">${gestionnaire.justificatif}</h6>
+                                            <small class="document-type text-muted">Document justificatif</small>
+                                        </div>
+                                    </div>
+                                    <div class="document-actions ms-4">
+                                        <button type="button" class="btn-document btn-consulter me-4 " onclick="consulterDocument('${gestionnaire.justificatif}')">
+                                            <i class="bi bi-eye"></i>
+                                            <span>Consulter</span>
+                                        </button>
+                                        <button type="button" class="btn-document btn-telecharger" onclick="telechargerDocument('${gestionnaire.justificatif}')">
+                                            <i class="bi bi-download"></i>
+                                            <span>Télécharger</span>
                                         </button>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-                ` : ''}
-            `;
+                        `;
+                    }
+                    documentsCard.style.display = 'block';
+                }
+            } else {
+                documentsCard.style.display = 'none';
+            }
+        }
+        
+        function afficherSiExiste(itemId, valueId, valeur) {
+            const item = document.getElementById(itemId);
+            if (valeur) {
+                document.getElementById(valueId).textContent = valeur;
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
         }
 
         function getStatusBadgeClass(status) {
-            switch(status) {
-                case 'accepté': return 'bg-success';
-                case 'refusé': return 'bg-danger';
-                case 'en attente': return 'bg-warning text-dark';
-                default: return 'bg-secondary';
-            }
+            const statusClasses = {
+                'En attente': 'en-attente',
+                'Accepté': 'accepte',
+                'Accepte': 'accepte',
+                'Refusé': 'refuse',
+                'Refuse': 'refuse'
+            };
+            return statusClasses[status] || 'en-attente';
         }
 
         function getTerrainStatusBadgeClass(etat) {
