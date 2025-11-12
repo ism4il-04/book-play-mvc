@@ -373,4 +373,89 @@ class Terrain extends Model {
             return [];
         }
     }
+
+// Ajoutez cette méthode dans votre classe Terrain (Terrain.php)
+
+/**
+ * Obtenir les créneaux horaires disponibles pour un terrain à une date donnée
+ * @param int $terrainId ID du terrain
+ * @param string $date Date au format Y-m-d (optionnel)
+ * @return array Tableau avec les informations des créneaux
+ */
+public function getCreneauxDisponibles($terrainId, $date = null) {
+    try {
+        // Récupérer les horaires du terrain
+        $stmt = $this->db->prepare("SELECT heure_ouverture, heure_fermeture FROM horaires WHERE id_terrain = ?");
+        $stmt->execute([$terrainId]);
+        $horaires = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$horaires) {
+            return [
+                'success' => false,
+                'message' => 'Aucun horaire défini pour ce terrain'
+            ];
+        }
+        
+        $heureOuverture = $horaires['heure_ouverture'];
+        $heureFermeture = $horaires['heure_fermeture'];
+        
+        // Générer les créneaux d'une heure
+        $creneaux = [];
+        $currentTime = strtotime($heureOuverture);
+        $endTime = strtotime($heureFermeture);
+        
+        while ($currentTime < $endTime) {
+            $nextTime = strtotime('+1 hour', $currentTime);
+            
+            // Heures formatées pour l'affichage et les calculs
+            $heureDebut = date('H:i', $currentTime);
+            $heureFin = date('H:i', $nextTime);
+            
+            // Vérifier si le créneau est disponible
+            $disponible = 1;
+            
+            if ($date) {
+                // Dans notre schéma, reservation.creneau stocke "HH:MM-HH:MM"
+                $creneauStr = $heureDebut . '-' . $heureFin;
+                $stmtCheck = $this->db->prepare(
+                    "SELECT COUNT(*) as count 
+                     FROM reservation 
+                     WHERE id_terrain = ? 
+                       AND date_reservation = ? 
+                       AND creneau = ?
+                       AND status IN ('accepté','en attente')"
+                );
+                $stmtCheck->execute([$terrainId, $date, $creneauStr]);
+                $result = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+                
+                if ($result['count'] > 0) {
+                    $disponible = 0;
+                }
+            }
+            
+            $creneaux[] = [
+                'heure_ouverture' => $heureDebut,
+                'heure_fermeture' => $heureFin,
+                'disponible' => $disponible
+            ];
+            
+            $currentTime = $nextTime;
+        }
+        
+        return [
+            'success' => true,
+            'heure_ouverture' => date('H:i', strtotime($heureOuverture)),
+            'heure_fermeture' => date('H:i', strtotime($heureFermeture)),
+            'creneaux' => $creneaux
+        ];
+        
+    } catch (Exception $e) {
+        error_log("Erreur getCreneauxDisponibles: " . $e->getMessage());
+        return [
+            'success' => false,
+            'message' => 'Erreur lors de la récupération des créneaux: ' . $e->getMessage()
+        ];
+    }
+}
+
 }

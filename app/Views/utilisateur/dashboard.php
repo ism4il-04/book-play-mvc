@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../../config/config.php';
+require_once __DIR__ . '/../components/reserverTerrain_modal.php';
 $baseUrl = BASE_URL;
 $currentUser = $user ?? null;
 
@@ -555,12 +556,15 @@ $filters = $filters ?? [
                                     <div class="terrain-price">
                                         Prix: <?php echo htmlspecialchars($terrain['prix_heure']); ?> <small>MAD/heure</small>
                                     </div>
-                                        <button type="button" class="btn-reserve" data-bs-toggle="modal" data-bs-target="#reservationModal"
-                                                onclick="openReservationModal(
-                                                    <?php echo (int)($terrain['id_terrain'] ?? 0); ?>,
-                                                    <?php echo json_encode((string)($terrain['localisation'] ?? '')); ?>,
-                                                    <?php echo (float)($terrain['prix_heure'] ?? 0); ?>
-                                                )">
+                                        <button 
+                                            type="button" 
+                                            class="btn-reserve" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#reservationModal"
+                                            data-id="<?php echo (int)($terrain['id_terrain'] ?? 0); ?>"
+                                            data-localisation="<?php echo htmlspecialchars($terrain['localisation'] ?? '', ENT_QUOTES); ?>"
+                                            data-prix="<?php echo (float)($terrain['prix_heure'] ?? 0); ?>"
+                                            onclick="openReservationModalFromButton(this)">
                                             Réserver
                                         </button>
                                 </div>
