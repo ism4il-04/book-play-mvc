@@ -629,13 +629,6 @@ $reservations = [
                                 </span>
                             </div>
                             
-                            <div class="reservation-footer">
-                                <div class="reservation-price">
-                                    <span class="label">Facture totale:</span>
-                                    <span class="amount"><?php echo htmlspecialchars($reservation['prix_total'] ?? '0'); ?> MAD</span>
-                                </div>
-                            </div>
-                            
                             <div class="action-buttons">
                                 <a href="<?php echo $baseUrl; ?>reservation/details?id=<?php echo $reservation['id']; ?>" class="btn-details">
                                     <i class="bi bi-info-circle"></i> Détails

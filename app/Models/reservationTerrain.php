@@ -85,6 +85,8 @@ class Reservation {
      * Créer une nouvelle réservation
      */
     public function createReservation($data) {
+        error_log("Début createReservation avec données: " . print_r($data, true));
+        
         // Validation des données requises
         $required = ['user_id', 'terrain_id', 'date_reservation', 'heure_debut', 'heure_fin'];
         foreach ($required as $field) {
@@ -96,6 +98,7 @@ class Reservation {
 
         // Construire le créneau
         $creneau = $data['heure_debut'] . '-' . $data['heure_fin'];
+        error_log("Créneau construit: " . $creneau);
         
         // Vérifier la disponibilité
         if (!$this->checkAvailability($data['terrain_id'], $data['date_reservation'], $creneau)) {
@@ -112,7 +115,7 @@ class Reservation {
                     type, 
                     commentaire
                 ) VALUES (
-                    :user_id, 
+                    :id_client, 
                     :terrain_id, 
                     :date_reservation, 
                     :creneau, 
@@ -123,7 +126,7 @@ class Reservation {
         
         try {
             $stmt = $this->db->prepare($sql);
-            $stmt->bindValue(':user_id', $data['user_id'], PDO::PARAM_INT);
+            $stmt->bindValue(':id_client', $data['user_id'], PDO::PARAM_INT);
             $stmt->bindValue(':terrain_id', $data['terrain_id'], PDO::PARAM_INT);
             $stmt->bindValue(':date_reservation', $data['date_reservation']);
             $stmt->bindValue(':creneau', $creneau);
@@ -132,10 +135,15 @@ class Reservation {
             $stmt->bindValue(':commentaire', $data['commentaire'] ?? '');
             
             $success = $stmt->execute();
+            error_log("Exécution SQL réussie: " . ($success ? "OUI" : "NON"));
             
-            if ($success && !empty($data['options'])) {
+            if ($success) {
                 $reservationId = $this->db->lastInsertId();
-                $this->addReservationOptions($reservationId, $data['options']);
+                error_log("ID de la nouvelle réservation: " . $reservationId);
+                
+                if (!empty($data['options'])) {
+                    $this->addReservationOptions($reservationId, $data['options']);
+                }
             }
             
             return $success;
@@ -228,28 +236,32 @@ class Reservation {
     /**
      * Vérifier la disponibilité d'un terrain
      */
-    public function checkAvailability($terrainId, $date, $creneau) {
-        $sql = "SELECT COUNT(*) as count 
-                FROM reservation 
-                WHERE id_terrain = :terrain_id 
-                AND date_reservation = :date 
-                AND creneau = :creneau
-                AND status IN ('accepté', 'en attente')";
+public function checkAvailability($terrainId, $date, $creneau) {
+    error_log("Vérification disponibilité: terrain=$terrainId, date=$date, creneau=$creneau");
+    
+    $sql = "SELECT COUNT(*) as count 
+            FROM reservation 
+            WHERE id_terrain = :terrain_id 
+            AND date_reservation = :date 
+            AND creneau = :creneau
+            AND status IN ('accepté', 'en attente')";
+    
+    try {
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':terrain_id', $terrainId, PDO::PARAM_INT);
+        $stmt->bindValue(':date', $date);
+        $stmt->bindValue(':creneau', $creneau);
+        $stmt->execute();
         
-        try {
-            $stmt = $this->db->prepare($sql);
-            $stmt->bindValue(':terrain_id', $terrainId, PDO::PARAM_INT);
-            $stmt->bindValue(':date', $date);
-            $stmt->bindValue(':creneau', $creneau);
-            $stmt->execute();
-            
-            $result = $stmt->fetch(PDO::FETCH_ASSOC);
-            return $result['count'] == 0;
-        } catch (PDOException $e) {
-            error_log("Erreur checkAvailability: " . $e->getMessage());
-            return false;
-        }
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $disponible = ($result['count'] == 0);
+        error_log("Résultat disponibilité: " . ($disponible ? "Disponible" : "Non disponible"));
+        return $disponible;
+    } catch (PDOException $e) {
+        error_log("Erreur checkAvailability: " . $e->getMessage());
+        return false;
     }
+}
 
     /**
      * Récupérer une réservation par ID

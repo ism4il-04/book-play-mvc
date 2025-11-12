@@ -298,27 +298,24 @@ public function creneaux() {
             'success' => false,
             'message' => 'ID du terrain manquant'
         ]);
-        return;
+        exit;
     }
 
     try {
         $terrainModel = new Terrain();
-        $creneaux = $terrainModel->getCreneauxDisponibles($terrainId, $date);
-
-        // Exemple : si ton modèle retourne déjà les créneaux sous forme de tableau
-        echo json_encode([
-            'success' => true,
-            'creneaux' => $creneaux,
-            'heure_ouverture' => '08:00',
-            'heure_fermeture' => '22:00'
-        ]);
-
+        $result = $terrainModel->getCreneauxDisponibles($terrainId, $date);
+        
+        // Retourner directement le résultat du modèle qui contient déjà
+        // success, creneaux, heure_ouverture et heure_fermeture
+        echo json_encode($result);
+        
     } catch (Exception $e) {
         echo json_encode([
             'success' => false,
             'message' => 'Erreur serveur : ' . $e->getMessage()
         ]);
     }
+    exit;
 }
 
     

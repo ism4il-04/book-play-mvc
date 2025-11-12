@@ -226,9 +226,9 @@
 
 <script>
 // Variables globales
-// let currentTerrainId = null;
-// let currentPrixHeure = 0;
-// let selectedCreneauData = null;
+let currentTerrainId = null;
+let currentPrixHeure = 0;
+let selectedCreneauData = null;
 
 /**
  * Ouvrir le modal de réservation
@@ -429,23 +429,21 @@ function loadCreneaux(terrainId, date) {
  * Sélectionner un créneau
  */
 function selectCreneau(element, creneauData) {
-  // Retirer la sélection des autres créneaux
-  document.querySelectorAll('.creneau-item').forEach(item => {
-    item.classList.remove('selected');
-  });
-  
-  // Sélectionner ce créneau
-  element.classList.add('selected');
-  
-  // Stocker les données
-  selectedCreneauData = creneauData;
-  document.getElementById('heure_debut').value = creneauData.heure_ouverture;
-  document.getElementById('heure_fin').value = creneauData.heure_fermeture;
-  
-  console.log('Créneau sélectionné:', creneauData);
-  
-  // Calculer le prix
-  calculateTotalPrice();
+    // Retirer la sélection des autres créneaux
+    document.querySelectorAll('.creneau-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    
+    // Sélectionner ce créneau
+    element.classList.add('selected');
+    
+    // Stocker les données
+    console.log('Créneau sélectionné:', creneauData);
+    document.getElementById('heure_debut').value = creneauData.heure_ouverture;
+    document.getElementById('heure_fin').value = creneauData.heure_fermeture;
+    
+    // Calculer le prix
+    calculateTotalPrice();
 }
 
 /**
