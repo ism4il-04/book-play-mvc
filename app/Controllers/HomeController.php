@@ -27,6 +27,12 @@ class HomeController extends Controller {
     }
     
     public function terrains() {
+        // Prevent all forms of caching
+        header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+        header("Cache-Control: post-check=0, pre-check=0", false);
+        header("Pragma: no-cache");
+        header("Expires: Sat, 26 Jul 1997 05:00:00 GMT"); // Date in the past
+        
         require_once __DIR__ . '/../Models/terrain.php';
         $terrainModel = new Terrain();
         $search = isset($_GET['search']) ? trim($_GET['search']) : '';

@@ -322,89 +322,66 @@ $terrains = $terrains ?? [];
         .activities-list {
             padding: 20px;
         }
+        
+        /* Animations for notifications */
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+        
+        /* Animation for new terrain items */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .activity-item.new-item {
+            animation: fadeInDown 0.5s ease-out;
+        }
     </style>
 </head>
 <body>
-<!-- Sidebar Navigation -->
-<aside class="sidebar">
-    <div class="sidebar-header">
-        <img src="<?php echo $baseUrl; ?>images/logo.png" alt="Logo" class="logo">
-        <button class="sidebar-toggle" id="sidebarToggle">
-            <i class="fas fa-bars"></i>
-        </button>
-    </div>
-
-    <nav class="sidebar-nav">
-        <a href="<?php echo $baseUrl; ?>dashboard/gestionnaire" class="nav-item">
-            <i class="fas fa-home"></i>
-            <span>Dashboard</span>
-        </a>
-        <a href="<?php echo $baseUrl; ?>terrain/gestionnaireTerrains" class="nav-item active">
-            <i class="fas fa-map-marked-alt"></i>
-            <span>Gestion des Terrains</span>
-        </a>
-        <a href="<?php echo $baseUrl; ?>reservations" class="nav-item">
-            <i class="fas fa-calendar-check"></i>
-            <span>Demandes de Réservation</span>
-        </a>
-        <a href="<?php echo $baseUrl; ?>tournois" class="nav-item">
-            <i class="fas fa-trophy"></i>
-            <span>Gestion des Tournois</span>
-        </a>
-    </nav>
-
-    <div class="sidebar-footer">
-        <div class="user-info">
-            <div class="user-avatar">
-                <?php echo strtoupper(substr($currentUser['name'], 0, 1)); ?>
-            </div>
-            <div class="user-details">
-                <span class="user-name"><?php echo htmlspecialchars($currentUser['name']); ?></span>
-                <span class="user-role">Gestionnaire</span>
-            </div>
-        </div>
-    </div>
-</aside>
+    <!-- Sidebar Navigation -->
+    <?php
+    $activeItem = 'terrains';
+    include __DIR__ . '/../components/nav_gestionnaire.php';
+    ?>
 <!-- Main Content -->
 <main class="main-content">
     <!-- Top Navbar -->
-    <header class="top-navbar">
-        <div class="navbar-left">
-            <h1>Gestion des Terrains</h1>
-            <p class="subtitle">Gérez vos terrains de sport</p>
-        </div>
-        <div class="navbar-right">
-            <button onclick="openAddModal()" class="btn btn-primary" style="margin-right: 15px;">
-                <i class="fas fa-plus"></i> Ajouter un terrain
-            </button>
-            <div class="search-box">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Rechercher...">
-            </div>
-            <div class="notifications">
-                <button class="notification-btn">
-                    <i class="fas fa-bell"></i>
-                    <span class="badge"><?php echo $stats['notifications_count'] ?? 0; ?></span>
-                </button>
-            </div>
-            <div class="user-menu">
-                <button class="user-menu-btn">
-                    <div class="user-avatar-small">
-                        <?php echo strtoupper(substr($currentUser['name'], 0, 1)); ?>
-                    </div>
-                    <i class="fas fa-chevron-down"></i>
-                </button>
-                <div class="dropdown-menu">
-                    <a href="<?php echo $baseUrl; ?>profile"><i class="fas fa-user"></i> Mon Profil</a>
-                    <a href="<?php echo $baseUrl; ?>settings"><i class="fas fa-cog"></i> Paramètres</a>
-                    <hr>
-                    <a href="<?php echo $baseUrl; ?>logout" class="logout"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
-                </div>
-            </div>
-        </div>
-    </header>
-    
+    <?php
+    $title = 'Gestion des Terrains';
+    $subtitle = 'Gérez vos terrains de sport';
+    include __DIR__ . '/../components/top_navbar_gestionnaire.php';
+    ?>
+
     <div class="dashboard-container" style="padding: 20px;">
+        <button onclick="openAddModal()" class="btn btn-primary" style="margin-bottom: 20px;">
+            <i class="fas fa-plus"></i> Ajouter un terrain
+        </button>
         <!-- Success/Error Messages -->
         <?php if (isset($_SESSION['success'])): ?>
             <div class="alert alert-success" style="padding: 15px; margin-bottom: 20px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 8px; display: flex; align-items: center; gap: 10px;">
@@ -424,7 +401,7 @@ $terrains = $terrains ?? [];
     <div class="activities-list">
         <?php if (!empty($terrains)): ?>
             <?php foreach ($terrains as $terrain): ?>
-                <div class="activity-item">
+                <div class="activity-item" data-terrain-id="<?php echo $terrain['id_terrain']; ?>">
                     <!-- Image -->
                     <?php if (!empty($terrain['image'])): ?>
                         <?php
@@ -482,11 +459,9 @@ $terrains = $terrains ?? [];
                             <button onclick="openEditModal(<?php echo htmlspecialchars(json_encode($terrain)); ?>)" class="btn btn-sm btn-warning">
                                 <i class="fas fa-edit"></i> Modifier
                             </button>
-                            <a href="<?php echo $baseUrl; ?>terrain/delete/<?php echo $terrain['id_terrain']; ?>" 
-                               class="btn btn-sm btn-danger" 
-                               onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce terrain ?');">
+                            <button onclick="deleteTerrain(<?php echo $terrain['id_terrain']; ?>)" class="btn btn-sm btn-danger">
                                 <i class="fas fa-trash"></i> Supprimer
-                            </a>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -511,7 +486,7 @@ $terrains = $terrains ?? [];
                 <h2>Ajouter un nouveau terrain</h2>
                 <button class="close" onclick="closeAddModal()">&times;</button>
             </div>
-            <form action="<?= BASE_URL ?>terrain/store" method="POST" enctype="multipart/form-data" id="addTerrainForm">
+            <form action="" method="POST" enctype="multipart/form-data" id="addTerrainForm">
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="nom_terrain" class="form-label">Nom du terrain <span class="text-danger">*</span></label>
@@ -563,6 +538,32 @@ $terrains = $terrains ?? [];
                                     <option value="10v10">10v10</option>
                                     <option value="11v11">11v11</option>
                                 </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Options Section -->
+                    <div class="form-group">
+                        <label class="form-label">Options disponibles pour ce terrain</label>
+                        <div class="options-selection" id="add-options-container">
+                            <!-- Options will be loaded dynamically -->
+                            <div class="text-center text-muted">
+                                <i class="fas fa-spinner fa-spin"></i> Chargement des options...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Horaires Section -->
+                    <div class="form-group">
+                        <label class="form-label">Horaires d'ouverture <span class="text-danger">*</span></label>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="heure_ouverture" class="form-label small">Heure d'ouverture</label>
+                                <input type="time" class="form-control" id="heure_ouverture" name="heure_ouverture" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="heure_fermeture" class="form-label small">Heure de fermeture</label>
+                                <input type="time" class="form-control" id="heure_fermeture" name="heure_fermeture" required>
                             </div>
                         </div>
                     </div>
@@ -648,6 +649,32 @@ $terrains = $terrains ?? [];
                             <option value="non disponible">Indisponible</option>
                         </select>
                     </div>
+
+                    <!-- Options Section -->
+                    <div class="form-group">
+                        <label class="form-label">Options disponibles pour ce terrain</label>
+                        <div class="options-selection" id="edit-options-container">
+                            <!-- Options will be loaded dynamically -->
+                            <div class="text-center text-muted">
+                                <i class="fas fa-spinner fa-spin"></i> Chargement des options...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Horaires Section -->
+                    <div class="form-group">
+                        <label class="form-label">Horaires d'ouverture <span class="text-danger">*</span></label>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="edit_heure_ouverture" class="form-label small">Heure d'ouverture</label>
+                                <input type="time" class="form-control" id="edit_heure_ouverture" name="heure_ouverture" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="edit_heure_fermeture" class="form-label small">Heure de fermeture</label>
+                                <input type="time" class="form-control" id="edit_heure_fermeture" name="heure_fermeture" required>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Annuler</button>
@@ -673,11 +700,31 @@ $terrains = $terrains ?? [];
 </main>
 
 <script src="<?php echo $baseUrl; ?>js/dashboard_gest.js"></script>
+<script src="<?php echo $baseUrl; ?>js/terrain-realtime.js?v=<?php echo time(); ?>"></script>
+<script>
+// Make BASE_URL available globally for JavaScript
+window.BASE_URL = '<?php echo $baseUrl; ?>';
+
+// Check if user is authenticated before starting monitoring
+window.userAuthenticated = <?php echo isset($_SESSION['user']) && $_SESSION['user']['role'] === 'gestionnaire' ? 'true' : 'false'; ?>;
+
+// Pass terrain IDs for initialization
+window.terrainIds = <?php echo json_encode(array_column($terrains, 'id_terrain')); ?>;
+</script>
 <script>
 // Fonctions pour gérer les modales
 function openAddModal() {
     document.getElementById('addTerrainModal').style.display = 'block';
     document.getElementById('addTerrainForm').reset();
+    // Reset options checkboxes and hide price inputs
+    document.querySelectorAll('#addTerrainModal .option-price').forEach(input => {
+        input.style.display = 'none';
+        input.required = false;
+        input.value = '';
+    });
+    document.querySelectorAll('#addTerrainModal .form-check-input').forEach(checkbox => {
+        checkbox.checked = false;
+    });
 }
 
 function closeAddModal() {
@@ -707,11 +754,111 @@ function openEditModal(terrain) {
         imageContainer.innerHTML = '';
     }
     
+    // Load options for edit modal
+    loadOptionsForEdit(terrain);
+    
+    // Populate horaires fields if available
+    if (terrain.horaires) {
+        document.getElementById('edit_heure_ouverture').value = terrain.horaires.heure_ouverture || '';
+        document.getElementById('edit_heure_fermeture').value = terrain.horaires.heure_fermeture || '';
+    } else {
+        document.getElementById('edit_heure_ouverture').value = '';
+        document.getElementById('edit_heure_fermeture').value = '';
+    }
+    
     modal.style.display = 'block';
+}
+
+// Function to load options for edit modal with existing terrain data
+function loadOptionsForEdit(terrain) {
+    const container = document.getElementById('edit-options-container');
+    if (!container) return;
+    
+    fetch('<?= BASE_URL ?>gestionnaire/getOptions', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            renderOptionsForEdit(container, data.options, terrain);
+        } else {
+            container.innerHTML = '<div class="text-danger">Erreur lors du chargement des options</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error loading options for edit:', error);
+        container.innerHTML = '<div class="text-danger">Erreur de chargement</div>';
+    });
+}
+
+// Function to render options for edit modal with pre-selected values
+function renderOptionsForEdit(container, options, terrain) {
+    container.innerHTML = '';
+    
+    options.forEach(option => {
+        // Check if this option is already selected for the terrain
+        const isSelected = terrain.options && terrain.options.some(opt => opt.id_option == option.id_option);
+        const optionPrice = isSelected ? terrain.options.find(opt => opt.id_option == option.id_option)?.prix_option || '' : '';
+        
+        const optionHtml = `
+            <div class="option-item mb-3" data-option-id="${option.id_option}">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" 
+                           name="options[${option.id_option}][selected]" 
+                           value="1" id="edit_option_${option.id_option}" ${isSelected ? 'checked' : ''}>
+                    <label class="form-check-label" for="edit_option_${option.id_option}">
+                        <strong>${option.nom_option}</strong> - ${option.description}
+                    </label>
+                </div>
+                <input type="number" class="form-control form-control-sm mt-2 option-price" 
+                       name="options[${option.id_option}][prix]" 
+                       placeholder="Prix (DH)" min="0" step="0.01" 
+                       value="${optionPrice}" style="display: ${isSelected ? 'block' : 'none'};">
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', optionHtml);
+    });
+    
+    // Attach event handlers for edit modal
+    attachOptionsHandlerForEdit();
+}
+
+// Function to attach option handlers for edit modal
+function attachOptionsHandlerForEdit() {
+    const container = document.getElementById('edit-options-container');
+    if (!container) return;
+    
+    const checkboxes = container.querySelectorAll('.form-check-input');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const optionItem = this.closest('.option-item');
+            const priceInput = optionItem.querySelector('.option-price');
+            if (this.checked) {
+                priceInput.style.display = 'block';
+                priceInput.required = true;
+            } else {
+                priceInput.style.display = 'none';
+                priceInput.required = false;
+                priceInput.value = '';
+            }
+        });
+    });
 }
 
 function closeEditModal() {
     document.getElementById('editTerrainModal').style.display = 'none';
+    // Reset options checkboxes and hide price inputs
+    document.querySelectorAll('#editTerrainModal .option-price').forEach(input => {
+        input.style.display = 'none';
+        input.required = false;
+        input.value = '';
+    });
+    document.querySelectorAll('#editTerrainModal .form-check-input').forEach(checkbox => {
+        checkbox.checked = false;
+    });
 }
 
 // Fermer la modale en cliquant en dehors
@@ -733,6 +880,343 @@ document.addEventListener('keydown', function(event) {
         closeEditModal();
     }
 });
+
+// Fonction utilitaire pour échapper le HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Fonction de rendu pour les éléments de terrain de la page de gestion
+function renderGestionTerrain(terrain) {
+    const div = document.createElement('div');
+    div.classList.add('activity-item', 'new-item');
+    div.setAttribute('data-terrain-id', terrain.id_terrain);
+    
+    let imageHtml = '';
+    if (terrain.image) {
+        imageHtml = `
+            <img src="<?= BASE_URL ?>images/${terrain.image}" 
+                 alt="${escapeHtml(terrain.nom_terrain)}" 
+                 class="terrain-image"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="terrain-image-placeholder" style="display:none;">
+                <i class="fas fa-futbol"></i>
+            </div>
+        `;
+    } else {
+        imageHtml = `
+            <div class="terrain-image-placeholder">
+                <i class="fas fa-futbol"></i>
+            </div>
+        `;
+    }
+    
+    div.innerHTML = `
+        ${imageHtml}
+        <div class="activity-content">
+            <h4>${escapeHtml(terrain.nom_terrain)}</h4>
+            <p><i class="fas fa-map-marker-alt"></i> ${escapeHtml(terrain.localisation)}</p>
+            <div class="terrain-info-row">
+                <span><i class="fas fa-layer-group"></i> ${escapeHtml(terrain.type_terrain)}</span>
+                <span><i class="fas fa-coins"></i> ${escapeHtml(terrain.prix_heure)} DH/h</span>
+            </div>
+            <div class="terrain-stats-row">
+                <span class="badge badge-info"><i class="fas fa-users"></i> ${escapeHtml(terrain.format_terrain)}</span>
+            </div>
+        </div>
+        <div class="terrain-actions">
+            <span class="status-badge" style="background-color: ${terrain.statut === 'disponible' ? '#28a745' : '#dc3545'}">
+                <i class="${terrain.statut === 'disponible' ? 'fas fa-check-circle' : 'fas fa-times-circle'}"></i>
+                ${escapeHtml(terrain.statut)}
+            </span>
+            <div class="action-buttons">
+                <button onclick='openEditModal(${JSON.stringify(terrain).replace(/'/g, "&#39;")})' class="btn btn-sm btn-warning">
+                    <i class="fas fa-edit"></i> Modifier
+                </button>
+                <button onclick="deleteTerrain(${terrain.id_terrain})" class="btn btn-sm btn-danger">
+                    <i class="fas fa-trash"></i> Supprimer
+                </button>
+            </div>
+        </div>
+    `;
+    
+    return div;
+}
+
+// Make renderGestionTerrain globally available
+window.renderGestionTerrain = renderGestionTerrain;
+
+// Initialize options handling when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Function to load options
+    function loadOptions() {
+        const container = document.getElementById('add-options-container');
+        if (!container) return;
+        
+        fetch('<?= BASE_URL ?>gestionnaire/getOptions', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderOptions(container, data.options);
+            } else {
+                container.innerHTML = '<div class="text-danger">Erreur lors du chargement des options</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading options:', error);
+            container.innerHTML = '<div class="text-danger">Erreur de chargement</div>';
+        });
+    }
+    
+    // Function to render options
+    function renderOptions(container, options) {
+        container.innerHTML = '';
+        
+        options.forEach(option => {
+            const optionHtml = `
+                <div class="option-item mb-3" data-option-id="${option.id_option}">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="options[${option.id_option}][selected]" value="1" id="add_option_${option.id_option}">
+                        <label class="form-check-label" for="add_option_${option.id_option}">
+                            <strong>${option.nom_option}</strong> - ${option.description}
+                        </label>
+                    </div>
+                    <input type="number" class="form-control form-control-sm mt-2 option-price" 
+                           name="options[${option.id_option}][prix]" placeholder="Prix (DH)" min="0" step="0.01" style="display: none;">
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', optionHtml);
+        });
+        
+        // Attach event handlers
+        attachOptionsHandler();
+    }
+    
+    // Function to attach option handlers
+    function attachOptionsHandler() {
+        const container = document.getElementById('add-options-container');
+        if (!container) return;
+        
+        const checkboxes = container.querySelectorAll('.form-check-input');
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const optionItem = this.closest('.option-item');
+                const priceInput = optionItem.querySelector('.option-price');
+                if (this.checked) {
+                    priceInput.style.display = 'block';
+                    priceInput.required = true;
+                } else {
+                    priceInput.style.display = 'none';
+                    priceInput.required = false;
+                    priceInput.value = '';
+                }
+            });
+        });
+    }
+    
+    // Load options when add modal is opened
+    function openAddModal() {
+        document.getElementById('addTerrainModal').style.display = 'block';
+        document.getElementById('addTerrainForm').reset();
+        // Reset options checkboxes and hide price inputs
+        document.querySelectorAll('#addTerrainModal .option-price').forEach(input => {
+            input.style.display = 'none';
+            input.required = false;
+            input.value = '';
+        });
+        document.querySelectorAll('#addTerrainModal .form-check-input').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        // Load options
+        loadOptions();
+    }
+    
+    // Make openAddModal globally available
+    window.openAddModal = openAddModal;
+});
+
+// Gérer la soumission du formulaire via AJAX
+document.getElementById("addTerrainForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+
+    fetch("<?= BASE_URL ?>terrain/store", {
+        method: "POST",
+        body: formData
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                terrainMonitor.afficherNotification("Terrain ajouté avec succès !");
+                closeAddModal();
+
+                // Ajouter au DOM
+                const container = document.querySelector('.activities-list');
+                const noData = container.querySelector('.no-data');
+                if (noData) noData.remove();
+                
+                const element = renderGestionTerrain(data.terrain);
+                container.insertBefore(element, container.firstChild);
+                
+                // Mettre à jour le dernier ID
+                terrainMonitor.mettreAJourDernierId(data.terrain.id_terrain);
+
+            } else {
+                alert("Erreur : " + data.message);
+            }
+        })
+        .catch(error => {
+            console.error("Erreur AJAX :", error);
+            alert("Erreur lors de l'ajout du terrain");
+        });
+});
+
+// Gérer la soumission du formulaire de modification via AJAX
+document.getElementById("editTerrainForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const formAction = this.action; // L'URL est définie dynamiquement dans openEditModal
+
+    fetch(formAction, {
+        method: "POST",
+        body: formData
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                terrainMonitor.afficherNotification("Terrain modifié avec succès !");
+                closeEditModal();
+
+                // Marquer ce terrain comme récemment mis à jour pour éviter la double notification
+                terrainMonitor.marquerTerrainMisAJour(data.terrain.id_terrain);
+
+                // Trouver et remplacer l'élément existant dans le DOM
+                const container = document.querySelector('.activities-list');
+                const existingElement = Array.from(container.querySelectorAll('.activity-item')).find(item => {
+                    const editButton = item.querySelector('button[onclick*="openEditModal"]');
+                    if (editButton) {
+                        const onclickAttr = editButton.getAttribute('onclick');
+                        return onclickAttr && onclickAttr.includes('"id_terrain":' + data.terrain.id_terrain);
+                    }
+                    return false;
+                });
+
+                if (existingElement) {
+                    const newElement = renderGestionTerrain(data.terrain);
+                    existingElement.replaceWith(newElement);
+                    
+                    // Mettre à jour le snapshot avec les nouvelles données
+                    terrainMonitor.terrainSnapshots[data.terrain.id_terrain] = terrainMonitor.creerSnapshotTerrain(data.terrain);
+                } else {
+                    console.warn('Élément terrain non trouvé pour la mise à jour');
+                }
+
+            } else {
+                alert("Erreur : " + data.message);
+            }
+        })
+        .catch(error => {
+            console.error("Erreur AJAX :", error);
+            alert("Erreur lors de la modification du terrain");
+        });
+});
+
+// AJAX Delete Terrain Function
+async function deleteTerrain(terrainId) {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce terrain et toutes ses réservations associées ?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('<?= BASE_URL ?>terrain/delete/' + terrainId, {
+            method: 'GET'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Remove terrain from DOM
+            const terrainElement = document.querySelector(`[data-terrain-id="${terrainId}"]`);
+            if (terrainElement) {
+                terrainElement.remove();
+            }
+            
+            // Update snapshot to mark as recently deleted
+            if (typeof terrainMonitor !== 'undefined') {
+                delete terrainMonitor.terrainSnapshots[terrainId];
+            }
+            
+            // Show success notification
+            showNotification('Terrain et ses réservations supprimés avec succès!', 'success');
+        } else {
+            showNotification('Erreur: ' + (result.message || 'Échec de la suppression'), 'error');
+        }
+    } catch (error) {
+        console.error('Erreur lors de la suppression:', error);
+        showNotification('Erreur lors de la suppression du terrain', 'error');
+    }
+}
+
+// Notification helper function
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8'};
+        color: white;
+        border-radius: 5px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+    `;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Add animation styles
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
 </script>
 </body>
 </html>
