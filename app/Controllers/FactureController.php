@@ -44,6 +44,11 @@ class FactureController extends Controller {
     public function generate($id_reservation) {
         // Vérifier que c'est un gestionnaire
         if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'gestionnaire') {
+            if ($this->isAjaxRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Non autorisé']);
+                exit;
+            }
             header('Location: ' . BASE_URL . 'auth/login');
             exit;
         }
@@ -74,12 +79,29 @@ class FactureController extends Controller {
             // Mettre à jour la facture avec le chemin du PDF
             $factureModel->updatePdfPath($num_facture, $pdfPath);
 
-            // Rediriger vers l'affichage de la facture
+            // Réponse AJAX ou redirection normale
+            if ($this->isAjaxRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Facture générée avec succès!',
+                    'num_facture' => $num_facture,
+                    'download_url' => BASE_URL . 'facture/download/' . $num_facture
+                ]);
+                exit;
+            }
+
+            // Rediriger vers le téléchargement du PDF
             $_SESSION['success'] = 'Facture générée avec succès!';
-            header('Location: ' . BASE_URL . 'facture/showFacture/' . $num_facture);
+            header('Location: ' . BASE_URL . 'facture/download/' . $num_facture);
             exit;
 
         } catch (Exception $e) {
+            if ($this->isAjaxRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Erreur: ' . $e->getMessage()]);
+                exit;
+            }
             $_SESSION['error'] = 'Erreur: ' . $e->getMessage();
             header('Location: ' . BASE_URL . 'facture');
             exit;
@@ -108,40 +130,16 @@ class FactureController extends Controller {
             exit;
         }
 
-        // Préparer les données pour le template
-        $viewData = [
-            'facture' => [
-                'num_facture' => $facture['num_facture'],
-                'TTC' => $facture['TTC'],
-                'date_facturation' => $facture['date_facturation']
-            ],
-            'reservation' => [
-                'date_reservation' => $facture['date_reservation'],
-                'creneau' => $facture['creneau'],
-                'status' => $facture['status'],
-                'type' => $facture['type'],
-                'commentaire' => $facture['commentaire'],
-                'id_terrain' => $facture['id_terrain'],
-                'id_client' => $facture['id_client']
-            ],
-            'terrain' => $facture['terrain'],
-            'client' => $facture['client'],
-            'gestionnaire' => $facture['gestionnaire'],
-            'options' => $facture['options'],
-            'total_options' => $facture['total_options']
-        ];
+        // Rediriger vers le téléchargement du PDF
+        header('Location: ' . BASE_URL . 'facture/download/' . $num_facture);
+        exit;
+    }
 
-        // Extraire les variables pour le template avec des valeurs par défaut
-        $facture = $viewData['facture'] ?? [];
-        $reservation = $viewData['reservation'] ?? [];
-        $terrain = $viewData['terrain'] ?? [];
-        $client = $viewData['client'] ?? [];
-        $gestionnaire = $viewData['gestionnaire'] ?? [];
-        $options = $viewData['options'] ?? [];
-        $total_options = $viewData['total_options'] ?? 0;
-
-        // Charger le template de facture
-        require_once __DIR__ . '/../Views/components/facture-template.php';
+    /**
+     * Vérifie si la requête est une requête AJAX
+     */
+    private function isAjaxRequest() {
+        return isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
     }
 
     /**
@@ -359,9 +357,9 @@ class FactureController extends Controller {
             exit;
         }
 
-        // Servir le fichier PDF
+        // Servir le fichier PDF en ligne (ouvre dans le navigateur)
         header('Content-Type: application/pdf');
-        header('Content-Disposition: attachment; filename="facture_' . $num_facture . '.pdf"');
+        header('Content-Disposition: inline; filename="facture_' . $num_facture . '.pdf"');
         header('Content-Length: ' . filesize($filepath));
         readfile($filepath);
         exit;
