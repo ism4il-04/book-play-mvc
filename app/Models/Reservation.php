@@ -75,6 +75,51 @@ class Reservation extends Model {
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([$newStatus, $reservationId, $gestionnaireId]);
     }
+    
+    /**
+     * Récupérer les détails d'une réservation pour un gestionnaire
+     */
+    public function getReservationDetailsForGestionnaire($userId, $reservationId) {
+        $gestionnaireId = $this->getGestionnaireIdFromUserId($userId);
+        if (!$gestionnaireId) {
+            return null;
+        }
+        
+        $sql = "SELECT r.id_reservation, r.date_reservation, r.creneau, r.id_terrain, r.status
+                FROM reservation r
+                INNER JOIN terrain t ON r.id_terrain = t.id_terrain
+                WHERE r.id_reservation = ?
+                AND t.id_gestionnaire = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$reservationId, $gestionnaireId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+    
+    /**
+     * Refuser automatiquement les réservations conflictuelles
+     * (même date, même créneau, même terrain)
+     */
+    public function refuseConflictingReservations($userId, $reservationId, $dateReservation, $creneau, $terrainId) {
+        $gestionnaireId = $this->getGestionnaireIdFromUserId($userId);
+        if (!$gestionnaireId) {
+            return false;
+        }
+        
+        // Refuser toutes les autres réservations avec la même date, créneau et terrain
+        // qui sont encore en attente ou acceptées (sauf celle qu'on vient de modifier)
+        $sql = "UPDATE reservation r
+                INNER JOIN terrain t ON r.id_terrain = t.id_terrain
+                SET r.status = 'refusé'
+                WHERE r.date_reservation = ?
+                AND r.creneau = ?
+                AND r.id_terrain = ?
+                AND r.id_reservation != ?
+                AND r.status IN ('en attente', 'accepté')
+                AND t.id_gestionnaire = ?";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([$dateReservation, $creneau, $terrainId, $reservationId, $gestionnaireId]);
+    }
 }
 
 

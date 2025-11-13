@@ -38,8 +38,37 @@ class ReservationsController extends Controller {
             exit;
         }
         $reservationModel = $this->model('Reservation');
+        
+        // Récupérer les détails de la réservation avant la mise à jour
+        $reservation = $reservationModel->getReservationDetailsForGestionnaire($_SESSION['user']['id'], (int)$id);
+        
+        if (!$reservation) {
+            $_SESSION['error'] = "Réservation non trouvée ou accès non autorisé.";
+            header('Location: ' . BASE_URL . 'reservations');
+            exit;
+        }
+        
         $ok = $reservationModel->updateStatusForGestionnaire($_SESSION['user']['id'], (int)$id, 'accepté');
-        $_SESSION[$ok ? 'success' : 'error'] = $ok ? "Réservation acceptée." : "Action non autorisée.";
+        
+        if ($ok) {
+            // Refuser automatiquement les réservations conflictuelles
+            $conflictsRefused = $reservationModel->refuseConflictingReservations(
+                $_SESSION['user']['id'],
+                (int)$id,
+                $reservation['date_reservation'],
+                $reservation['creneau'],
+                $reservation['id_terrain']
+            );
+            
+            $message = "Réservation acceptée.";
+            if ($conflictsRefused) {
+                $message .= " Les réservations conflictuelles ont été automatiquement refusées.";
+            }
+            $_SESSION['success'] = $message;
+        } else {
+            $_SESSION['error'] = "Action non autorisée.";
+        }
+        
         header('Location: ' . BASE_URL . 'reservations');
         exit;
     }
@@ -52,8 +81,37 @@ class ReservationsController extends Controller {
             exit;
         }
         $reservationModel = $this->model('Reservation');
+        
+        // Récupérer les détails de la réservation avant la mise à jour
+        $reservation = $reservationModel->getReservationDetailsForGestionnaire($_SESSION['user']['id'], (int)$id);
+        
+        if (!$reservation) {
+            $_SESSION['error'] = "Réservation non trouvée ou accès non autorisé.";
+            header('Location: ' . BASE_URL . 'reservations');
+            exit;
+        }
+        
         $ok = $reservationModel->updateStatusForGestionnaire($_SESSION['user']['id'], (int)$id, 'refusé');
-        $_SESSION[$ok ? 'success' : 'error'] = $ok ? "Réservation refusée." : "Action non autorisée.";
+        
+        if ($ok) {
+            // Refuser automatiquement les réservations conflictuelles
+            $conflictsRefused = $reservationModel->refuseConflictingReservations(
+                $_SESSION['user']['id'],
+                (int)$id,
+                $reservation['date_reservation'],
+                $reservation['creneau'],
+                $reservation['id_terrain']
+            );
+            
+            $message = "Réservation refusée.";
+            if ($conflictsRefused) {
+                $message .= " Les réservations conflictuelles ont été automatiquement refusées.";
+            }
+            $_SESSION['success'] = $message;
+        } else {
+            $_SESSION['error'] = "Action non autorisée.";
+        }
+        
         header('Location: ' . BASE_URL . 'reservations');
         exit;
     }
@@ -174,19 +232,61 @@ class ReservationsController extends Controller {
         
         try {
             $reservationModel = $this->model('Reservation');
+            
+            // Récupérer les détails de la réservation avant la mise à jour
+            $reservation = $reservationModel->getReservationDetailsForGestionnaire($_SESSION['user']['id'], $id);
+            
+            if (!$reservation) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Réservation non trouvée ou accès non autorisé'
+                ]);
+                exit;
+            }
+            
+            // Mettre à jour le statut de la réservation
             $ok = $reservationModel->updateStatusForGestionnaire($_SESSION['user']['id'], $id, $status);
             
             if ($ok) {
-                $statusLabels = [
-                    'accepté' => 'acceptée',
-                    'refusé' => 'refusée',
-                    'en attente' => 'mise en attente',
-                    'annulé' => 'annulée'
-                ];
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Réservation ' . ($statusLabels[$status] ?? $status) . ' avec succès'
-                ]);
+                // Si la réservation est acceptée ou refusée, refuser automatiquement les réservations conflictuelles
+                if (in_array($status, ['accepté', 'refusé'], true)) {
+                    $conflictsRefused = $reservationModel->refuseConflictingReservations(
+                        $_SESSION['user']['id'],
+                        $id,
+                        $reservation['date_reservation'],
+                        $reservation['creneau'],
+                        $reservation['id_terrain']
+                    );
+                    
+                    $statusLabels = [
+                        'accepté' => 'acceptée',
+                        'refusé' => 'refusée',
+                        'en attente' => 'mise en attente',
+                        'annulé' => 'annulée'
+                    ];
+                    
+                    $message = 'Réservation ' . ($statusLabels[$status] ?? $status) . ' avec succès';
+                    if ($conflictsRefused) {
+                        $message .= '. Les réservations conflictuelles ont été automatiquement refusées.';
+                    }
+                    
+                    echo json_encode([
+                        'success' => true,
+                        'message' => $message,
+                        'conflictsRefused' => $conflictsRefused
+                    ]);
+                } else {
+                    $statusLabels = [
+                        'accepté' => 'acceptée',
+                        'refusé' => 'refusée',
+                        'en attente' => 'mise en attente',
+                        'annulé' => 'annulée'
+                    ];
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Réservation ' . ($statusLabels[$status] ?? $status) . ' avec succès'
+                    ]);
+                }
             } else {
                 echo json_encode([
                     'success' => false,
