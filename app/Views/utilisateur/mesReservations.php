@@ -557,9 +557,14 @@ $reservations = [
                             Mes Réservations
                         </a>
                     </li>
-                    <li class="nav-item">
+                     <li class="nav-item">
                         <a class="nav-link" href="<?php echo $baseUrl; ?>home/tournois">
-                            Tournoi
+                            <i class="fas fa-trophy me-1"></i> Tournois
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<?php echo $baseUrl; ?>tournoi/create">
+                            <i class="fas fa-plus-circle me-1"></i> Demander un tournoi
                         </a>
                     </li>
                 </ul>
