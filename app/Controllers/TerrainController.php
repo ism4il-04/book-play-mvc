@@ -21,7 +21,24 @@ class TerrainController extends Controller{
         }
     }
 
+    /**
+     * Default index method - redirects based on user role
+     */
+    public function index() {
+        if (!isset($_SESSION['user'])) {
+            header('Location: ' . BASE_URL . 'auth/login');
+            exit;
+        }
 
+        $role = $_SESSION['user']['role'] ?? null;
+        
+        if ($role === 'gestionnaire') {
+            header('Location: ' . BASE_URL . 'terrain/gestionnaireTerrains');
+        } else {
+            header('Location: ' . BASE_URL . 'utilisateur/dashboard');
+        }
+        exit;
+    }
 
     public function gestionnaireTerrains() {
         // Check if user is logged in and is a manager
@@ -404,23 +421,13 @@ public function creneaux() {
         
         // Récupérer les créneaux disponibles
         $creneaux = array_values($terrainModel->getCreneauxDisponibles($terrainId, $date));
-        echo json_encode([
-            'success' => true,
-            'creneaux' => $creneaux,
-            'heure_ouverture' => '08:00',
-            'heure_fermeture' => '22:00'
-        ]);
         
         // Récupérer les options disponibles
-        $options = $this->options($terrainId);
-        
-        // Rediriger vers la page avec les données nécessaires
-        // Les données seront passées à la vue via les paramètres GET
-        $params = [
-            'terrain_id' => $terrainId,
-            'date' => $date,
-            'open_modal' => '1'
-        ];
+        $optionsResult = $this->getOptionsForReservation($terrainId);
+        $options = [];
+        if ($optionsResult && isset($optionsResult['options'])) {
+            $options = $optionsResult['options'];
+        }
         
         // Stocker les données dans la session pour les récupérer dans la vue
         $_SESSION['reservation_data'] = [
@@ -430,7 +437,53 @@ public function creneaux() {
         ];
         
         // Rediriger vers la page dashboard avec les paramètres
+        $params = [
+            'terrain_id' => $terrainId,
+            'date' => $date,
+            'open_modal' => '1'
+        ];
         header('Location: ' . BASE_URL . 'utilisateur/dashboard?' . http_build_query($params));
         exit;
+    }
+
+    /**
+     * Alias method for reserver() to match the view route
+     * @param int $terrainId ID du terrain à réserver
+     */
+    public function reserverTerrain($terrainId = null) {
+        $this->reserver($terrainId);
+    }
+
+    /**
+     * Get options for reservation (internal method)
+     */
+    private function getOptionsForReservation($terrainId) {
+        if (!$terrainId) {
+            return ['success' => false, 'options' => []];
+        }
+        
+        try {
+            $sql = "SELECT 
+                        o.id_option,
+                        o.nom_option,
+                        o.description,
+                        p.prix_option,
+                        p.disponible
+                    FROM options o
+                    INNER JOIN posseder p ON o.id_option = p.id_option
+                    WHERE p.id_terrain = :terrain_id
+                    AND (p.disponible = 1 OR p.disponible IS NULL)
+                    ORDER BY o.nom_option";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindValue(':terrain_id', $terrainId, PDO::PARAM_INT);
+            $stmt->execute();
+            $options = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            return ['success' => true, 'options' => $options];
+        } catch (PDOException $e) {
+            error_log("Erreur getOptionsForReservation: " . $e->getMessage());
+            return ['success' => false, 'options' => []];
+        }
     }
 }

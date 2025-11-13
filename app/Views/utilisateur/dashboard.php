@@ -560,9 +560,11 @@ $filters = $filters ?? [
                                     <div class="terrain-price">
                                         <?php echo htmlspecialchars($terrain['prix_heure']); ?> <small>MAD/heure</small>
                                     </div>
-                                    <a href="<?php echo $baseUrl; ?>terrain/reserverTerrain/<?php echo (int)($terrain['id_terrain'] ?? 0); ?>" class="btn-reserve">
+                                    <button type="button" 
+                                            class="btn-reserve" 
+                                            onclick="openReservationModal(<?php echo (int)($terrain['id_terrain'] ?? 0); ?>, '<?php echo htmlspecialchars($terrain['nom_terrain'] ?? '', ENT_QUOTES); ?>', <?php echo htmlspecialchars($terrain['prix_heure'] ?? 0); ?>)">
                                         Réserver
-                                    </a>
+                                    </button>
                                 </div>
                         </div>
                     </div>
@@ -574,6 +576,9 @@ $filters = $filters ?? [
             </div>
         <?php } ?>
     </main>
+
+    <!-- Include Reservation Modal -->
+    <?php require_once __DIR__ . '/../components/reserverTerrain_modal.php'; ?>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

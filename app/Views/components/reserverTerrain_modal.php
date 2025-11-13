@@ -50,19 +50,19 @@
             <label class="form-label reservation-modal-label">Informations du client</label>
             <div class="row g-3">
               <div class="col-md-6">
-                <input type="text" class="form-control reservation-modal-input" name="nom" 
-                       placeholder="Nom *" value="<?php echo htmlspecialchars($_SESSION['user']['nom'] ?? ''); ?>" required>
+                <input type="text" class="form-control reservation-modal-input" name="nom" id="client_nom"
+                       placeholder="Nom *" value="<?php echo htmlspecialchars($_SESSION['user']['nom'] ?? $_SESSION['user']['name'] ?? ''); ?>" required>
               </div>
               <div class="col-md-6">
-                <input type="text" class="form-control reservation-modal-input" name="prenom" 
+                <input type="text" class="form-control reservation-modal-input" name="prenom" id="client_prenom"
                        placeholder="Prénom *" value="<?php echo htmlspecialchars($_SESSION['user']['prenom'] ?? ''); ?>" required>
               </div>
               <div class="col-md-6">
-                <input type="email" class="form-control reservation-modal-input" name="email" 
+                <input type="email" class="form-control reservation-modal-input" name="email" id="client_email"
                        placeholder="Email *" value="<?php echo htmlspecialchars($_SESSION['user']['email'] ?? ''); ?>" required>
               </div>
               <div class="col-md-6">
-                <input type="tel" class="form-control reservation-modal-input" name="telephone" 
+                <input type="tel" class="form-control reservation-modal-input" name="telephone" id="client_telephone"
                        placeholder="Téléphone *" value="<?php echo htmlspecialchars($_SESSION['user']['num_tel'] ?? ''); ?>" required>
               </div>
             </div>
@@ -232,6 +232,12 @@ window.openReservationModal = function(terrainId, terrainNom, prixHeure) {
   // Remplir l'ID du terrain
   document.getElementById('modal_terrain_id').value = terrainId;
   
+  // Charger les informations client depuis la base de données
+  loadClientInfo();
+  
+  // Calculer le prix initial (même sans créneau)
+  calculateTotalPrice();
+  
   // Réinitialiser le formulaire
   resetForm();
 
@@ -249,6 +255,26 @@ window.openReservationModal = function(terrainId, terrainNom, prixHeure) {
   const modal = new bootstrap.Modal(document.getElementById('reservationModal'));
   modal.show();
 };
+
+/**
+ * Charger les informations client depuis la base de données
+ */
+function loadClientInfo() {
+  fetch('<?php echo BASE_URL; ?>utilisateur/getUserInfo')
+    .then(response => response.json())
+    .then(data => {
+      if (data.success && data.user) {
+        const user = data.user;
+        document.getElementById('client_nom').value = user.nom || user.name || '';
+        document.getElementById('client_prenom').value = user.prenom || '';
+        document.getElementById('client_email').value = user.email || '';
+        document.getElementById('client_telephone').value = user.num_tel || '';
+      }
+    })
+    .catch(error => {
+      console.error('Erreur chargement infos client:', error);
+    });
+}
 
 /**
  * Fonction alternative pour boutons avec data attributes
@@ -269,8 +295,8 @@ function resetForm() {
   document.getElementById('creneauxList').innerHTML = '<div class="alert alert-info">Veuillez sélectionner une date pour voir les créneaux disponibles</div>';
   document.getElementById('heuresInfo').style.display = 'none';
   document.getElementById('optionsSection').style.display = 'none';
-  document.getElementById('prixTotalSection').style.display = 'none';
   selectedCreneauData = null;
+  // Ne pas cacher le prix - il sera recalculé par calculateTotalPrice()
 }
 
 /**
@@ -421,7 +447,7 @@ function selectCreneau(element, creneauData) {
 function calculateTotalPrice() {
   let total = 0;
   
-  // Prix du créneau
+  // Prix du créneau (terrain base price)
   if (selectedCreneauData) {
     const debut = new Date('2000-01-01 ' + selectedCreneauData.heure_ouverture);
     const fin = new Date('2000-01-01 ' + selectedCreneauData.heure_fermeture);
@@ -429,6 +455,10 @@ function calculateTotalPrice() {
     
     total += currentPrixHeure * diffHeures;
     console.log('Prix créneau:', currentPrixHeure, 'x', diffHeures, '=', currentPrixHeure * diffHeures);
+  } else if (currentPrixHeure > 0) {
+    // Afficher le prix de base même sans créneau sélectionné (pour 1 heure par défaut)
+    total = currentPrixHeure;
+    console.log('Prix de base (1h):', currentPrixHeure);
   }
   
   // Prix des options
@@ -448,6 +478,9 @@ function calculateTotalPrice() {
   if (total > 0) {
     prixSection.style.display = 'block';
     prixDisplay.textContent = total.toFixed(2) + ' MAD';
+    if (!selectedCreneauData) {
+      prixDisplay.textContent += ' (estimation pour 1 heure)';
+    }
   } else {
     prixSection.style.display = 'none';
   }

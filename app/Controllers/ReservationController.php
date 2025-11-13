@@ -35,8 +35,20 @@ public function create() {
 
     $userId = (int)($_SESSION['user']['id'] ?? 0);
     
-    // Vérifier si l'utilisateur existe dans la table client
-    // Si non, créer l'entrée client ou utiliser une autre logique
+    // Vérifier et créer l'entrée client si elle n'existe pas
+    try {
+        $checkClient = $this->db->prepare("SELECT id FROM client WHERE id = ?");
+        $checkClient->execute([$userId]);
+        if (!$checkClient->fetch()) {
+            // Créer l'entrée client
+            $insertClient = $this->db->prepare("INSERT INTO client (id) VALUES (?)");
+            $insertClient->execute([$userId]);
+            error_log("Entrée client créée pour l'utilisateur ID: $userId");
+        }
+    } catch (PDOException $e) {
+        error_log("Erreur lors de la vérification/création du client: " . $e->getMessage());
+    }
+    
     error_log("User ID de la session: " . $userId);
     $terrainId = (int)($_POST['terrain_id'] ?? 0);
     $dateReservation = trim($_POST['date_reservation'] ?? '');
@@ -70,6 +82,7 @@ public function create() {
     ];
 
     error_log("Données envoyées à createReservation: " . print_r($data, true));
+    error_log("Options reçues: " . print_r($options, true));
 
     $reservationModel = new Reservation();
     $ok = $reservationModel->createReservation($data);
@@ -79,7 +92,7 @@ public function create() {
     if ($ok) {
         $_SESSION['success'] = "Réservation créée avec succès!";
     } else {
-        $_SESSION['error'] = "Erreur lors de la création de la réservation";
+        $_SESSION['error'] = "Erreur lors de la création de la réservation. Le créneau peut être déjà réservé.";
         error_log("Échec de la création de la réservation: " . print_r($data, true));
     }
 
@@ -331,32 +344,26 @@ public function details() {
             require_once __DIR__ . '/../Core/Database.php';
             $db = \Database::getInstance()->getConnection();
             
-            // Vérifier si la table options existe et contient des données
-            $checkOptionsSql = "SHOW TABLES LIKE 'options'";
-            $checkOptionsStmt = $db->prepare($checkOptionsSql);
-            $checkOptionsStmt->execute();
-            
-            if ($checkOptionsStmt->rowCount() === 0) {
-                error_log("La table 'options' n'existe pas");
-                return $this->getHardcodedOptions();
+            // Requête directe pour vérifier les options de la réservation
+            // Vérifier si la table a une colonne commentaire
+            try {
+                $checkColumn = $db->query("SHOW COLUMNS FROM reservation_option LIKE 'commentaire'");
+                $hasCommentaire = $checkColumn->rowCount() > 0;
+            } catch (\PDOException $e) {
+                $hasCommentaire = false;
             }
             
-            // Vérifier si la table contient des données
-            $countOptionsSql = "SELECT COUNT(*) FROM options";
-            $countOptionsStmt = $db->prepare($countOptionsSql);
-            $countOptionsStmt->execute();
-            $optionsCount = $countOptionsStmt->fetchColumn();
-            
-            if ($optionsCount === 0) {
-                error_log("La table 'options' est vide");
-                return $this->getHardcodedOptions();
+            if ($hasCommentaire) {
+                $sql = "SELECT ro.id_reservation, ro.id_option, ro.commentaire, o.nom_option, o.prix_option 
+                        FROM reservation_option ro
+                        JOIN options o ON ro.id_option = o.id_option
+                        WHERE ro.id_reservation = :id_reservation";
+            } else {
+                $sql = "SELECT ro.id_reservation, ro.id_option, '' as commentaire, o.nom_option, o.prix_option 
+                        FROM reservation_option ro
+                        JOIN options o ON ro.id_option = o.id_option
+                        WHERE ro.id_reservation = :id_reservation";
             }
-            
-            // Requête directe pour vérifier les options
-            $sql = "SELECT ro.*, o.nom_option, o.prix_option 
-                    FROM reservation_option ro
-                    JOIN options o ON ro.id_option = o.id_option
-                    WHERE ro.id_reservation = :id_reservation";
             
             $stmt = $db->prepare($sql);
             $stmt->bindValue(':id_reservation', $reservationId, \PDO::PARAM_INT);
@@ -365,48 +372,15 @@ public function details() {
             $options = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             error_log("Options directement depuis la BD pour ID $reservationId: " . print_r($options, true));
             
-            if (empty($options)) {
-                // Vérifier si la réservation existe
-                $checkSql = "SELECT id_reservation FROM reservation WHERE id_reservation = :id";
-                $checkStmt = $db->prepare($checkSql);
-                $checkStmt->bindValue(':id', $reservationId, \PDO::PARAM_INT);
-                $checkStmt->execute();
-                
-                if ($checkStmt->rowCount() > 0) {
-                    error_log("La réservation $reservationId existe mais n'a pas d'options");
-                    // Utiliser des options hardcodées pour cette réservation
-                    return $this->getHardcodedOptions();
-                } else {
-                    error_log("La réservation $reservationId n'existe pas");
-                    return $this->getHardcodedOptions();
-                }
-            }
-            
-            return $options;
+            // Retourner un tableau vide si aucune option n'est trouvée (pas d'options hardcodées)
+            return $options ?: [];
         } catch (\Exception $e) {
             error_log("Erreur dans getReservationOptions: " . $e->getMessage());
-            return $this->getHardcodedOptions();
+            // Retourner un tableau vide en cas d'erreur
+            return [];
         }
     }
     
-    /**
-     * Retourne des options hardcodées pour les réservations sans options
-     */
-    private function getHardcodedOptions() {
-        error_log("Utilisation d'options hardcodées");
-        return [
-            [
-                'id_option' => 1,
-                'nom_option' => 'Douche',
-                'prix_option' => 20.00
-            ],
-            [
-                'id_option' => 2,
-                'nom_option' => 'Bouteille d\'eau',
-                'prix_option' => 10.00
-            ]
-        ];
-    }
 
     // GET/POST /reservation/edit?id=...
     public function edit() {
@@ -649,8 +623,18 @@ public function details() {
             if (ob_get_length()) ob_clean();
             
             header('Content-Type: application/json');
-            $html = $this->generateEditFormHTML($reservation);
-            echo json_encode(['success' => true, 'html' => $html]);
+            try {
+                $html = $this->generateEditFormHTML($reservation);
+                echo json_encode(['success' => true, 'html' => $html]);
+            } catch (\Exception $e) {
+                error_log("Erreur lors de la génération du formulaire d'édition: " . $e->getMessage());
+                error_log("Stack trace: " . $e->getTraceAsString());
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'Erreur lors du chargement du formulaire: ' . $e->getMessage(),
+                    'html' => '<div class="alert alert-danger">Erreur lors du chargement du formulaire. Veuillez réessayer.</div>'
+                ]);
+            }
             exit;
         }
         
@@ -665,21 +649,77 @@ public function details() {
      * Génère le HTML pour le formulaire de modification
      */
     private function generateEditFormHTML($reservation) {
+        // Initialiser les variables
+        $optionsData = [];
+        $allOptions = [];
+        $optionsHTML = '';
+        
+        error_log("generateEditFormHTML - Données réservation: " . print_r($reservation, true));
+        
         try {
-            // Récupérer les options de la réservation
-            $optionsData = $this->getReservationOptions($reservation['id_reservation']);
+            // Récupérer les options de la réservation (celles déjà sélectionnées)
+            // Handle both 'id_reservation' and 'id' keys
+            $reservationIdForOptions = $reservation['id_reservation'] ?? $reservation['id'] ?? 0;
+            error_log("Reservation ID pour options: $reservationIdForOptions");
             
-            // Utiliser des options hardcodées pour éviter les erreurs
-            $allOptions = [
-                ['id_option' => 1, 'nom_option' => 'Arbitre', 'description' => 'Inclut un arbitre professionnel', 'prix_option' => 20.00],
-                ['id_option' => 2, 'nom_option' => 'Ballon', 'description' => 'Inclut un ballon', 'prix_option' => 20.00],
-                ['id_option' => 3, 'nom_option' => 'Douches', 'description' => 'Accès aux douches', 'prix_option' => 20.00]
-            ];
+            if ($reservationIdForOptions > 0) {
+                $optionsData = $this->getReservationOptions($reservationIdForOptions);
+                error_log("Options de la réservation récupérées: " . count($optionsData));
+            } else {
+                error_log("ATTENTION: Reservation ID invalide pour récupérer les options");
+                $optionsData = [];
+            }
+            
+            // Récupérer toutes les options disponibles pour ce terrain
+            require_once __DIR__ . '/../Core/Database.php';
+            $db = \Database::getInstance()->getConnection();
+            
+            $terrainId = (int)($reservation['id_terrain'] ?? 0);
+            error_log("Terrain ID: $terrainId");
+            
+            if ($terrainId > 0) {
+                try {
+                    // Vérifier d'abord si le terrain existe
+                    $checkTerrain = $db->prepare("SELECT id_terrain FROM terrain WHERE id_terrain = ?");
+                    $checkTerrain->execute([$terrainId]);
+                    if (!$checkTerrain->fetch()) {
+                        error_log("Terrain $terrainId n'existe pas");
+                        $allOptions = [];
+                    } else {
+                        $sql = "SELECT 
+                                    o.id_option,
+                                    o.nom_option,
+                                    o.description,
+                                    COALESCE(p.prix_option, o.prix_option, 0) as prix_option,
+                                    p.disponible
+                                FROM options o
+                                INNER JOIN posseder p ON o.id_option = p.id_option
+                                WHERE p.id_terrain = :terrain_id
+                                AND (p.disponible = 1 OR p.disponible IS NULL)
+                                ORDER BY o.nom_option";
+                        
+                        $stmt = $db->prepare($sql);
+                        $stmt->bindValue(':terrain_id', $terrainId, PDO::PARAM_INT);
+                        $stmt->execute();
+                        $allOptions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                        error_log("Options disponibles pour terrain $terrainId: " . count($allOptions));
+                    }
+                } catch (PDOException $e) {
+                    error_log("Erreur lors de la récupération des options du terrain $terrainId: " . $e->getMessage());
+                    error_log("Stack trace: " . $e->getTraceAsString());
+                    $allOptions = [];
+                }
+            } else {
+                error_log("Terrain ID invalide ou manquant dans la réservation. Clés disponibles: " . implode(', ', array_keys($reservation)));
+                $allOptions = [];
+            }
             
             // Créer un tableau des IDs d'options sélectionnées
             $selectedOptionIds = [];
-            foreach ($optionsData as $option) {
-                $selectedOptionIds[] = $option['id_option'];
+            if (is_array($optionsData)) {
+                foreach ($optionsData as $option) {
+                    $selectedOptionIds[] = (int)($option['id_option'] ?? 0);
+                }
             }
             
             // Générer le HTML pour les options
@@ -687,44 +727,128 @@ public function details() {
                 <label class="form-label reservation-modal-label">Options supplémentaires</label>
                 <div id="optionsList" class="options-list-reservation">';
             
-            foreach ($allOptions as $option) {
-                $isChecked = in_array($option['id_option'], $selectedOptionIds) ? 'checked' : '';
-                $commentValue = '';
-                
-                // Rechercher le commentaire pour cette option si elle est sélectionnée
-                foreach ($optionsData as $selectedOption) {
-                    if ($selectedOption['id_option'] == $option['id_option'] && isset($selectedOption['commentaire'])) {
-                        $commentValue = htmlspecialchars($selectedOption['commentaire']);
-                        break;
+            if (empty($allOptions)) {
+                $optionsHTML .= '<div class="alert alert-info">Aucune option disponible pour ce terrain</div>';
+            } else {
+                foreach ($allOptions as $option) {
+                    $optionId = (int)($option['id_option'] ?? 0);
+                    $isChecked = in_array($optionId, $selectedOptionIds) ? 'checked' : '';
+                    $commentValue = '';
+                    
+                    // Rechercher le commentaire pour cette option si elle est sélectionnée
+                    if (is_array($optionsData)) {
+                        foreach ($optionsData as $selectedOption) {
+                            if ((int)($selectedOption['id_option'] ?? 0) == $optionId && isset($selectedOption['commentaire'])) {
+                                $commentValue = htmlspecialchars($selectedOption['commentaire']);
+                                break;
+                            }
+                        }
                     }
+                    
+                    $optionsHTML .= '<div class="option-item-reservation">
+                        <div class="option-header">
+                            <input type="checkbox" 
+                                   id="opt_' . $optionId . '" 
+                                   name="options[]" 
+                                   value="' . $optionId . '" 
+                                   data-price="' . ($option['prix_option'] ?? 0) . '" 
+                                   onchange="calculateTotalPrice()" 
+                                   ' . $isChecked . '>
+                            <label for="opt_' . $optionId . '">' . htmlspecialchars($option['nom_option'] ?? '') . '</label>
+                            <span class="option-price">+' . number_format((float)($option['prix_option'] ?? 0), 2) . ' MAD</span>
+                        </div>';
+                    
+                    if (!empty($option['description'])) {
+                        $optionsHTML .= '<div class="option-description">' . htmlspecialchars($option['description']) . '</div>';
+                    }
+                    
+                    $optionsHTML .= '</div>';
                 }
-                
-                $displayStyle = $isChecked ? 'block' : 'none';
-                
-                $optionsHTML .= '<div class="option-item-reservation">
-                    <div class="option-header">
-                        <input type="checkbox" 
-                               id="opt_' . $option['id_option'] . '" 
-                               name="options[]" 
-                               value="' . $option['id_option'] . '" 
-                               data-price="' . $option['prix_option'] . '" 
-                               onchange="calculateTotalPrice()" 
-                               ' . $isChecked . '>
-                        <label for="opt_' . $option['id_option'] . '">' . htmlspecialchars($option['nom_option']) . '</label>
-                        <span class="option-price">+' . number_format((float)$option['prix_option'], 2) . ' MAD</span>
-                    </div>
-                    <div class="option-description">Inclut ' . htmlspecialchars($option['nom_option']) . '</div>
-                </div>';
             }
             
             $optionsHTML .= '</div></div>';
         } catch (\Exception $e) {
             error_log("Erreur dans generateEditFormHTML: " . $e->getMessage());
-            $optionsHTML = '<div class="alert alert-warning">Impossible de charger les options</div>';
+            error_log("Stack trace: " . $e->getTraceAsString());
+            error_log("Données réservation au moment de l'erreur: " . print_r($reservation, true));
+            
+            // En cas d'erreur, essayer de récupérer les options de manière plus simple
+            try {
+                $terrainId = (int)($reservation['id_terrain'] ?? 0);
+                if ($terrainId > 0) {
+                    require_once __DIR__ . '/../Core/Database.php';
+                    $db = \Database::getInstance()->getConnection();
+                    
+                    // Requête simplifiée sans JOIN complexe
+                    $sql = "SELECT o.id_option, o.nom_option, o.description, o.prix_option, 1 as disponible
+                            FROM options o
+                            INNER JOIN posseder p ON o.id_option = p.id_option
+                            WHERE p.id_terrain = ?";
+                    $stmt = $db->prepare($sql);
+                    $stmt->execute([$terrainId]);
+                    $allOptions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    
+                    if (!empty($allOptions)) {
+                        // Si on a réussi à récupérer les options, continuer normalement
+                        $optionsHTML = '<div class="mb-4">
+                            <label class="form-label reservation-modal-label">Options supplémentaires</label>
+                            <div id="optionsList" class="options-list-reservation">';
+                        
+                        $selectedOptionIds = [];
+                        if (is_array($optionsData)) {
+                            foreach ($optionsData as $opt) {
+                                $selectedOptionIds[] = (int)($opt['id_option'] ?? 0);
+                            }
+                        }
+                        
+                        foreach ($allOptions as $option) {
+                            $optionId = (int)($option['id_option'] ?? 0);
+                            $isChecked = in_array($optionId, $selectedOptionIds) ? 'checked' : '';
+                            $optionsHTML .= '<div class="option-item-reservation">
+                                <div class="option-header">
+                                    <input type="checkbox" 
+                                           id="opt_' . $optionId . '" 
+                                           name="options[]" 
+                                           value="' . $optionId . '" 
+                                           data-price="' . ($option['prix_option'] ?? 0) . '" 
+                                           onchange="calculateTotalPrice()" 
+                                           ' . $isChecked . '>
+                                    <label for="opt_' . $optionId . '">' . htmlspecialchars($option['nom_option'] ?? '') . '</label>
+                                    <span class="option-price">+' . number_format((float)($option['prix_option'] ?? 0), 2) . ' MAD</span>
+                                </div>';
+                            if (!empty($option['description'])) {
+                                $optionsHTML .= '<div class="option-description">' . htmlspecialchars($option['description']) . '</div>';
+                            }
+                            $optionsHTML .= '</div>';
+                        }
+                        
+                        $optionsHTML .= '</div></div>';
+                    } else {
+                        $optionsHTML = '<div class="mb-4">
+                            <label class="form-label reservation-modal-label">Options supplémentaires</label>
+                            <div id="optionsList" class="options-list-reservation">
+                                <div class="alert alert-info">Aucune option disponible pour ce terrain</div>
+                            </div>
+                        </div>';
+                    }
+                } else {
+                    throw new \Exception("Terrain ID manquant");
+                }
+            } catch (\Exception $e2) {
+                error_log("Erreur dans le fallback: " . $e2->getMessage());
+                // En cas d'erreur, afficher un message mais continuer avec un tableau vide
+                $optionsHTML = '<div class="mb-4">
+                    <label class="form-label reservation-modal-label">Options supplémentaires</label>
+                    <div id="optionsList" class="options-list-reservation">
+                        <div class="alert alert-info">Aucune option disponible pour ce terrain</div>
+                    </div>
+                </div>';
+                $optionsData = [];
+            }
         }
         
         // Calculer le prix total
-        $prixTotal = (float)$reservation['prix_heure'];
+        $prixTotal = (float)($reservation['prix_heure'] ?? 0);
         
         // Déterminer les valeurs initiales d'heure début/fin
         $heureDebutVal = $reservation['heure_debut'] ?? '';
@@ -736,22 +860,25 @@ public function details() {
                 $heureFinVal = trim($parts[1]);
             }
         }
-        if (isset($optionsData) && is_array($optionsData)) {
+        
+        // Ajouter le prix des options sélectionnées
+        if (is_array($optionsData) && !empty($optionsData)) {
             foreach ($optionsData as $option) {
                 $prixTotal += (float)($option['prix_option'] ?? 0);
             }
         }
         
         // Générer le HTML du formulaire de modification
-        $actionUrl = BASE_URL . 'reservation/edit?id=' . $reservation['id_reservation'];
+        $reservationId = $reservation['id_reservation'] ?? $reservation['id'] ?? 0;
+        $actionUrl = BASE_URL . 'reservation/edit?id=' . $reservationId;
         $html = '<form id="editReservationForm" method="POST" action="' . $actionUrl . '">
-            <input type="hidden" name="terrain_id" id="terrain_id" value="' . $reservation['id_terrain'] . '">
-            <input type="hidden" name="prix_heure" id="prix_heure" value="' . $reservation['prix_heure'] . '">
+            <input type="hidden" name="terrain_id" id="terrain_id" value="' . htmlspecialchars($reservation['id_terrain'] ?? 0) . '">
+            <input type="hidden" name="prix_heure" id="prix_heure" value="' . htmlspecialchars($reservation['prix_heure'] ?? 0) . '">
             
             <!-- Date de réservation -->
             <div class="mb-4">
                 <label class="form-label reservation-modal-label">Date de réservation *</label>
-                <input type="date" class="form-control reservation-modal-input" name="date_reservation" id="date_reservation" value="' . $reservation['date_reservation'] . '" required>
+                <input type="date" class="form-control reservation-modal-input" name="date_reservation" id="date_reservation" value="' . htmlspecialchars($reservation['date_reservation'] ?? '') . '" required>
             </div>
             
             <!-- Créneaux disponibles -->
