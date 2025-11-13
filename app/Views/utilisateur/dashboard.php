@@ -423,6 +423,11 @@ $filters = $filters ?? [
                             Tournoi
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<?php echo $baseUrl; ?>tournoi/create">
+                            <i class="fas fa-plus-circle me-1"></i> Demander un tournoi
+                        </a>
+                    </li>
                 </ul>
                 
                 <ul class="navbar-nav ms-auto align-items-center">
@@ -486,6 +491,42 @@ $filters = $filters ?? [
 
     <!-- Main Content -->
     <main class="main-content">
+        <!-- Welcome Section -->
+        <div class="welcome-card">
+            <h1>Bonjour, <?php echo htmlspecialchars($currentUser['name'] ?? 'Utilisateur'); ?> </h1>
+            <p>Bienvenue sur votre tableau de bord. Gérez facilement vos réservations et restez informé de vos activités.</p>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <a href="<?php echo $baseUrl; ?>home/terrains" class="btn">
+                    <i class="fas fa-plus me-2"></i>Nouvelle réservation
+                </a>
+                <a href="<?php echo $baseUrl; ?>tournoi/create" class="btn" style="background: rgba(255,255,255,0.2); border: 2px solid white;">
+                    <i class="fas fa-trophy me-2"></i>Demander un tournoi
+                </a>
+            </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <i class="fas fa-calendar-check"></i>
+                <h3><?php echo (int)$stats['totalReservations']; ?></h3>
+                <p>Réservations totales</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-clock"></i>
+                <h3><?php echo (int)$stats['upcomingReservations']; ?></h3>
+                <p>Réservations à venir</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-hourglass-half"></i>
+                <h3><?php echo (int)$stats['hoursBooked']; ?>h</h3>
+                <p>Heures réservées</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-wallet"></i>
+                <h3><?php echo number_format((float)$stats['amountSpent'], 0, ',', ' '); ?> <small>MAD</small></h3>
+                <p>Total dépensé</p>
+            </div>
         <h2 class="page-title">Terrains disponibles</h2>
 
         <!-- Search Section -->
@@ -570,11 +611,44 @@ $filters = $filters ?? [
                                 </div>
                         </div>
                     </div>
-                <?php } ?>
-            </div>
-        <?php } else { ?>
-            <div class="alert alert-info">
-                Aucun terrain disponible pour le moment.
+                <?php endforeach; ?>
+                
+                <?php if (count($upcoming) > 3): ?>
+                    <div class="text-center mt-3">
+                        <a href="<?php echo $baseUrl; ?>tournois" class="btn btn-link">
+                            Voir tous les tournois <i class="fas fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                <?php endif; ?>
+                
+            <?php else: ?>
+                <div class="text-center py-4">
+                    <i class="fas fa-trophy fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Aucun tournoi prévu pour le moment</p>
+                    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                        <a href="<?php echo $baseUrl; ?>tournoi/create" class="btn btn-primary">
+                            <i class="fas fa-plus-circle me-2"></i>Demander un tournoi
+                        </a>
+                        <a href="<?php echo $baseUrl; ?>tournois" class="btn btn-outline-primary">
+                            <i class="fas fa-calendar-plus me-2"></i>Voir le calendrier
+                        </a>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Support Section -->
+        <div class="activities-card mt-4">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h3 class="mb-2">Besoin d'aide ?</h3>
+                    <p class="text-muted mb-3 mb-md-0">Notre équipe de support est disponible 24/7 pour répondre à vos questions.</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="<?php echo $baseUrl; ?>contact" class="btn btn-primary">
+                        <i class="fas fa-headset me-2"></i>Contacter le support
+                    </a>
+                </div>
             </div>
         <?php } ?>
     </main>

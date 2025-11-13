@@ -202,9 +202,9 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
                 <i class="fas fa-calendar-check"></i>
                 <span>Demandes de Réservation</span>
             </a>
-            <a href="<?php echo $baseUrl; ?>tournois" class="nav-item">
+            <a href="<?php echo $baseUrl; ?>tournoi" class="nav-item">
                 <i class="fas fa-trophy"></i>
-                <span>Gestion des Tournois</span>
+                <span>Tournois & Demandes</span>
             </a>
         </nav>
 
@@ -320,6 +320,56 @@ $stats = $dashboardModel->getManagerStats($currentUser['id']);
                     </div>
                 </div>
             </div>
+
+            <!-- Demandes de Tournois Récentes -->
+            <?php
+            // Récupérer les demandes de tournois récentes
+            require_once __DIR__ . '/../../Controllers/TournoiController.php';
+            require_once __DIR__ . '/../../Core/Database.php';
+            try {
+                $db = Database::getInstance()->getConnection();
+                $sql = "SELECT t.*, u.prenom AS client_prenom, u.nom AS client_nom
+                        FROM tournoi t
+                        INNER JOIN demande d ON t.id_tournoi = d.id_tournoi
+                        INNER JOIN utilisateur u ON d.id_client = u.id
+                        WHERE t.id_gestionnaire = ?
+                        ORDER BY t.date_debut DESC
+                        LIMIT 3";
+                $stmt = $db->prepare($sql);
+                $stmt->execute([$currentUser['id']]);
+                $demandesTournois = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (Exception $e) {
+                $demandesTournois = [];
+            }
+            ?>
+            
+            <?php if (!empty($demandesTournois)): ?>
+            <div class="content-section" style="margin-bottom: 30px;">
+                <div class="section-header">
+                    <h2><i class="fas fa-trophy"></i> Demandes de Tournois Récentes</h2>
+                    <a href="<?php echo $baseUrl; ?>tournoi?section=demandes" class="btn btn-primary" style="text-decoration: none; padding: 10px 20px; background: #064420; color: white; border-radius: 8px;">
+                        Voir les demandes
+                    </a>
+                </div>
+                <div class="activities-list">
+                    <?php foreach ($demandesTournois as $demande): ?>
+                        <div class="activity-item">
+                            <div class="activity-content">
+                                <h4><?= htmlspecialchars($demande['nom_tournoi']) ?></h4>
+                                <p><i class="fas fa-user"></i> Client: <?= htmlspecialchars($demande['client_prenom'] . ' ' . $demande['client_nom']) ?></p>
+                                <div class="terrain-info-row">
+                                    <span><i class="fas fa-calendar-alt"></i> <?= date('d/m/Y', strtotime($demande['date_debut'])) ?></span>
+                                    <span><i class="fas fa-users"></i> <?= htmlspecialchars($demande['nb_equipes']) ?> équipes</span>
+                                </div>
+                            </div>
+                            <span class="status-badge" style="background-color: <?= $demande['status'] === 'en attente' ? '#ffc107' : ($demande['status'] === 'accepté' ? '#28a745' : '#dc3545') ?>">
+                                <?= htmlspecialchars($demande['status']) ?>
+                            </span>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <!-- Recent Activities -->
             <div class="content-section">

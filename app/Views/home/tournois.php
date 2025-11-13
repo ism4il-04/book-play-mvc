@@ -10,7 +10,7 @@ $baseUrl = BASE_URL;
     <title>Tournois - Book&Play</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/home.css">
+    <link rel="stylesheet" href="<?= $baseUrl ?>css/home.css">
     <style>
     .tournois-page {
         background: #195156; min-height: 100vh; padding-bottom: 4vh;
@@ -111,29 +111,29 @@ $baseUrl = BASE_URL;
         </tr>
       </thead>
       <tbody>
-        <?php foreach ($tournois as $t) { ?>
+        <?php foreach ($tournois as $t): ?>
         <tr>
-          <td><?php echo htmlspecialchars($t['nom_tournoi']); ?></td>
-          <td><?php echo htmlspecialchars($t['date_debut']); ?><?php echo ($t['date_fin']) ? ' - ' . htmlspecialchars($t['date_fin']) : ''; ?></td>
+          <td><?= htmlspecialchars($t['nom_tournoi']) ?></td>
+          <td><?= htmlspecialchars($t['date_debut']) ?><?= ($t['date_fin']) ? ' - '.htmlspecialchars($t['date_fin']) : '' ?></td>
           <td>
-            <?php echo htmlspecialchars($t['terrain'] ?? $t['localisation'] ?? '—'); ?>
+            <?= htmlspecialchars($t['terrain'] ?? $t['localisation'] ?? '—') ?>
           </td>
-          <td><?php echo htmlspecialchars($t['nb_equipes'] ?? '-'); ?></td>
+          <td><?= htmlspecialchars($t['nb_equipes'] ?? '-') ?></td>
           <td>
-            <?php if (isset($t['status']) && 'accepté' === strtolower($t['status'])) { ?>
+            <?php if (isset($t['status']) && strtolower($t['status']) === 'accepté'): ?>
               <span class="badge-vert">Ouvert</span>
-            <?php } elseif (isset($t['status']) && 'complet' === strtolower($t['status'])) { ?>
+            <?php elseif (isset($t['status']) && strtolower($t['status']) === 'complet'): ?>
               <span class="badge-orange">Complet</span>
-            <?php } else { ?>
+            <?php else: ?>
               <span class="badge-vert">Ouvert</span>
-            <?php } ?>
+            <?php endif; ?>
           </td>
           <td class="text-end pe-3">
             <a class="btn-action" href="#"><i class="bi bi-eye"></i> Détails</a>
             <a class="btn-inscrire" href="#">S'inscrire</a>
           </td>
         </tr>
-        <?php } ?>
+        <?php endforeach; ?>
       </tbody>
     </table>
   </div>

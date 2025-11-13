@@ -111,7 +111,7 @@
                                             <td><?php echo htmlspecialchars($g['num_tel'] ?? ''); ?></td>
                                             <td>
                                                 <?php
-                                                $statut = strtolower(trim($g['status'] ?? ''));
+                                                $statut = strtolower(trim($g['statut_gestionnaire'] ?? ''));
                                                 
                                                 // Déterminer le badge selon le statut
                                                 switch ($statut) {

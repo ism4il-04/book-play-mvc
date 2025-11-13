@@ -297,85 +297,19 @@ if ($user) {
 </head>
 <body>
     <!-- Sidebar Navigation -->
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <img src="<?php echo $baseUrl; ?>images/logo.png" alt="Logo" class="logo">
-            <button class="sidebar-toggle" id="sidebarToggle">
-                <i class="fas fa-bars"></i>
-            </button>
-        </div>
-
-        <nav class="sidebar-nav">
-            <a href="<?php echo $baseUrl; ?>dashboard/gestionnaire" class="nav-item">
-                <i class="fas fa-home"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="<?php echo $baseUrl; ?>terrain/gestionnaireTerrains" class="nav-item">
-                <i class="fas fa-map-marked-alt"></i>
-                <span>Gestion des Terrains</span>
-            </a>
-            <a href="<?php echo $baseUrl; ?>facture" class="nav-item active">
-                <i class="fas fa-file-invoice-dollar"></i>
-                <span>Gestion des Factures</span>
-            </a>
-            <a href="<?php echo $baseUrl; ?>reservations" class="nav-item">
-                <i class="fas fa-calendar-check"></i>
-                <span>Demandes de Réservation</span>
-            </a>
-            <a href="<?php echo $baseUrl; ?>tournois" class="nav-item">
-                <i class="fas fa-trophy"></i>
-                <span>Gestion des Tournois</span>
-            </a>
-        </nav>
-
-        <div class="sidebar-footer">
-            <div class="user-info">
-                <div class="user-avatar">
-                    <?php echo strtoupper(substr($userName, 0, 1)); ?>
-                </div>
-                <div class="user-details">
-                    <span class="user-name"><?php echo htmlspecialchars($userName); ?></span>
-                    <span class="user-role">Gestionnaire</span>
-                </div>
-            </div>
-        </div>
-    </aside>
+    <?php
+    $activeItem = 'factures';
+    include __DIR__ . '/../components/nav_gestionnaire.php';
+    ?>
 
     <!-- Main Content -->
     <main class="main-content">
         <!-- Top Navbar -->
-        <header class="top-navbar">
-            <div class="navbar-left">
-                <h1>Gestion des Factures</h1>
-                <p class="subtitle">Générez et consultez les factures de vos réservations</p>
-            </div>
-            <div class="navbar-right">
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Rechercher...">
-                </div>
-                <div class="notifications">
-                    <button class="notification-btn">
-                        <i class="fas fa-bell"></i>
-                        <span class="badge">0</span>
-                    </button>
-                </div>
-                <div class="user-menu">
-                    <button class="user-menu-btn">
-                        <div class="user-avatar-small">
-                            <?php echo strtoupper(substr($userName, 0, 1)); ?>
-                        </div>
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <div class="dropdown-menu">
-                        <a href="<?php echo $baseUrl; ?>profile"><i class="fas fa-user"></i> Mon Profil</a>
-                        <a href="<?php echo $baseUrl; ?>settings"><i class="fas fa-cog"></i> Paramètres</a>
-                        <hr>
-                        <a href="<?php echo $baseUrl; ?>logout" class="logout"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
-                    </div>
-                </div>
-            </div>
-        </header>
+        <?php
+        $title = 'Gestion des Factures';
+        $subtitle = 'Générez et consultez les factures de vos réservations';
+        include __DIR__ . '/../components/top_navbar_gestionnaire.php';
+        ?>
 
         <!-- Dashboard Content -->
         <div class="dashboard-container">
@@ -546,8 +480,8 @@ if ($user) {
                                 <div>
                                     <?php if ($reservation['num_facture']): ?>
                                         <!-- Facture existe déjà -->
-                                        <a href="<?= BASE_URL ?>facture/showFacture/<?= $reservation['num_facture'] ?>"
-                                           class="btn btn-view">
+                                        <a href="<?= BASE_URL ?>facture/download/<?= $reservation['num_facture'] ?>"
+                                           class="btn btn-view" target="_blank">
                                             <i class="fas fa-eye"></i> Voir Facture #<?= $reservation['num_facture'] ?>
                                         </a>
                                     <?php elseif ($reservation['status'] === 'accepté'): ?>
@@ -600,8 +534,72 @@ if ($user) {
 <script>
     function generateFacture(reservationId) {
         if (confirm('Êtes-vous sûr de vouloir générer une facture pour cette réservation ?')) {
-            window.location.href = '<?= BASE_URL ?>facture/generate/' + reservationId;
+            // Désactiver le bouton pendant la génération
+            const button = document.querySelector(`button[onclick="generateFacture(${reservationId})"]`);
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Génération...';
+            button.disabled = true;
+
+            // Faire la requête AJAX
+            fetch('<?= BASE_URL ?>facture/generate/' + reservationId, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Mettre à jour le bouton pour devenir "Voir Facture"
+                    const container = button.parentElement;
+                    container.innerHTML = `
+                        <a href="${data.download_url}"
+                           class="btn btn-view" target="_blank">
+                            <i class="fas fa-eye"></i> Voir Facture #${data.num_facture}
+                        </a>
+                    `;
+
+                    // Ouvrir le PDF dans un nouvel onglet
+                    window.open(data.download_url, '_blank');
+
+                    // Afficher un message de succès
+                    showMessage('Facture générée avec succès!', 'success');
+                } else {
+                    showMessage(data.message || 'Erreur lors de la génération de la facture', 'error');
+                    // Réactiver le bouton
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                showMessage('Erreur lors de la génération de la facture', 'error');
+                // Réactiver le bouton
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
         }
+    }
+
+    function showMessage(message, type) {
+        // Créer un élément de message temporaire
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
+        messageDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+        messageDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        document.body.appendChild(messageDiv);
+
+        // Auto-supprimer après 5 secondes
+        setTimeout(() => {
+            if (messageDiv.parentElement) {
+                messageDiv.remove();
+            }
+        }, 5000);
     }
 
     // Auto-submit form on filter change (optionnel)
