@@ -690,7 +690,7 @@ public function details() {
                                     o.id_option,
                                     o.nom_option,
                                     o.description,
-                                    COALESCE(p.prix_option, o.prix_option, 0) as prix_option,
+                                    p.prix_option,
                                     p.disponible
                                 FROM options o
                                 INNER JOIN posseder p ON o.id_option = p.id_option
@@ -780,10 +780,11 @@ public function details() {
                     $db = \Database::getInstance()->getConnection();
                     
                     // Requête simplifiée sans JOIN complexe
-                    $sql = "SELECT o.id_option, o.nom_option, o.description, o.prix_option, 1 as disponible
+                    $sql = "SELECT o.id_option, o.nom_option, o.description, p.prix_option, p.disponible
                             FROM options o
                             INNER JOIN posseder p ON o.id_option = p.id_option
-                            WHERE p.id_terrain = ?";
+                            WHERE p.id_terrain = ?
+                            AND (p.disponible = 1 OR p.disponible IS NULL)";
                     $stmt = $db->prepare($sql);
                     $stmt->execute([$terrainId]);
                     $allOptions = $stmt->fetchAll(PDO::FETCH_ASSOC);
