@@ -104,27 +104,36 @@ class Gestion_gestionnaireController extends Controller {
         error_log("updateGestionnaireStatus result: " . ($result ? 'true' : 'false') . " for ID: " . $id);
 
         if ($result) {
-            // Envoyer l'email d'acceptation
-            $subject = "🎉 Félicitations ! Votre demande de gestionnaire a été acceptée";
-            $emailContent = $this->generateGestionnaireEmailTemplate('acceptation', $gestionnaire);
+            // Vérifier si le gestionnaire était déjà accepté (pour éviter d'envoyer l'email plusieurs fois)
+            $adminModel = $this->model('Admin');
+            $gestionnaireActuel = $adminModel->getGestionnaireDetailsById($id);
+            $gestionnaireDejaAccepte = ($gestionnaire['status'] === 'accepté');
             
-            $emailSent = $this->sendEmail($gestionnaire['email'], $subject, $emailContent);
+            $message = '';
+            $emailStatus = '';
             
-            if ($emailSent) {
-                ob_clean();
-                echo json_encode([
-                    'success' => true, 
-                    'message' => 'Gestionnaire accepté avec succès !', 
-                    'email_status' => 'Email de confirmation envoyé avec succès'
-                ]);
+            if ($gestionnaireDejaAccepte) {
+                // Gestionnaire déjà accepté, on a juste accepté un terrain supplémentaire
+                $message = 'Terrain accepté avec succès !';
+                $emailStatus = 'Aucun email envoyé (gestionnaire déjà accepté)';
             } else {
-                ob_clean();
-                echo json_encode([
-                    'success' => true, 
-                    'message' => 'Gestionnaire accepté avec succès !', 
-                    'email_status' => 'Erreur lors de l\'envoi de l\'email'
-                ]);
+                // Premier terrain accepté, gestionnaire nouvellement accepté
+                $message = 'Gestionnaire accepté avec succès !';
+                
+                // Envoyer l'email d'acceptation
+                $subject = "🎉 Félicitations ! Votre demande de gestionnaire a été acceptée";
+                $emailContent = $this->generateGestionnaireEmailTemplate('acceptation', $gestionnaire);
+                
+                $emailSent = $this->sendEmail($gestionnaire['email'], $subject, $emailContent);
+                $emailStatus = $emailSent ? 'Email de confirmation envoyé avec succès' : 'Erreur lors de l\'envoi de l\'email';
             }
+            
+            ob_clean();
+            echo json_encode([
+                'success' => true, 
+                'message' => $message, 
+                'email_status' => $emailStatus
+            ]);
         } else {
             ob_clean();
             echo json_encode(['success' => false, 'message' => 'Erreur lors de l\'acceptation']);
@@ -355,6 +364,91 @@ class Gestion_gestionnaireController extends Controller {
             error_log("PHPMailer Error: {$mail->ErrorInfo}");
             return false;
         }
+    }
+
+    /**
+     * Vérifier les nouveaux gestionnaires acceptés (pour le système temps réel)
+     */
+    public function checkNewGestionnaires() {
+        header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-cache, must-revalidate');
+        
+        // Vérifier la session et le rôle
+        if (!isset($_SESSION['user']) || ($_SESSION['user']['role'] ?? '') !== 'administrateur') {
+            echo json_encode(['success' => false, 'message' => 'Non autorisé']);
+            exit;
+        }
+
+        try {
+            $adminModel = $this->model('Admin');
+            
+            // Récupérer tous les gestionnaires acceptés
+            $recentlyAcceptedGestionnaires = $adminModel->getRecentlyAcceptedGestionnaires();
+            
+            // Log pour débogage
+            error_log('checkNewGestionnaires - Nombre de gestionnaires acceptés: ' . count($recentlyAcceptedGestionnaires));
+            
+            echo json_encode([
+                'success' => true,
+                'recentlyAccepted' => $recentlyAcceptedGestionnaires,
+                'debug' => [
+                    'count' => count($recentlyAcceptedGestionnaires),
+                    'timestamp' => date('Y-m-d H:i:s')
+                ]
+            ]);
+        } catch (Exception $e) {
+            error_log('Erreur checkNewGestionnaires: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Erreur serveur']);
+        }
+        exit;
+    }
+
+    /**
+     * Récupérer un gestionnaire par son ID (pour le système temps réel)
+     */
+    public function getGestionnaireById($id = null) {
+        header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-cache, must-revalidate');
+        
+        // Vérifier la session et le rôle
+        if (!isset($_SESSION['user']) || ($_SESSION['user']['role'] ?? '') !== 'administrateur') {
+            echo json_encode(['success' => false, 'message' => 'Non autorisé']);
+            exit;
+        }
+
+        // Récupérer l'ID depuis l'URL ou les paramètres POST
+        if (!$id) {
+            $pathInfo = $_SERVER['PATH_INFO'] ?? '';
+            $pathParts = explode('/', trim($pathInfo, '/'));
+            $id = end($pathParts);
+        }
+
+        if (!$id || !is_numeric($id)) {
+            echo json_encode(['success' => false, 'message' => 'ID manquant ou invalide']);
+            exit;
+        }
+
+        try {
+            $adminModel = $this->model('Admin');
+            $gestionnaire = $adminModel->getGestionnaireDetailsById($id);
+            
+            if ($gestionnaire) {
+                echo json_encode([
+                    'success' => true,
+                    'gestionnaire' => $gestionnaire
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Gestionnaire non trouvé',
+                    'removed' => true
+                ]);
+            }
+        } catch (Exception $e) {
+            error_log('Erreur getGestionnaireById: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Erreur serveur']);
+        }
+        exit;
     }
 
     /**
