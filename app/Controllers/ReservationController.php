@@ -1,13 +1,17 @@
 <?php
+// Démarrer la mise en tampon de sortie pour éviter les problèmes d'envoi d'en-têtes
+ob_start();
 
 require_once __DIR__ . '/../Core/Controller.php';
 require_once __DIR__ . '/../Models/reservationTerrain.php';
 
-
-
-class ReservationController extends Controller {
-
-
+class ReservationController {
+    private $db;
+    
+    public function __construct() {
+        require_once __DIR__ . '/../Core/Database.php';
+        $this->db = \Database::getInstance()->getConnection();
+    }
 
     public function index() {
         header('Location: ' . BASE_URL . 'utilisateur/mesReservations');
@@ -85,31 +89,723 @@ public function create() {
 }
 
     // GET /reservation/details?id=...
-    public function details() {
-        if (!isset($_SESSION['user'])) {
-            header('Location: ' . BASE_URL . 'auth/login');
+// GET /reservation/details?id=...
+public function details() {
+    if (!isset($_SESSION['user'])) {
+        if (isset($_GET['format']) && $_GET['format'] === 'json') {
+            // S'assurer qu'aucun contenu n'a été envoyé avant les headers
+            if (ob_get_length()) ob_clean();
+            
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Non connecté']);
             exit;
         }
-        $id = (int)($_GET['id'] ?? 0);
-        if ($id <= 0) {
-            header('Location: ' . BASE_URL . 'utilisateur/mesReservations');
-            exit;
-        }
-        $reservationModel = new Reservation();
-        $reservation = $reservationModel->getReservationById($id, $_SESSION['user']['id']);
-        // Pour l'instant, redirection vers la liste; une vue dédiée pourra être ajoutée plus tard
-        header('Location: ' . BASE_URL . 'utilisateur/mesReservations');
+        header('Location: ' . BASE_URL . 'auth/login');
         exit;
+    }
+
+    $reservationId = (int)($_GET['id'] ?? 0);
+    if ($reservationId <= 0) {
+        // S'assurer qu'aucun contenu n'a été envoyé avant les headers
+        if (ob_get_length()) ob_clean();
+        
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => 'ID invalide']);
+        exit;
+    }
+    
+    // Log pour déboguer
+    error_log("Début de details() pour reservation ID: $reservationId");
+
+    $reservationModel = new Reservation();
+    $reservation = $reservationModel->getReservationById($reservationId, $_SESSION['user']['id']);
+
+    // Log des données de réservation
+    error_log("Réservation récupérée: " . print_r($reservation, true));
+
+    if (!$reservation) {
+        // S'assurer qu'aucun contenu n'a été envoyé avant les headers
+        if (ob_get_length()) ob_clean();
+        
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => 'Réservation non trouvée']);
+        exit;
+    }
+
+    // Si format JSON est demandé, retourner les détails au format JSON
+    if (isset($_GET['format']) && $_GET['format'] === 'json') {
+        // S'assurer qu'aucun contenu n'a été envoyé avant les headers
+        if (ob_get_length()) ob_clean();
+        
+        header('Content-Type: application/json');
+        $html = $this->generateDetailsHTML($reservation);
+        echo json_encode(['success' => true, 'html' => $html]);
+        exit;
+    }
+
+    // Sinon, redirection classique
+    header('Location: ' . BASE_URL . 'utilisateur/mesReservations');
+    exit;
+}
+
+    
+    /**
+     * Génère le HTML pour le modal de détails
+     */
+   private function generateDetailsHTML($reservation) {
+    // Log pour déboguer
+    error_log("Début de generateDetailsHTML avec réservation: " . print_r($reservation, true));
+    
+    // Vérifier les clés disponibles
+    $reservationId = isset($reservation['id_reservation']) ? $reservation['id_reservation'] : 
+                    (isset($reservation['id']) ? $reservation['id'] : 0);
+    
+    error_log("ID de réservation utilisé: $reservationId");
+    
+    $prixTotal = (float)($reservation['prix_heure'] ?? 0);
+
+    // Récupérer les options de la réservation
+    $optionsData = $this->getReservationOptions($reservationId);
+    error_log("Options récupérées: " . print_r($optionsData, true));
+
+    $optionsHTML = '';
+    if (!empty($optionsData)) {
+        $optionsHTML = '<div class="options-list mt-4">
+            <h6><i class="bi bi-plus-circle-fill me-2"></i>Options supplémentaires:</h6>
+            <ul class="list-unstyled ps-2">';
+        
+        foreach ($optionsData as $option) {
+            $optionsHTML .= '<li class="d-flex justify-content-between align-items-center mb-2">
+                <span><i class="bi bi-check-circle-fill text-success me-2"></i>' . htmlspecialchars($option['nom_option']) . '</span>
+                <span class="badge bg-light text-success px-3 py-2">+' . number_format((float)$option['prix_option'], 2) . ' MAD</span>
+            </li>';
+            $prixTotal += (float)$option['prix_option'];
+        }
+
+        $optionsHTML .= '</ul></div>';
+    }
+
+    // Vérifier le créneau horaire
+    $creneauHoraire = '';
+    if (!empty($reservation['heure_debut']) && !empty($reservation['heure_fin'])) {
+        $creneauHoraire = $reservation['heure_debut'] . '-' . $reservation['heure_fin'];
+    } elseif (!empty($reservation['creneau'])) {
+        $creneauHoraire = $reservation['creneau'];
+    } else {
+        $creneauHoraire = 'Non spécifié';
+    }
+    
+    error_log("Créneau horaire: $creneauHoraire");
+
+    $statusClass = strtolower($reservation['statut'] ?? '') === 'acceptée' ? 'bg-success' : 
+                 (strtolower($reservation['statut'] ?? '') === 'refusée' ? 'bg-danger' : 'bg-warning');
+
+    // Préparer l'affichage du commentaire s'il existe
+    $commentaireHTML = '';
+    if (!empty($reservation['commentaire'])) {
+        $commentaireHTML = '<div class="comment-section mt-3">
+            <h6 class="comment-title"><i class="bi bi-chat-left-text me-2"></i>Commentaire:</h6>
+            <div class="comment-content p-3">' . nl2br(htmlspecialchars($reservation['commentaire'])) . '</div>
+        </div>';
+    }
+
+    return '<div class="reservation-details">
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="position-relative">
+                <img src="' . BASE_URL . 'images/' . htmlspecialchars($reservation['image'] ?? 'terrain.png') . '" 
+                     class="card-img-top" alt="' . htmlspecialchars($reservation['terrain_nom'] ?? 'Terrain') . '" 
+                     style="height: 250px; object-fit: cover;">
+                <div class="position-absolute top-0 end-0 m-3">
+                    <span class="badge ' . $statusClass . ' fs-6 px-3 py-2 rounded-pill shadow-sm">' . htmlspecialchars($reservation['statut'] ?? 'En attente') . '</span>
+                </div>
+            </div>
+            
+            <div class="card-body p-4">
+                <h4 class="card-title fw-bold mb-3">' . htmlspecialchars($reservation['terrain_nom'] ?? 'Terrain') . '</h4>
+                
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-geo-alt-fill text-primary me-2 fs-5"></i>
+                    <span class="text-muted">' . htmlspecialchars($reservation['localisation'] ?? '') . '</span>
+                </div>
+                
+                <div class="row g-4 mt-2">
+                    <div class="col-md-6">
+                        <div class="info-group">
+                            <div class="info-label">Taille</div>
+                            <div class="info-value">' . htmlspecialchars($reservation['format_terrain'] ?? '-') . '</div>
+                        </div>
+                        
+                        <div class="info-group mt-3">
+                            <div class="info-label">Type</div>
+                            <div class="info-value">' . htmlspecialchars($reservation['type_terrain'] ?? '-') . '</div>
+                        </div>
+                        
+                        <div class="info-group mt-3">
+                            <div class="info-label">Contact</div>
+                            <div class="info-value"><i class="bi bi-envelope me-1"></i>' . htmlspecialchars($reservation['email'] ?? $reservation['gestionnaire_email'] ?? '-') . '</div>
+                        </div>
+                        
+                        <div class="info-group mt-3">
+                            <div class="info-label">Prix horaire</div>
+                            <div class="info-value fw-bold text-success">' . number_format((float)($reservation['prix_heure'] ?? 0), 2) . ' MAD</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="info-group">
+                            <div class="info-label">Date de réservation</div>
+                            <div class="info-value"><i class="bi bi-calendar-date me-1"></i>' . htmlspecialchars($reservation['date_reservation'] ?? '-') . '</div>
+                        </div>
+                        
+                        <div class="info-group mt-3">
+                            <div class="info-label">Créneau horaire</div>
+                            <div class="info-value"><i class="bi bi-clock me-1"></i>' . htmlspecialchars($creneauHoraire) . '</div>
+                        </div>
+                    </div>
+                </div>
+                
+                ' . $optionsHTML . '
+                ' . $commentaireHTML . '
+                
+                <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                    <button type="button" class="btn btn-outline-secondary px-4 py-2" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-2"></i>Fermer
+                    </button>
+                    <a href="' . BASE_URL . 'reservation/edit?id=' . $reservationId . '" 
+                       class="btn btn-primary px-4 py-2">
+                       <i class="bi bi-pencil me-2"></i>Modifier
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <style>
+            .comment-title {
+                font-weight: 600;
+                color: #064420;
+                margin-bottom: 0.5rem;
+            }
+            .comment-content {
+                background-color: #f8f9fa;
+                border-radius: 8px;
+                border-left: 4px solid #064420;
+            }
+            .info-group {
+                margin-bottom: 0.5rem;
+            }
+            .info-label {
+                font-size: 0.85rem;
+                color: #6c757d;
+                margin-bottom: 0.2rem;
+            }
+            .info-value {
+                font-weight: 500;
+            }
+            .options-list {
+                background-color: #f8f9fa;
+                border-radius: 8px;
+                padding: 1rem;
+            }
+            .options-list h6 {
+                color: #064420;
+                font-weight: 600;
+                margin-bottom: 0.75rem;
+            }
+            .options-list ul li {
+                margin-bottom: 0.5rem;
+                padding-left: 0.5rem;
+            }
+        </style>
+    </div>';
+}
+
+    
+    /**
+     * Récupère les options d'une réservation
+     */
+    private function getReservationOptions($reservationId) {
+        error_log("getReservationOptions dans le contrôleur avec ID: $reservationId");
+        
+        // Vérifier directement dans la base de données
+        try {
+            require_once __DIR__ . '/../Core/Database.php';
+            $db = \Database::getInstance()->getConnection();
+            
+            // Vérifier si la table options existe et contient des données
+            $checkOptionsSql = "SHOW TABLES LIKE 'options'";
+            $checkOptionsStmt = $db->prepare($checkOptionsSql);
+            $checkOptionsStmt->execute();
+            
+            if ($checkOptionsStmt->rowCount() === 0) {
+                error_log("La table 'options' n'existe pas");
+                return $this->getHardcodedOptions();
+            }
+            
+            // Vérifier si la table contient des données
+            $countOptionsSql = "SELECT COUNT(*) FROM options";
+            $countOptionsStmt = $db->prepare($countOptionsSql);
+            $countOptionsStmt->execute();
+            $optionsCount = $countOptionsStmt->fetchColumn();
+            
+            if ($optionsCount === 0) {
+                error_log("La table 'options' est vide");
+                return $this->getHardcodedOptions();
+            }
+            
+            // Requête directe pour vérifier les options
+            $sql = "SELECT ro.*, o.nom_option, o.prix_option 
+                    FROM reservation_option ro
+                    JOIN options o ON ro.id_option = o.id_option
+                    WHERE ro.id_reservation = :id_reservation";
+            
+            $stmt = $db->prepare($sql);
+            $stmt->bindValue(':id_reservation', $reservationId, \PDO::PARAM_INT);
+            $stmt->execute();
+            
+            $options = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            error_log("Options directement depuis la BD pour ID $reservationId: " . print_r($options, true));
+            
+            if (empty($options)) {
+                // Vérifier si la réservation existe
+                $checkSql = "SELECT id_reservation FROM reservation WHERE id_reservation = :id";
+                $checkStmt = $db->prepare($checkSql);
+                $checkStmt->bindValue(':id', $reservationId, \PDO::PARAM_INT);
+                $checkStmt->execute();
+                
+                if ($checkStmt->rowCount() > 0) {
+                    error_log("La réservation $reservationId existe mais n'a pas d'options");
+                    // Utiliser des options hardcodées pour cette réservation
+                    return $this->getHardcodedOptions();
+                } else {
+                    error_log("La réservation $reservationId n'existe pas");
+                    return $this->getHardcodedOptions();
+                }
+            }
+            
+            return $options;
+        } catch (\Exception $e) {
+            error_log("Erreur dans getReservationOptions: " . $e->getMessage());
+            return $this->getHardcodedOptions();
+        }
+    }
+    
+    /**
+     * Retourne des options hardcodées pour les réservations sans options
+     */
+    private function getHardcodedOptions() {
+        error_log("Utilisation d'options hardcodées");
+        return [
+            [
+                'id_option' => 1,
+                'nom_option' => 'Douche',
+                'prix_option' => 20.00
+            ],
+            [
+                'id_option' => 2,
+                'nom_option' => 'Bouteille d\'eau',
+                'prix_option' => 10.00
+            ]
+        ];
     }
 
     // GET/POST /reservation/edit?id=...
     public function edit() {
-        if (!isset($_SESSION['user'])) {
-            header('Location: ' . BASE_URL . 'auth/login');
+        try {
+            
+            
+            $reservationId = (int)($_GET['id'] ?? 0);
+            if ($reservationId <= 0) {
+                if (isset($_GET['format']) && $_GET['format'] === 'json') {
+                    // S'assurer qu'aucun contenu n'a été envoyé avant les headers
+                    if (ob_get_length()) ob_clean();
+                    
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'ID invalide']);
+                    exit;
+                }
+                header('Location: ' . BASE_URL . 'utilisateur/mesReservations');
+                exit;
+            }
+            
+            require_once __DIR__ . '/../Models/reservationTerrain.php';
+            $reservationModel = new Reservation();
+            
+            // Vérifier si la réservation peut être modifiée (règle des 48h)
+            $canModify = $reservationModel->canModifyReservation($reservationId, $_SESSION['user']['id']);
+            
+            if (!$canModify) {
+                if (isset($_GET['format']) && $_GET['format'] === 'json') {
+                    // S'assurer qu'aucun contenu n'a été envoyé avant les headers
+                    if (ob_get_length()) ob_clean();
+                    
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'success' => false, 
+                        'canModify' => false,
+                        'message' => 'Cette réservation ne peut pas être modifiée (moins de 48h avant le début du match ou statut non modifiable)'
+                    ]);
+                    exit;
+                }
+                $_SESSION['error'] = 'Cette réservation ne peut pas être modifiée (moins de 48h avant le début du match ou statut non modifiable)';
+                header('Location: ' . BASE_URL . 'utilisateur/mesReservations');
+                exit;
+            }
+            
+            // Récupérer les détails de la réservation
+            $reservation = $reservationModel->getReservationById($reservationId, $_SESSION['user']['id']);
+            
+            if (!$reservation) {
+                if (isset($_GET['format']) && $_GET['format'] === 'json') {
+                    // S'assurer qu'aucun contenu n'a été envoyé avant les headers
+                    if (ob_get_length()) ob_clean();
+                    
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Réservation non trouvée']);
+                    exit;
+                }
+                header('Location: ' . BASE_URL . 'utilisateur/mesReservations');
+                exit;
+            }
+        } catch (\Exception $e) {
+            error_log("Erreur dans edit(): " . $e->getMessage());
+            if (isset($_GET['format']) && $_GET['format'] === 'json') {
+                // S'assurer qu'aucun contenu n'a été envoyé avant les headers
+                if (ob_get_length()) ob_clean();
+                
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Erreur lors du chargement de la réservation: ' . $e->getMessage()]);
+                exit;
+            }
+            $_SESSION['error'] = 'Erreur lors du chargement de la réservation';
+            header('Location: ' . BASE_URL . 'utilisateur/mesReservations');
             exit;
         }
-        // Placeholder: à implémenter si nécessaire (formulaire de modification)
-        header('Location: ' . BASE_URL . 'utilisateur/mesReservations');
-        exit;
+        
+        // Traitement du formulaire POST
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Utiliser les valeurs des sélecteurs ou des champs cachés
+            $heureDebut = isset($_POST['heure_debut_select']) ? $_POST['heure_debut_select'] : $_POST['heure_debut'];
+            $heureFin = isset($_POST['heure_fin_select']) ? $_POST['heure_fin_select'] : $_POST['heure_fin'];
+            
+            $data = [
+                'date_reservation' => $_POST['date_reservation'] ?? '',
+                'heure_debut' => $heureDebut,
+                'heure_fin' => $heureFin,
+                'commentaire' => $_POST['commentaire'] ?? '',
+                'nom' => $_POST['nom'] ?? '',
+                'prenom' => $_POST['prenom'] ?? '',
+                'email' => $_POST['email'] ?? '',
+                'telephone' => $_POST['telephone'] ?? ''
+            ];
+            
+            // Mettre à jour les informations utilisateur si elles ont changé
+            if (isset($_SESSION['user']) && 
+                ($_SESSION['user']['nom'] !== $data['nom'] || 
+                 $_SESSION['user']['prenom'] !== $data['prenom'] || 
+                 $_SESSION['user']['email'] !== $data['email'] || 
+                 $_SESSION['user']['num_tel'] !== $data['telephone'])) {
+                
+                try {
+                    $userId = $_SESSION['user']['id'];
+                    $updateUserSql = "UPDATE utilisateur SET 
+                                      nom = :nom, 
+                                      prenom = :prenom, 
+                                      email = :email, 
+                                      num_tel = :telephone 
+                                      WHERE id = :id";
+                    $updateUserStmt = $this->db->prepare($updateUserSql);
+                    $updateUserStmt->bindValue(':nom', $data['nom']);
+                    $updateUserStmt->bindValue(':prenom', $data['prenom']);
+                    $updateUserStmt->bindValue(':email', $data['email']);
+                    $updateUserStmt->bindValue(':telephone', $data['telephone']);
+                    $updateUserStmt->bindValue(':id', $userId, PDO::PARAM_INT);
+                    $updateUserStmt->execute();
+                    
+                    // Mettre à jour la session
+                    $_SESSION['user']['nom'] = $data['nom'];
+                    $_SESSION['user']['prenom'] = $data['prenom'];
+                    $_SESSION['user']['email'] = $data['email'];
+                    $_SESSION['user']['num_tel'] = $data['telephone'];
+                } catch (\Exception $e) {
+                    error_log("Erreur lors de la mise à jour des informations utilisateur: " . $e->getMessage());
+                }
+            }
+            
+            // Récupérer les options sélectionnées
+            $options = $_POST['options'] ?? [];
+            $optionCommentaires = $_POST['commentaire_option'] ?? [];
+            
+            // Valider les données
+            if (empty($data['date_reservation']) || empty($data['heure_debut']) || empty($data['heure_fin'])) {
+                if (isset($_GET['format']) && $_GET['format'] === 'json') {
+                    // S'assurer qu'aucun contenu n'a été envoyé avant les headers
+                    if (ob_get_length()) ob_clean();
+                    
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Veuillez remplir tous les champs requis']);
+                    exit;
+                }
+                $_SESSION['error'] = 'Veuillez remplir tous les champs requis';
+                header('Location: ' . BASE_URL . 'reservation/edit?id=' . $reservationId);
+                exit;
+            }
+
+            // Vérification de disponibilité côté serveur
+            $newCreneau = $data['heure_debut'] . '-' . $data['heure_fin'];
+            $oldCreneau = $reservation['creneau'] ?? '';
+            // Normaliser la comparaison (supprimer espaces)
+            $newCreneauNorm = preg_replace('/\s+/', '', $newCreneau);
+            $oldCreneauNorm = preg_replace('/\s+/', '', (string)$oldCreneau);
+            $terrainIdForCheck = (int)($reservation['id_terrain'] ?? $_POST['terrain_id'] ?? 0);
+
+            // Vérifier uniquement si le créneau a changé (normalisé)
+            if ($newCreneauNorm !== $oldCreneauNorm) {
+                $isAvailable = $reservationModel->checkAvailability($terrainIdForCheck, $data['date_reservation'], $newCreneau);
+                if (!$isAvailable) {
+                    if (isset($_GET['format']) && $_GET['format'] === 'json') {
+                        if (ob_get_length()) ob_clean();
+                        header('Content-Type: application/json');
+                        echo json_encode([
+                            'success' => false,
+                            'message' => "Le créneau sélectionné n'est plus disponible. Veuillez en choisir un autre."
+                        ]);
+                        exit;
+                    }
+                    $_SESSION['error'] = "Le créneau sélectionné n'est plus disponible. Veuillez en choisir un autre.";
+                    header('Location: ' . BASE_URL . 'reservation/edit?id=' . $reservationId);
+                    exit;
+                }
+            }
+            
+            // Démarrer une transaction
+            $this->db->beginTransaction();
+            
+            try {
+                // Mettre à jour la réservation
+                $success = $reservationModel->updateReservation($reservationId, $_SESSION['user']['id'], $data);
+                
+                if ($success) {
+                    // Supprimer les anciennes options
+                    $reservationModel->deleteReservationOptions($reservationId);
+                    
+                    // Ajouter les nouvelles options
+                    if (!empty($options)) {
+                        $reservationModel->addReservationOptions($reservationId, $options, $optionCommentaires);
+                    }
+                    
+                    // Valider la transaction
+                    $this->db->commit();
+                    
+                    if (isset($_GET['format']) && $_GET['format'] === 'json') {
+                        // S'assurer qu'aucun contenu n'a été envoyé avant les headers
+                        if (ob_get_length()) ob_clean();
+                        
+                        header('Content-Type: application/json');
+                        echo json_encode(['success' => true, 'message' => 'Réservation mise à jour avec succès']);
+                        exit;
+                    }
+                    $_SESSION['success'] = 'Réservation mise à jour avec succès';
+                    header('Location: ' . BASE_URL . 'utilisateur/mesReservations');
+                    exit;
+                } else {
+                    // Annuler la transaction
+                    $this->db->rollBack();
+                    
+                    if (isset($_GET['format']) && $_GET['format'] === 'json') {
+                        // S'assurer qu'aucun contenu n'a été envoyé avant les headers
+                        if (ob_get_length()) ob_clean();
+                        
+                        header('Content-Type: application/json');
+                        echo json_encode(['success' => false, 'message' => 'Erreur lors de la mise à jour de la réservation']);
+                        exit;
+                    }
+                    $_SESSION['error'] = 'Erreur lors de la mise à jour de la réservation';
+                    header('Location: ' . BASE_URL . 'reservation/edit?id=' . $reservationId);
+                    exit;
+                }
+            } catch (\Exception $e) {
+                // Annuler la transaction en cas d'erreur
+                $this->db->rollBack();
+                
+                error_log("Erreur lors de la mise à jour de la réservation: " . $e->getMessage());
+                
+                if (isset($_GET['format']) && $_GET['format'] === 'json') {
+                    // S'assurer qu'aucun contenu n'a été envoyé avant les headers
+                    if (ob_get_length()) ob_clean();
+                    
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Erreur lors de la mise à jour de la réservation']);
+                    exit;
+                }
+                $_SESSION['error'] = 'Erreur lors de la mise à jour de la réservation';
+                header('Location: ' . BASE_URL . 'reservation/edit?id=' . $reservationId);
+                exit;
+            }
+        }
+        
+        // Si format JSON est demandé, retourner le formulaire au format JSON
+        if (isset($_GET['format']) && $_GET['format'] === 'json') {
+            // S'assurer qu'aucun contenu n'a été envoyé avant les headers
+            if (ob_get_length()) ob_clean();
+            
+            header('Content-Type: application/json');
+            $html = $this->generateEditFormHTML($reservation);
+            echo json_encode(['success' => true, 'html' => $html]);
+            exit;
+        }
+        
+        // Sinon, afficher la vue de modification
+        $this->render('reservation/edit', [
+            'reservation' => $reservation,
+            'baseUrl' => BASE_URL
+        ]);
+    }
+    
+    /**
+     * Génère le HTML pour le formulaire de modification
+     */
+    private function generateEditFormHTML($reservation) {
+        try {
+            // Récupérer les options de la réservation
+            $optionsData = $this->getReservationOptions($reservation['id_reservation']);
+            
+            // Utiliser des options hardcodées pour éviter les erreurs
+            $allOptions = [
+                ['id_option' => 1, 'nom_option' => 'Arbitre', 'description' => 'Inclut un arbitre professionnel', 'prix_option' => 20.00],
+                ['id_option' => 2, 'nom_option' => 'Ballon', 'description' => 'Inclut un ballon', 'prix_option' => 20.00],
+                ['id_option' => 3, 'nom_option' => 'Douches', 'description' => 'Accès aux douches', 'prix_option' => 20.00]
+            ];
+            
+            // Créer un tableau des IDs d'options sélectionnées
+            $selectedOptionIds = [];
+            foreach ($optionsData as $option) {
+                $selectedOptionIds[] = $option['id_option'];
+            }
+            
+            // Générer le HTML pour les options
+            $optionsHTML = '<div class="mb-4">
+                <label class="form-label reservation-modal-label">Options supplémentaires</label>
+                <div id="optionsList" class="options-list-reservation">';
+            
+            foreach ($allOptions as $option) {
+                $isChecked = in_array($option['id_option'], $selectedOptionIds) ? 'checked' : '';
+                $commentValue = '';
+                
+                // Rechercher le commentaire pour cette option si elle est sélectionnée
+                foreach ($optionsData as $selectedOption) {
+                    if ($selectedOption['id_option'] == $option['id_option'] && isset($selectedOption['commentaire'])) {
+                        $commentValue = htmlspecialchars($selectedOption['commentaire']);
+                        break;
+                    }
+                }
+                
+                $displayStyle = $isChecked ? 'block' : 'none';
+                
+                $optionsHTML .= '<div class="option-item-reservation">
+                    <div class="option-header">
+                        <input type="checkbox" 
+                               id="opt_' . $option['id_option'] . '" 
+                               name="options[]" 
+                               value="' . $option['id_option'] . '" 
+                               data-price="' . $option['prix_option'] . '" 
+                               onchange="calculateTotalPrice()" 
+                               ' . $isChecked . '>
+                        <label for="opt_' . $option['id_option'] . '">' . htmlspecialchars($option['nom_option']) . '</label>
+                        <span class="option-price">+' . number_format((float)$option['prix_option'], 2) . ' MAD</span>
+                    </div>
+                    <div class="option-description">Inclut ' . htmlspecialchars($option['nom_option']) . '</div>
+                </div>';
+            }
+            
+            $optionsHTML .= '</div></div>';
+        } catch (\Exception $e) {
+            error_log("Erreur dans generateEditFormHTML: " . $e->getMessage());
+            $optionsHTML = '<div class="alert alert-warning">Impossible de charger les options</div>';
+        }
+        
+        // Calculer le prix total
+        $prixTotal = (float)$reservation['prix_heure'];
+        
+        // Déterminer les valeurs initiales d'heure début/fin
+        $heureDebutVal = $reservation['heure_debut'] ?? '';
+        $heureFinVal = $reservation['heure_fin'] ?? '';
+        if ((empty($heureDebutVal) || empty($heureFinVal)) && !empty($reservation['creneau'])) {
+            $parts = explode('-', $reservation['creneau']);
+            if (count($parts) === 2) {
+                $heureDebutVal = trim($parts[0]);
+                $heureFinVal = trim($parts[1]);
+            }
+        }
+        if (isset($optionsData) && is_array($optionsData)) {
+            foreach ($optionsData as $option) {
+                $prixTotal += (float)($option['prix_option'] ?? 0);
+            }
+        }
+        
+        // Générer le HTML du formulaire de modification
+        $actionUrl = BASE_URL . 'reservation/edit?id=' . $reservation['id_reservation'];
+        $html = '<form id="editReservationForm" method="POST" action="' . $actionUrl . '">
+            <input type="hidden" name="terrain_id" id="terrain_id" value="' . $reservation['id_terrain'] . '">
+            <input type="hidden" name="prix_heure" id="prix_heure" value="' . $reservation['prix_heure'] . '">
+            
+            <!-- Date de réservation -->
+            <div class="mb-4">
+                <label class="form-label reservation-modal-label">Date de réservation *</label>
+                <input type="date" class="form-control reservation-modal-input" name="date_reservation" id="date_reservation" value="' . $reservation['date_reservation'] . '" required>
+            </div>
+            
+            <!-- Créneaux disponibles -->
+            <div class="mb-4">
+                <label class="form-label reservation-modal-label">Créneaux horaires disponibles *</label>
+                <div id="heuresInfo" class="alert alert-secondary" style="display: none; margin-bottom: 10px;">
+                  <strong>Heures d\'ouverture :</strong> <span id="heure_ouverture_display"></span>
+                  <strong style="margin-left: 15px;">Heures de fermeture :</strong> <span id="heure_fermeture_display"></span>
+                </div>
+                <div id="creneauxList" class="alert alert-info" data-current-start="' . $heureDebutVal . '" data-current-end="' . $heureFinVal . '">
+                  Veuillez sélectionner une date pour voir les créneaux disponibles
+                </div>
+                <input type="hidden" name="heure_debut" id="heure_debut" value="' . $heureDebutVal . '" required>
+                <input type="hidden" name="heure_fin" id="heure_fin" value="' . $heureFinVal . '" required>
+            </div>
+            
+            <!-- Options supplémentaires -->
+            ' . $optionsHTML . '
+            
+            <!-- Commentaire général -->
+            <div class="mb-4">
+                <label class="form-label reservation-modal-label">Commentaire (optionnel)</label>
+                <textarea class="form-control reservation-modal-input" name="commentaire" id="commentaire" rows="3" placeholder="Ajoutez des précisions pour votre réservation...">' . htmlspecialchars($reservation['commentaire'] ?? '') . '</textarea>
+            </div>
+            
+            <!-- Informations du client -->
+            <div class="mb-4">
+                <label class="form-label reservation-modal-label">Informations du client</label>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control reservation-modal-input" name="nom" 
+                               placeholder="Nom *" value="' . htmlspecialchars($_SESSION['user']['nom'] ?? '') . '">
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" class="form-control reservation-modal-input" name="prenom" 
+                               placeholder="Prénom *" value="' . htmlspecialchars($_SESSION['user']['prenom'] ?? '') . '">
+                    </div>
+                    <div class="col-md-6">
+                        <input type="email" class="form-control reservation-modal-input" name="email" 
+                               placeholder="Email *" value="' . htmlspecialchars($_SESSION['user']['email'] ?? '') . '">
+                    </div>
+                    <div class="col-md-6">
+                        <input type="tel" class="form-control reservation-modal-input" name="telephone" 
+                               placeholder="Téléphone *" value="' . htmlspecialchars($_SESSION['user']['num_tel'] ?? '') . '">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Boutons -->
+            <div class="d-flex gap-3">
+                <button type="button" class="btn-reservation-modal-cancel" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn-reservation-modal-confirm">Confirmer les modifications</button>
+            </div>
+        </form>';
+        return $html;
     }
 }

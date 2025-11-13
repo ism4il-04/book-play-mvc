@@ -458,4 +458,27 @@ public function getCreneauxDisponibles($terrainId, $date = null) {
     }
 }
 
+/**
+ * Récupérer les options disponibles pour un terrain
+ * @param int $terrainId ID du terrain
+ * @return array Tableau des options disponibles pour ce terrain
+ */
+public function getTerrainOptions($terrainId) {
+    try {
+        $sql = "SELECT o.*, p.prix_option, p.disponible 
+                FROM options o 
+                LEFT JOIN posseder p ON o.id_option = p.id_option AND p.id_terrain = :terrain_id
+                WHERE p.id_terrain IS NOT NULL AND p.disponible = 1";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':terrain_id', $terrainId, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        error_log("Erreur getTerrainOptions: " . $e->getMessage());
+        return [];
+    }
+}
+
 }

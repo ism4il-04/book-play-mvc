@@ -156,22 +156,23 @@ class Reservation {
     /**
      * Ajouter des options à une réservation
      */
-    private function addReservationOptions($reservationId, $options) {
+    public function addReservationOptions($reservationId, $options, $commentaires = []) {
         if (!is_array($options) || empty($options)) {
             return false;
         }
 
-        $sql = "INSERT INTO reservation_option (id_reservation, id_option) 
-                SELECT :reservation_id, id_option 
-                FROM options 
-                WHERE nom_option = :nom_option";
+        $sql = "INSERT INTO reservation_option (id_reservation, id_option, commentaire) 
+                VALUES (:reservation_id, :id_option, :commentaire)";
         
         try {
             $stmt = $this->db->prepare($sql);
             
-            foreach ($options as $optionName) {
+            foreach ($options as $optionId) {
+                $commentaire = isset($commentaires[$optionId]) ? $commentaires[$optionId] : '';
+                
                 $stmt->bindValue(':reservation_id', $reservationId, PDO::PARAM_INT);
-                $stmt->bindValue(':nom_option', $optionName);
+                $stmt->bindValue(':id_option', (int)$optionId, PDO::PARAM_INT);
+                $stmt->bindValue(':commentaire', $commentaire, PDO::PARAM_STR);
                 $stmt->execute();
             }
             
@@ -181,7 +182,52 @@ class Reservation {
             return false;
         }
     }
+    
+    /**
+     * Supprimer toutes les options d'une réservation
+     */
+    public function deleteReservationOptions($reservationId) {
+        $sql = "DELETE FROM reservation_option WHERE id_reservation = :reservation_id";
+        
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindValue(':reservation_id', $reservationId, PDO::PARAM_INT);
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Erreur deleteReservationOptions: " . $e->getMessage());
+            return false;
+        }
+    }
 
+    /**
+     * Récupérer les options d'une réservation
+     */
+    public function getOptionsForReservation($reservationId) {
+        // Ajouter un log pour déboguer
+        error_log("Début getOptionsForReservation pour reservation ID: " . $reservationId);
+        
+        // Requête simplifiée pour récupérer les options d'une réservation avec leurs commentaires
+        $sql = "SELECT o.id_option, o.nom_option, COALESCE(p.prix_option, o.prix_option) as prix_option, ro.commentaire 
+                FROM reservation_option ro
+                JOIN options o ON ro.id_option = o.id_option
+                LEFT JOIN reservation r ON ro.id_reservation = r.id_reservation
+                LEFT JOIN posseder p ON p.id_option = o.id_option AND p.id_terrain = r.id_terrain
+                WHERE ro.id_reservation = :id_reservation";
+        
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindValue(':id_reservation', $reservationId, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            $options = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            error_log("Options trouvées pour reservation ID $reservationId: " . print_r($options, true));
+            return $options;
+        } catch (PDOException $e) {
+            error_log("Erreur getOptionsForReservation: " . $e->getMessage());
+            return [];
+        }
+    }
+    
     /**
      * Mettre à jour une réservation
      */
@@ -192,7 +238,7 @@ class Reservation {
                     commentaire = :commentaire
                 WHERE id_reservation = :id 
                 AND id_client = :user_id
-                AND status = 'en attente'";
+                AND status IN ('en attente','accepté')";
         
         try {
             $creneau = $data['heure_debut'] . '-' . $data['heure_fin'];
@@ -295,7 +341,25 @@ public function checkAvailability($terrainId, $date, $creneau) {
             }
             $stmt->execute();
             
-            return $stmt->fetch(PDO::FETCH_ASSOC);
+            $reservation = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($reservation) {
+                // Extraire heure_debut et heure_fin du créneau
+                $creneau = $reservation['creneau'] ?? '';
+                if (strpos($creneau, '-') !== false) {
+                    list($heureDebut, $heureFin) = explode('-', $creneau);
+                    $reservation['heure_debut'] = trim($heureDebut);
+                    $reservation['heure_fin'] = trim($heureFin);
+                } else {
+                    $reservation['heure_debut'] = '';
+                    $reservation['heure_fin'] = '';
+                }
+                
+                // Normaliser le statut
+                $reservation['statut'] = $this->normalizeStatus($reservation['status']);
+            }
+            
+            return $reservation;
         } catch (PDOException $e) {
             error_log("Erreur getReservationById: " . $e->getMessage());
             return null;
@@ -407,16 +471,41 @@ public function checkAvailability($terrainId, $date, $creneau) {
 
     /**
      * Vérifier si une réservation peut être modifiée
+     * La modification est possible jusqu'à 48 heures avant le début du match
      */
     public function canModifyReservation($reservationId, $userId) {
         $reservation = $this->getReservationById($reservationId, $userId);
         
         if (!$reservation) {
+            error_log("Réservation $reservationId non trouvée pour l'utilisateur $userId");
             return false;
         }
         
-        return $reservation['status'] === 'en attente' 
-               && $reservation['date_reservation'] >= date('Y-m-d');
+        // Vérifier si la réservation est en attente ou acceptée
+        if (!in_array($reservation['status'], ['en attente', 'accepté'])) {
+            error_log("Réservation $reservationId a un statut qui ne permet pas la modification: {$reservation['status']}");
+            return false;
+        }
+        
+        // Vérifier si la date de réservation est dans le futur
+        $dateReservation = $reservation['date_reservation'];
+        if ($dateReservation < date('Y-m-d')) {
+            error_log("Réservation $reservationId est dans le passé: $dateReservation");
+            return false;
+        }
+        
+        // Vérifier la règle des 48 heures
+        $dateHeure = $dateReservation . ' ' . $reservation['heure_debut'];
+        $timestamp = strtotime($dateHeure);
+        $now = time();
+        $diff = $timestamp - $now;
+        $heures = $diff / 3600; // Convertir en heures
+        
+        $canModify = $heures >= 48;
+        
+        error_log("Réservation $reservationId: différence de $heures heures, modification " . ($canModify ? 'autorisée' : 'refusée'));
+        
+        return $canModify;
     }
 
     /**

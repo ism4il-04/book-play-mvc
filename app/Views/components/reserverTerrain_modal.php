@@ -39,6 +39,12 @@
             <div id="optionsList" class="options-list-reservation"></div>
           </div>
 
+          <!-- 4️⃣ Commentaire général -->
+          <div class="mb-4">
+            <label class="form-label reservation-modal-label">Commentaire (optionnel)</label>
+            <textarea class="form-control reservation-modal-input" name="commentaire" id="commentaire" rows="3" placeholder="Ajoutez des précisions pour votre réservation..."></textarea>
+          </div>
+
           <!-- 5️⃣ Informations du client -->
           <div class="mb-4">
             <label class="form-label reservation-modal-label">Informations du client</label>
@@ -142,24 +148,6 @@
   color: #666;
   margin-top: 0.5rem;
   padding-left: 2rem;
-}
-.option-comment {
-  margin-top: 0.8rem;
-  padding-left: 2rem;
-  display: none;
-}
-.option-comment textarea {
-  width: 100%;
-  resize: none;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  padding: 0.6rem;
-  font-size: 0.9rem;
-}
-.option-comment textarea:focus {
-  border-color: #00bcd4;
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1);
 }
 .creneau-item {
   padding: 1rem;
@@ -317,14 +305,6 @@ function loadTerrainOptions(terrainId) {
               <span class="option-price">+${parseFloat(option.prix_option).toFixed(2)} MAD</span>
             </div>
             ${option.description ? `<div class="option-description">${option.description}</div>` : ''}
-            <div class="option-comment" id="comment_${option.id_option}">
-              <label class="form-label" style="font-size: 0.9rem; margin-bottom: 0.3rem;">
-                Commentaire pour "${option.nom_option}" :
-              </label>
-              <textarea name="commentaire_option[${option.id_option}]" 
-                        rows="2" 
-                        placeholder="Ajoutez des précisions pour cette option..."></textarea>
-            </div>
           `;
           optionsList.appendChild(optionDiv);
         });
@@ -341,20 +321,9 @@ function loadTerrainOptions(terrainId) {
 }
 
 /**
- * Afficher/masquer le commentaire d'une option
+ * Gérer le changement d'état d'une option
  */
 function toggleOptionComment(checkbox) {
-  const commentDiv = document.getElementById('comment_' + checkbox.value);
-  if (commentDiv) {
-    commentDiv.style.display = checkbox.checked ? 'block' : 'none';
-    
-    // Vider le textarea si décoché
-    if (!checkbox.checked) {
-      const textarea = commentDiv.querySelector('textarea');
-      if (textarea) textarea.value = '';
-    }
-  }
-  
   // Recalculer le prix
   calculateTotalPrice();
 }
