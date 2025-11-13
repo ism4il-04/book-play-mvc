@@ -194,14 +194,14 @@ class FactureController extends Controller {
 
         // En-tête
         $pdf->SetFont('Arial', 'B', 20);
-        $pdf->Cell(0, 15, 'BOOK&PLAY', 0, 1, 'C');
+        $pdf->Cell(0, 15, utf8_decode('BOOK&PLAY'), 0, 1, 'C');
         $pdf->SetFont('Arial', '', 12);
-        $pdf->Cell(0, 8, 'Plateforme de Réservation de Terrains', 0, 1, 'C');
+        $pdf->Cell(0, 8, utf8_decode('Plateforme de Réservation de Terrains'), 0, 1, 'C');
         $pdf->Ln(10);
 
         // Titre FACTURE
         $pdf->SetFont('Arial', 'B', 18);
-        $pdf->Cell(0, 15, 'FACTURE', 0, 1, 'R');
+        $pdf->Cell(0, 15, utf8_decode('FACTURE'), 0, 1, 'R');
         $pdf->Ln(5);
 
         // Informations facture
@@ -218,19 +218,19 @@ class FactureController extends Controller {
 
         // Parties (Émetteur et Client)
         $pdf->SetFont('Arial', 'B', 12);
-        $pdf->Cell(90, 8, 'ÉMETTEUR', 1, 0, 'C');
+        $pdf->Cell(90, 8, utf8_decode('ÉMETTEUR'), 1, 0, 'C');
         $pdf->Cell(10, 8, '', 0, 0); // Espace
-        $pdf->Cell(90, 8, 'CLIENT', 1, 1, 'C');
+        $pdf->Cell(90, 8, utf8_decode('CLIENT'), 1, 1, 'C');
 
         $pdf->SetFont('Arial', '', 10);
         $maxLines = max(
-            count(explode("\n", wordwrap(iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $terrain['nom_terrain'] ?? 'N/A'), 35))),
-            count(explode("\n", wordwrap(iconv('UTF-8', 'ISO-8859-1//TRANSLIT', ($client['prenom'] ?? '') . ' ' . ($client['nom'] ?? '') ?: 'N/A'), 35)))
+            count(explode("\n", wordwrap(utf8_decode($terrain['nom_terrain'] ?? 'N/A'), 35))),
+            count(explode("\n", wordwrap(utf8_decode(($client['prenom'] ?? '') . ' ' . ($client['nom'] ?? '') ?: 'N/A'), 35)))
         );
 
         for ($i = 0; $i < $maxLines; $i++) {
-            $terrainLines = explode("\n", wordwrap(iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $terrain['nom_terrain'] ?? 'N/A'), 35));
-            $clientLines = explode("\n", wordwrap(iconv('UTF-8', 'ISO-8859-1//TRANSLIT', ($client['prenom'] ?? '') . ' ' . ($client['nom'] ?? '') ?: 'N/A'), 35));
+            $terrainLines = explode("\n", wordwrap(utf8_decode($terrain['nom_terrain'] ?? 'N/A'), 35));
+            $clientLines = explode("\n", wordwrap(utf8_decode(($client['prenom'] ?? '') . ' ' . ($client['nom'] ?? '') ?: 'N/A'), 35));
 
             $terrainLine = $terrainLines[$i] ?? '';
             $clientLine = $clientLines[$i] ?? '';
@@ -243,37 +243,37 @@ class FactureController extends Controller {
 
         // Détails de la réservation
         $pdf->SetFont('Arial', 'B', 12);
-        $pdf->Cell(0, 10, 'DÉTAILS DE LA RÉSERVATION', 1, 1, 'C');
+        $pdf->Cell(0, 10, utf8_decode('DÉTAILS DE LA RÉSERVATION'), 1, 1, 'C');
         $pdf->SetFont('Arial', '', 10);
 
         $details = [
-            ['Terrain', iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $terrain['nom_terrain'] ?? 'N/A')],
-            ['Type de Terrain', iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $terrain['type_terrain'] ?? 'N/A')],
-            ['Format', iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $terrain['format_terrain'] ?? 'N/A')],
+            ['Terrain', utf8_decode($terrain['nom_terrain'] ?? 'N/A')],
+            ['Type de Terrain', utf8_decode($terrain['type_terrain'] ?? 'N/A')],
+            ['Format', utf8_decode($terrain['format_terrain'] ?? 'N/A')],
             ['Date de Réservation', !empty($reservation['date_reservation']) ? date('d/m/Y', strtotime($reservation['date_reservation'])) : 'N/A'],
             ['Créneau Horaire', !empty($reservation['creneau']) ? date('H:i', strtotime($reservation['creneau'])) : 'N/A'],
             ['Type de Réservation', ucfirst($reservation['type'] ?? 'normal')]
         ];
 
         foreach ($details as $detail) {
-            $pdf->Cell(50, 8, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $detail[0] . ':'), 1, 0);
-            $pdf->Cell(0, 8, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $detail[1]), 1, 1);
+            $pdf->Cell(50, 8, utf8_decode($detail[0] . ':'), 1, 0);
+            $pdf->Cell(0, 8, utf8_decode($detail[1]), 1, 1);
         }
 
         if (!empty($reservation['commentaire'])) {
-            $pdf->Cell(50, 8, 'Commentaire:', 1, 0);
-            $pdf->MultiCell(0, 8, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $reservation['commentaire']), 1, 'L');
+            $pdf->Cell(50, 8, utf8_decode('Commentaire:'), 1, 0);
+            $pdf->MultiCell(0, 8, utf8_decode($reservation['commentaire']), 1, 'L');
         }
         $pdf->Ln(5);
 
         // Options supplémentaires
         if (!empty($options)) {
             $pdf->SetFont('Arial', 'B', 12);
-            $pdf->Cell(0, 10, 'OPTIONS SUPPLÉMENTAIRES', 1, 1, 'C');
+            $pdf->Cell(0, 10, utf8_decode('OPTIONS SUPPLÉMENTAIRES'), 1, 1, 'C');
             $pdf->SetFont('Arial', '', 10);
 
             foreach ($options as $option) {
-                $pdf->Cell(120, 8, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $option['nom_option'] ?? 'Option'), 1, 0);
+                $pdf->Cell(120, 8, utf8_decode($option['nom_option'] ?? 'Option'), 1, 0);
                 $pdf->Cell(0, 8, number_format(($option['prix'] ?? 0), 2, ',', ' ') . ' DH', 1, 1, 'R');
             }
             $pdf->Ln(5);
@@ -281,7 +281,7 @@ class FactureController extends Controller {
 
         // Tableau des montants
         $pdf->SetFont('Arial', 'B', 12);
-        $pdf->Cell(0, 10, 'DÉTAIL DES MONTANTS', 1, 1, 'C');
+        $pdf->Cell(0, 10, utf8_decode('DÉTAIL DES MONTANTS'), 1, 1, 'C');
         $pdf->SetFont('Arial', '', 10);
 
         $montants = [
@@ -292,7 +292,7 @@ class FactureController extends Controller {
         ];
 
         foreach ($montants as $montant) {
-            $pdf->Cell(120, 8, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $montant[0]), 1, 0);
+            $pdf->Cell(120, 8, utf8_decode($montant[0]), 1, 0);
             $pdf->Cell(0, 8, $montant[1], 1, 1, 'R');
         }
 
@@ -300,15 +300,15 @@ class FactureController extends Controller {
         $pdf->SetFont('Arial', 'B', 12);
         $pdf->SetFillColor(0, 123, 255);
         $pdf->SetTextColor(255, 255, 255);
-        $pdf->Cell(120, 10, 'TOTAL TTC', 1, 0, 'L', true);
+        $pdf->Cell(120, 10, utf8_decode('TOTAL TTC'), 1, 0, 'L', true);
         $pdf->Cell(0, 10, number_format(($facture_data['TTC'] ?? 0), 2, ',', ' ') . ' DH', 1, 1, 'R', true);
         $pdf->SetTextColor(0, 0, 0);
 
         // Pied de page
         $pdf->Ln(20);
         $pdf->SetFont('Arial', '', 8);
-        $pdf->Cell(0, 5, 'Book&Play - Plateforme de Réservation de Terrains de Sport', 0, 1, 'C');
-        $pdf->Cell(0, 5, 'Cette facture est générée automatiquement.', 0, 1, 'C');
+        $pdf->Cell(0, 5, utf8_decode('Book&Play - Plateforme de Réservation de Terrains de Sport'), 0, 1, 'C');
+        $pdf->Cell(0, 5, utf8_decode('Cette facture est générée automatiquement.'), 0, 1, 'C');
 
         // Créer le répertoire si nécessaire
         $uploadDir = __DIR__ . '/../../public/uploads/factures/';
@@ -331,21 +331,43 @@ class FactureController extends Controller {
      * Télécharge la facture en PDF
      */
     public function download($num_facture) {
-        // Vérifier que c'est un gestionnaire
-        if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'gestionnaire') {
+        // Vérifier que l'utilisateur est connecté (gestionnaire ou client)
+        if (!isset($_SESSION['user'])) {
             header('Location: ' . BASE_URL . 'auth/login');
             exit;
         }
 
-        $gestionnaire_id = $_SESSION['user']['id'];
+        $user_id = $_SESSION['user']['id'];
+        $user_role = $_SESSION['user']['role'];
         $factureModel = new Facture();
 
         // Récupérer les détails de la facture
-        $facture = $factureModel->getFactureDetails($num_facture, $gestionnaire_id);
+        $facture = $factureModel->getFactureDetails($num_facture);
 
         if (!$facture || empty($facture['facture_path'])) {
             $_SESSION['error'] = 'Facture introuvable ou PDF non disponible';
-            header('Location: ' . BASE_URL . 'facture');
+            header('Location: ' . BASE_URL . ($user_role === 'gestionnaire' ? 'facture' : 'facture/client'));
+            exit;
+        }
+
+        // Vérifier les permissions
+        if ($user_role === 'gestionnaire') {
+            // Pour les gestionnaires, vérifier qu'ils gèrent le terrain
+            if (!$factureModel->checkGestionnaireAccess($facture['id_terrain'], $user_id)) {
+                $_SESSION['error'] = 'Accès non autorisé à cette facture';
+                header('Location: ' . BASE_URL . 'facture');
+                exit;
+            }
+        } elseif ($user_role === 'utilisateur') {
+            // Pour les clients, vérifier que c'est leur facture
+            if ($facture['id_client'] !== $user_id) {
+                $_SESSION['error'] = 'Accès non autorisé à cette facture';
+                header('Location: ' . BASE_URL . 'facture/client');
+                exit;
+            }
+        } else {
+            $_SESSION['error'] = 'Accès non autorisé';
+            header('Location: ' . BASE_URL . 'auth/login');
             exit;
         }
 
@@ -353,7 +375,7 @@ class FactureController extends Controller {
 
         if (!file_exists($filepath)) {
             $_SESSION['error'] = 'Fichier PDF introuvable';
-            header('Location: ' . BASE_URL . 'facture');
+            header('Location: ' . BASE_URL . ($user_role === 'gestionnaire' ? 'facture' : 'facture/client'));
             exit;
         }
 
@@ -366,32 +388,24 @@ class FactureController extends Controller {
     }
 
     /**
-     * API: Vérifie si une facture existe pour une réservation
+     * Affiche les factures du client connecté
      */
-    public function checkExists($id_reservation) {
-        header('Content-Type: application/json');
-
-        // Vérifier que c'est un gestionnaire
-        if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'gestionnaire') {
-            echo json_encode(['success' => false, 'message' => 'Non autorisé']);
+    public function client() {
+        // Vérifier que c'est un utilisateur (client)
+        if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'utilisateur') {
+            header('Location: ' . BASE_URL . 'auth/login');
             exit;
         }
 
-        $gestionnaire_id = $_SESSION['user']['id'];
+        $client_id = $_SESSION['user']['id'];
         $factureModel = new Facture();
 
-        try {
-            $num_facture = $factureModel->factureExists($id_reservation);
+        // Récupérer les factures du client
+        $factures = $factureModel->getFacturesByClient($client_id);
 
-            echo json_encode([
-                'success' => true,
-                'exists' => $num_facture !== false,
-                'num_facture' => $num_facture
-            ]);
-
-        } catch (Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
-        }
-        exit;
+        $this->view('utilisateur/factures', [
+            'factures' => $factures,
+            'user' => $_SESSION['user']
+        ]);
     }
 }

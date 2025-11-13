@@ -40,6 +40,14 @@
         </a>
       </li>
       
+      <!-- Demandes d'ajout de terrains -->
+      <li class="nav-item">
+        <a class="nav-link" href="<?= $baseUrl ?>Gestion_gestionnaire/demandes_ajout_terrains">
+          <i class="bi bi-plus-circle nav-icon"></i>
+          <span class="nav-text">Demandes d'ajout terrains</span>
+        </a>
+      </li>
+      
       <!-- Newsletter avec sous-menu -->
       <li class="nav-item">
         <a class="nav-link" href="#newsletterMenu" data-bs-toggle="collapse" role="button" aria-expanded="false">

@@ -6,6 +6,7 @@ class TerrainController extends Controller{
 
     private $db;
     private $uploadDir = __DIR__ . '/../../public/images/';
+    private $justificatifsDir = __DIR__ . '/../../public/uploads/justificatifs/';
 
     public function __construct($db)
     {
@@ -13,6 +14,11 @@ class TerrainController extends Controller{
         // Create upload directory if it doesn't exist
         if (!file_exists($this->uploadDir)) {
             mkdir($this->uploadDir, 0777, true);
+        }
+        
+        // Create justificatifs directory if it doesn't exist
+        if (!file_exists($this->justificatifsDir)) {
+            mkdir($this->justificatifsDir, 0777, true);
         }
         
         // Start session if not already started
@@ -78,6 +84,53 @@ class TerrainController extends Controller{
         }
     }
 
+    private function uploadJustificatifs($files) {
+        $uploadedFiles = [];
+        
+        if (!isset($files['name']) || !is_array($files['name'])) {
+            return json_encode([]); // Return empty JSON array if no files
+        }
+        
+        foreach ($files['name'] as $key => $name) {
+            if ($files['error'][$key] !== UPLOAD_ERR_OK) {
+                continue; // Skip files with errors
+            }
+            
+            $file = [
+                'name' => $files['name'][$key],
+                'type' => $files['type'][$key],
+                'tmp_name' => $files['tmp_name'][$key],
+                'error' => $files['error'][$key],
+                'size' => $files['size'][$key]
+            ];
+            
+            $targetFile = $this->justificatifsDir . basename($file['name']);
+            $fileType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
+            
+            // Check file size (max 10MB as per form)
+            if ($file['size'] > 10000000) {
+                continue; // Skip large files
+            }
+            
+            // Allow certain file formats
+            $allowedTypes = ['pdf', 'png', 'jpg', 'jpeg'];
+            if (!in_array($fileType, $allowedTypes)) {
+                continue; // Skip invalid file types
+            }
+            
+            // Generate unique filename
+            $newFilename = uniqid() . '_' . $file['name'];
+            $targetFile = $this->justificatifsDir . $newFilename;
+            
+            if (move_uploaded_file($file['tmp_name'], $targetFile)) {
+                $uploadedFiles[] = $newFilename;
+            }
+        }
+        
+        return json_encode($uploadedFiles);
+    }
+
+
     public function store()
     {
         header('Content-Type: application/json');
@@ -90,6 +143,9 @@ class TerrainController extends Controller{
                 exit;
             }
 
+            // Handle justificatifs upload
+            $justificatifsJson = $this->uploadJustificatifs($_FILES['justificatifs'] ?? []);
+
             // Get posted form data
             $data = [
                 'nom_terrain'    => htmlspecialchars($_POST['nom_terrain'] ?? ''),
@@ -100,7 +156,8 @@ class TerrainController extends Controller{
                 'format_terrain' => htmlspecialchars($_POST['format_terrain'] ?? ''),
                 'heure_ouverture' => $_POST['heure_ouverture'] ?? null,
                 'heure_fermeture' => $_POST['heure_fermeture'] ?? null,
-                'options' => $_POST['options'] ?? []
+                'options' => $_POST['options'] ?? [],
+                'justificatifs' => $justificatifsJson
             ];
 
             // Validate required fields
@@ -168,6 +225,19 @@ class TerrainController extends Controller{
         
         $terrainModel = new Terrain($_SESSION['user']['id']);
         echo $terrainModel->checkLastId();
+        exit;
+    }
+
+    /**
+     * Check for new available terrains (public endpoint for home page)
+     */
+    public function checkNewAvailableTerrains() {
+        header('Content-Type: application/json');
+        
+        // Public endpoint - no authentication required
+        $terrainModel = new Terrain();
+        $result = $terrainModel->checkLastAvailableId();
+        echo json_encode($result);
         exit;
     }
 
@@ -249,6 +319,11 @@ class TerrainController extends Controller{
             // Handle image upload if provided
             if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
                 $data['image'] = $this->uploadImage($_FILES['image']);
+            }
+
+            // Handle justificatifs upload if provided
+            if (isset($_FILES['justificatifs']) && !empty($_FILES['justificatifs']['name'][0])) {
+                $data['justificatifs'] = $this->uploadJustificatifs($_FILES['justificatifs']);
             }
 
             $terrain = new Terrain($_SESSION['user']['id']);

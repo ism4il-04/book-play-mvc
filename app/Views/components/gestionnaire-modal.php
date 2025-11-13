@@ -56,6 +56,12 @@
                                 <input type="text" class="form-control" name="terrains[0][localisation]" placeholder="Adresse complète" required>
                             </div>
 
+                            <div class="mb-3">
+                                <label class="form-label">Image du terrain</label>
+                                <input type="file" class="form-control" name="terrains[0][image]" accept="image/*" required>
+                                <div class="form-text">Formats acceptés: JPG, JPEG, PNG, GIF (max 5MB)</div>
+                            </div>
+
                             <div class="row mb-3">
                                 <div class="col-md-4">
                                     <label class="form-label">Type de terrain</label>
@@ -291,6 +297,12 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="mb-3">
                 <label class="form-label">Localisation</label>
                 <input type="text" class="form-control" name="terrains[${newIndex}][localisation]" placeholder="Adresse complète" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Image du terrain</label>
+                <input type="file" class="form-control" name="terrains[${newIndex}][image]" accept="image/*" required>
+                <div class="form-text">Formats acceptés: JPG, JPEG, PNG, GIF (max 5MB)</div>
             </div>
 
             <div class="row mb-3">
