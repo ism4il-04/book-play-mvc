@@ -313,10 +313,38 @@ $terrains = $terrains ?? [];
             background-color: #0056b3;
         }
         
-        .no-data {
+        .file-list {
+            font-size: 0.85rem;
+            color: #666;
+        }
+        .file-item {
+            display: inline-block;
+            background: #e8f5e9;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin: 2px;
+        }
+        .document-upload {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 20px;
             text-align: center;
-            padding: 60px;
-            color: #95a5a6;
+            background: #f9f9f9;
+            position: relative;
+        }
+        .upload-icon {
+            margin-bottom: 10px;
+        }
+        .upload-label {
+            display: block;
+            font-weight: 500;
+            color: #007bff;
+            cursor: pointer;
+            margin-bottom: 5px;
+        }
+        .upload-hint {
+            color: #6c757d;
+            font-size: 0.875rem;
         }
         
         .activities-list {
@@ -379,7 +407,7 @@ $terrains = $terrains ?? [];
     ?>
 
     <div class="dashboard-container" style="padding: 20px;">
-        <button onclick="openAddModal()" class="btn btn-primary" style="margin-bottom: 20px;">
+        <button id="addTerrainBtn" class="btn btn-primary">
             <i class="fas fa-plus"></i> Ajouter un terrain
         </button>
         <!-- Success/Error Messages -->
@@ -456,10 +484,10 @@ $terrains = $terrains ?? [];
                             <?php echo htmlspecialchars($terrain['statut']); ?>
                         </span>
                         <div class="action-buttons">
-                            <button onclick="openEditModal(<?php echo htmlspecialchars(json_encode($terrain)); ?>)" class="btn btn-sm btn-warning">
+                            <button class="btn btn-sm btn-warning edit-terrain-btn" data-terrain-id="<?php echo $terrain['id_terrain']; ?>" data-terrain='<?php echo htmlspecialchars(json_encode($terrain), ENT_QUOTES, 'UTF-8'); ?>'>
                                 <i class="fas fa-edit"></i> Modifier
                             </button>
-                            <button onclick="deleteTerrain(<?php echo $terrain['id_terrain']; ?>)" class="btn btn-sm btn-danger">
+                            <button class="btn btn-sm btn-danger delete-terrain-btn" data-terrain-id="<?php echo $terrain['id_terrain']; ?>">
                                 <i class="fas fa-trash"></i> Supprimer
                             </button>
                         </div>
@@ -470,7 +498,7 @@ $terrains = $terrains ?? [];
             <div class="no-data">
                 <i class="fas fa-map-marked-alt" style="font-size: 48px; color: #ccc; margin-bottom: 15px;"></i>
                 <p>Aucun terrain trouvé</p>
-                <button onclick="openAddModal()" class="btn btn-primary">
+                <button id="addTerrainBtn" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Créer un terrain
                 </button>
             </div>
@@ -483,11 +511,15 @@ $terrains = $terrains ?? [];
     <div id="addTerrainModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Ajouter un nouveau terrain</h2>
-                <button class="close" onclick="closeAddModal()">&times;</button>
+                <h2>Soumettre une demande d'ajout de terrain</h2>
+                <button id="closeAddModalBtn" class="close">&times;</button>
             </div>
             <form action="" method="POST" enctype="multipart/form-data" id="addTerrainForm">
                 <div class="modal-body">
+                    <div class="alert alert-info" style="margin-bottom: 20px;">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Demande d'approbation :</strong> Votre terrain sera soumis à l'approbation d'un administrateur avant d'être publié sur la plateforme.
+                    </div>
                     <div class="form-group">
                         <label for="nom_terrain" class="form-label">Nom du terrain <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="nom_terrain" name="nom_terrain" 
@@ -510,6 +542,23 @@ $terrains = $terrains ?? [];
                         <label for="image" class="form-label">Image du terrain <span class="text-danger">*</span></label>
                         <input type="file" class="form-control" id="image" name="image" accept="image/*" required>
                         <div class="form-text">Formats acceptés: JPG, JPEG, PNG, GIF (max 5MB)</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="justificatif" class="form-label">Justificatifs (permis, certificat, etc.) <span class="text-danger">*</span></label>
+                        <div class="document-upload">
+                            <div class="upload-icon">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                            </div>
+                            <input type="file" class="form-control d-none justificatif-input" id="justificatif" name="justificatifs[]" multiple accept=".pdf,.png,.jpg,.jpeg" required>
+                            <label class="upload-label">Cliquez pour télécharger</label>
+                            <small class="upload-hint">PDF, PNG, JPG jusqu'à 10MB</small>
+                            <div class="file-list mt-2"></div>
+                        </div>
                     </div>
 
                     <div class="row">
@@ -569,9 +618,9 @@ $terrains = $terrains ?? [];
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeAddModal()">Annuler</button>
+                    <button type="button" id="cancelAddModalBtn" class="btn btn-secondary">Annuler</button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-plus-circle"></i> Ajouter le terrain
+                        <i class="fas fa-paper-plane"></i> Soumettre la demande
                     </button>
                 </div>
             </form>
@@ -583,7 +632,7 @@ $terrains = $terrains ?? [];
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Modifier le terrain</h2>
-                <button class="close" onclick="closeEditModal()">&times;</button>
+                <button id="closeEditModalBtn" class="close">&times;</button>
             </div>
             <form action="" method="POST" enctype="multipart/form-data" id="editTerrainForm">
                 <div class="modal-body">
@@ -610,6 +659,23 @@ $terrains = $terrains ?? [];
                         <div id="current_image_container" style="margin-bottom: 10px;"></div>
                         <input type="file" class="form-control" id="edit_image" name="image" accept="image/*">
                         <div class="form-text">Formats acceptés: JPG, JPEG, PNG, GIF (max 5MB). Laissez vide pour conserver l'image actuelle.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit_justificatif" class="form-label">Justificatifs (permis, certificat, etc.)</label>
+                        <div class="document-upload">
+                            <div class="upload-icon">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                            </div>
+                            <input type="file" class="form-control d-none justificatif-input" id="edit_justificatif" name="justificatifs[]" multiple accept=".pdf,.png,.jpg,.jpeg" >
+                            <label class="upload-label">Cliquez pour télécharger</label>
+                            <small class="upload-hint">PDF, PNG, JPG jusqu'à 10MB</small>
+                            <div class="file-list mt-2"></div>
+                        </div>
                     </div>
 
                     <div class="row">
@@ -677,7 +743,7 @@ $terrains = $terrains ?? [];
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Annuler</button>
+                    <button type="button" id="cancelEditModalBtn" class="btn btn-secondary">Annuler</button>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save"></i> Enregistrer les modifications
                     </button>
@@ -710,8 +776,12 @@ window.userAuthenticated = <?php echo isset($_SESSION['user']) && $_SESSION['use
 
 // Pass terrain IDs for initialization
 window.terrainIds = <?php echo json_encode(array_column($terrains, 'id_terrain')); ?>;
-</script>
-<script>
+
+// Override the global terrainMonitor configuration for gestionnaire
+if (window.terrainMonitor) {
+    window.terrainMonitor.getEndpoint = 'terrain/getTerrainById';
+}
+
 // Fonctions pour gérer les modales
 function openAddModal() {
     document.getElementById('addTerrainModal').style.display = 'block';
@@ -725,6 +795,8 @@ function openAddModal() {
     document.querySelectorAll('#addTerrainModal .form-check-input').forEach(checkbox => {
         checkbox.checked = false;
     });
+    // Load options
+    loadOptions();
 }
 
 function closeAddModal() {
@@ -861,6 +933,68 @@ function closeEditModal() {
     });
 }
 
+// AJAX Delete Terrain Function
+async function deleteTerrain(terrainId) {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce terrain et toutes ses réservations associées ?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('<?= BASE_URL ?>terrain/delete/' + terrainId, {
+            method: 'GET'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Remove terrain from DOM
+            const terrainElement = document.querySelector(`[data-terrain-id="${terrainId}"]`);
+            if (terrainElement) {
+                terrainElement.remove();
+            }
+            
+            // Update snapshot to mark as recently deleted
+            if (typeof terrainMonitor !== 'undefined') {
+                delete terrainMonitor.terrainSnapshots[terrainId];
+            }
+            
+            // Show success notification
+            showNotification('Terrain et ses réservations supprimés avec succès!', 'success');
+        } else {
+            showNotification('Erreur: ' + (result.message || 'Échec de la suppression'), 'error');
+        }
+    } catch (error) {
+        console.error('Erreur lors de la suppression:', error);
+        showNotification('Erreur lors de la suppression du terrain', 'error');
+    }
+}
+
+// Notification helper function
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8'};
+        color: white;
+        border-radius: 5px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+    `;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
 // Fermer la modale en cliquant en dehors
 window.onclick = function(event) {
     const addModal = document.getElementById('addTerrainModal');
@@ -932,10 +1066,10 @@ function renderGestionTerrain(terrain) {
                 ${escapeHtml(terrain.statut)}
             </span>
             <div class="action-buttons">
-                <button onclick='openEditModal(${JSON.stringify(terrain).replace(/'/g, "&#39;")})' class="btn btn-sm btn-warning">
+                <button class="btn btn-sm btn-warning edit-terrain-btn" data-terrain-id="${terrain.id_terrain}" data-terrain='${JSON.stringify(terrain).replace(/'/g, "&#39;")}'>
                     <i class="fas fa-edit"></i> Modifier
                 </button>
-                <button onclick="deleteTerrain(${terrain.id_terrain})" class="btn btn-sm btn-danger">
+                <button class="btn btn-sm btn-danger delete-terrain-btn" data-terrain-id="${terrain.id_terrain}">
                     <i class="fas fa-trash"></i> Supprimer
                 </button>
             </div>
@@ -948,148 +1082,232 @@ function renderGestionTerrain(terrain) {
 // Make renderGestionTerrain globally available
 window.renderGestionTerrain = renderGestionTerrain;
 
+// Function to load options
+function loadOptions() {
+    const container = document.getElementById('add-options-container');
+    if (!container) return;
+    
+    fetch('<?= BASE_URL ?>gestionnaire/getOptions', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            renderOptions(container, data.options);
+        } else {
+            container.innerHTML = '<div class="text-danger">Erreur lors du chargement des options</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error loading options:', error);
+        container.innerHTML = '<div class="text-danger">Erreur de chargement</div>';
+    });
+}
+
+// Attach event listeners immediately for modal buttons
+(function() {
+    // Add event listeners for modal buttons
+    const addTerrainBtn = document.getElementById('addTerrainBtn');
+    if (addTerrainBtn) {
+        addTerrainBtn.addEventListener('click', openAddModal);
+    }
+
+    const closeAddModalBtn = document.getElementById('closeAddModalBtn');
+    if (closeAddModalBtn) {
+        closeAddModalBtn.addEventListener('click', closeAddModal);
+    }
+
+    const cancelAddModalBtn = document.getElementById('cancelAddModalBtn');
+    if (cancelAddModalBtn) {
+        cancelAddModalBtn.addEventListener('click', closeAddModal);
+    }
+
+    const closeEditModalBtn = document.getElementById('closeEditModalBtn');
+    if (closeEditModalBtn) {
+        closeEditModalBtn.addEventListener('click', closeEditModal);
+    }
+
+    const cancelEditModalBtn = document.getElementById('cancelEditModalBtn');
+    if (cancelEditModalBtn) {
+        cancelEditModalBtn.addEventListener('click', closeEditModal);
+    }
+
+    // Load options when add modal is shown
+    const addModal = document.getElementById('addTerrainModal');
+    if (addModal) {
+        addModal.addEventListener('show.bs.modal', function() {
+            loadOptions();
+        });
+    }
+})();
+
+// Add event listeners for terrain card buttons using event delegation
+document.addEventListener('click', function(e) {
+    // Handle edit terrain buttons
+    if (e.target.closest('.edit-terrain-btn')) {
+        const btn = e.target.closest('.edit-terrain-btn');
+        const terrainData = JSON.parse(btn.getAttribute('data-terrain').replace(/&#39;/g, "'"));
+        openEditModal(terrainData);
+    }
+
+    // Handle delete terrain buttons
+    if (e.target.closest('.delete-terrain-btn')) {
+        const btn = e.target.closest('.delete-terrain-btn');
+        const terrainId = btn.getAttribute('data-terrain-id');
+        deleteTerrain(terrainId);
+    }
+});
+
+// Function to render options
+function renderOptions(container, options) {
+    container.innerHTML = '';
+    
+    options.forEach(option => {
+        const optionHtml = `
+            <div class="option-item mb-3" data-option-id="${option.id_option}">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="options[${option.id_option}][selected]" value="1" id="add_option_${option.id_option}">
+                    <label class="form-check-label" for="add_option_${option.id_option}">
+                        <strong>${option.nom_option}</strong> - ${option.description}
+                    </label>
+                </div>
+                <input type="number" class="form-control form-control-sm mt-2 option-price" 
+                       name="options[${option.id_option}][prix]" placeholder="Prix (DH)" min="0" step="0.01" style="display: none;">
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', optionHtml);
+    });
+    
+    // Attach event handlers
+    attachOptionsHandler();
+}
+
+// Function to attach option handlers
+function attachOptionsHandler() {
+    const container = document.getElementById('add-options-container');
+    if (!container) return;
+    
+    const checkboxes = container.querySelectorAll('.form-check-input');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const optionItem = this.closest('.option-item');
+            const priceInput = optionItem.querySelector('.option-price');
+            if (this.checked) {
+                priceInput.style.display = 'block';
+                priceInput.required = true;
+            } else {
+                priceInput.style.display = 'none';
+                priceInput.required = false;
+                priceInput.value = '';
+            }
+        });
+    });
+}
+
 // Initialize options handling when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    // Function to load options
-    function loadOptions() {
-        const container = document.getElementById('add-options-container');
-        if (!container) return;
-        
-        fetch('<?= BASE_URL ?>gestionnaire/getOptions', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                renderOptions(container, data.options);
-            } else {
-                container.innerHTML = '<div class="text-danger">Erreur lors du chargement des options</div>';
-            }
-        })
-        .catch(error => {
-            console.error('Error loading options:', error);
-            container.innerHTML = '<div class="text-danger">Erreur de chargement</div>';
+
+    // File upload handling for justificatif (add modal)
+    const justificatifInput = document.querySelector('#addTerrainModal .justificatif-input');
+    const fileList = document.querySelector('#addTerrainModal .file-list');
+    const uploadLabel = document.querySelector('#addTerrainModal .upload-label');
+    
+    if (uploadLabel) {
+        uploadLabel.addEventListener('click', function() {
+            justificatifInput.click();
         });
     }
     
-    // Function to render options
-    function renderOptions(container, options) {
-        container.innerHTML = '';
-        
-        options.forEach(option => {
-            const optionHtml = `
-                <div class="option-item mb-3" data-option-id="${option.id_option}">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="options[${option.id_option}][selected]" value="1" id="add_option_${option.id_option}">
-                        <label class="form-check-label" for="add_option_${option.id_option}">
-                            <strong>${option.nom_option}</strong> - ${option.description}
-                        </label>
-                    </div>
-                    <input type="number" class="form-control form-control-sm mt-2 option-price" 
-                           name="options[${option.id_option}][prix]" placeholder="Prix (DH)" min="0" step="0.01" style="display: none;">
-                </div>
-            `;
-            container.insertAdjacentHTML('beforeend', optionHtml);
+    if (justificatifInput) {
+        justificatifInput.addEventListener('change', function() {
+            fileList.innerHTML = '';
+            if (this.files.length > 0) {
+                Array.from(this.files).forEach(file => {
+                    const fileItem = document.createElement('span');
+                    fileItem.className = 'file-item';
+                    fileItem.textContent = file.name;
+                    fileList.appendChild(fileItem);
+                });
+            }
         });
-        
-        // Attach event handlers
-        attachOptionsHandler();
+    }
+
+    // File upload handling for justificatif (edit modal)
+    const editJustificatifInput = document.querySelector('#editTerrainModal .justificatif-input');
+    const editFileList = document.querySelector('#editTerrainModal .file-list');
+    const editUploadLabel = document.querySelector('#editTerrainModal .upload-label');
+    
+    if (editUploadLabel) {
+        editUploadLabel.addEventListener('click', function() {
+            editJustificatifInput.click();
+        });
     }
     
-    // Function to attach option handlers
-    function attachOptionsHandler() {
-        const container = document.getElementById('add-options-container');
-        if (!container) return;
-        
-        const checkboxes = container.querySelectorAll('.form-check-input');
-        checkboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const optionItem = this.closest('.option-item');
-                const priceInput = optionItem.querySelector('.option-price');
-                if (this.checked) {
-                    priceInput.style.display = 'block';
-                    priceInput.required = true;
+    if (editJustificatifInput) {
+        editJustificatifInput.addEventListener('change', function() {
+            editFileList.innerHTML = '';
+            if (this.files.length > 0) {
+                Array.from(this.files).forEach(file => {
+                    const fileItem = document.createElement('span');
+                    fileItem.className = 'file-item';
+                    fileItem.textContent = file.name;
+                    editFileList.appendChild(fileItem);
+                });
+            }
+        });
+    }
+
+    // Gérer la soumission du formulaire via AJAX
+    document.getElementById("addTerrainForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+
+        fetch("<?= BASE_URL ?>terrain/store", {
+            method: "POST",
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    terrainMonitor.afficherNotification("Demande d'ajout de terrain soumise avec succès ! Elle sera examinée par un administrateur.");
+                    closeAddModal();
+
+                    // Ajouter au DOM
+                    const container = document.querySelector('.activities-list');
+                    const noData = container.querySelector('.no-data');
+                    if (noData) noData.remove();
+                    
+                    const element = renderGestionTerrain(data.terrain);
+                    container.insertBefore(element, container.firstChild);
+                    
+                    // Mettre à jour le dernier ID
+                    terrainMonitor.mettreAJourDernierId(data.terrain.id_terrain);
+
                 } else {
-                    priceInput.style.display = 'none';
-                    priceInput.required = false;
-                    priceInput.value = '';
+                    alert("Erreur : " + data.message);
                 }
+            })
+            .catch(error => {
+                console.error("Erreur AJAX :", error);
+                alert("Erreur lors de l'ajout du terrain");
             });
-        });
-    }
-    
-    // Load options when add modal is opened
-    function openAddModal() {
-        document.getElementById('addTerrainModal').style.display = 'block';
-        document.getElementById('addTerrainForm').reset();
-        // Reset options checkboxes and hide price inputs
-        document.querySelectorAll('#addTerrainModal .option-price').forEach(input => {
-            input.style.display = 'none';
-            input.required = false;
-            input.value = '';
-        });
-        document.querySelectorAll('#addTerrainModal .form-check-input').forEach(checkbox => {
-            checkbox.checked = false;
-        });
-        // Load options
-        loadOptions();
-    }
-    
-    // Make openAddModal globally available
-    window.openAddModal = openAddModal;
-});
+    });
 
-// Gérer la soumission du formulaire via AJAX
-document.getElementById("addTerrainForm").addEventListener("submit", function(e) {
-    e.preventDefault();
+    // Gérer la soumission du formulaire de modification via AJAX
+    document.getElementById("editTerrainForm").addEventListener("submit", function(e) {
+        e.preventDefault();
 
-    const formData = new FormData(this);
+        const formData = new FormData(this);
+        const formAction = this.action; // L'URL est définie dynamiquement dans openEditModal
 
-    fetch("<?= BASE_URL ?>terrain/store", {
-        method: "POST",
-        body: formData
-    })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                terrainMonitor.afficherNotification("Terrain ajouté avec succès !");
-                closeAddModal();
-
-                // Ajouter au DOM
-                const container = document.querySelector('.activities-list');
-                const noData = container.querySelector('.no-data');
-                if (noData) noData.remove();
-                
-                const element = renderGestionTerrain(data.terrain);
-                container.insertBefore(element, container.firstChild);
-                
-                // Mettre à jour le dernier ID
-                terrainMonitor.mettreAJourDernierId(data.terrain.id_terrain);
-
-            } else {
-                alert("Erreur : " + data.message);
-            }
+        fetch(formAction, {
+            method: "POST",
+            body: formData
         })
-        .catch(error => {
-            console.error("Erreur AJAX :", error);
-            alert("Erreur lors de l'ajout du terrain");
-        });
-});
-
-// Gérer la soumission du formulaire de modification via AJAX
-document.getElementById("editTerrainForm").addEventListener("submit", function(e) {
-    e.preventDefault();
-
-    const formData = new FormData(this);
-    const formAction = this.action; // L'URL est définie dynamiquement dans openEditModal
-
-    fetch(formAction, {
-        method: "POST",
-        body: formData
-    })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -1101,14 +1319,7 @@ document.getElementById("editTerrainForm").addEventListener("submit", function(e
 
                 // Trouver et remplacer l'élément existant dans le DOM
                 const container = document.querySelector('.activities-list');
-                const existingElement = Array.from(container.querySelectorAll('.activity-item')).find(item => {
-                    const editButton = item.querySelector('button[onclick*="openEditModal"]');
-                    if (editButton) {
-                        const onclickAttr = editButton.getAttribute('onclick');
-                        return onclickAttr && onclickAttr.includes('"id_terrain":' + data.terrain.id_terrain);
-                    }
-                    return false;
-                });
+                const existingElement = container.querySelector(`[data-terrain-id="${data.terrain.id_terrain}"]`);
 
                 if (existingElement) {
                     const newElement = renderGestionTerrain(data.terrain);
@@ -1128,95 +1339,34 @@ document.getElementById("editTerrainForm").addEventListener("submit", function(e
             console.error("Erreur AJAX :", error);
             alert("Erreur lors de la modification du terrain");
         });
-});
+    });
 
-// AJAX Delete Terrain Function
-async function deleteTerrain(terrainId) {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce terrain et toutes ses réservations associées ?')) {
-        return;
-    }
-    
-    try {
-        const response = await fetch('<?= BASE_URL ?>terrain/delete/' + terrainId, {
-            method: 'GET'
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            // Remove terrain from DOM
-            const terrainElement = document.querySelector(`[data-terrain-id="${terrainId}"]`);
-            if (terrainElement) {
-                terrainElement.remove();
+    // Add animation styles
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
             }
-            
-            // Update snapshot to mark as recently deleted
-            if (typeof terrainMonitor !== 'undefined') {
-                delete terrainMonitor.terrainSnapshots[terrainId];
+            to {
+                transform: translateX(0);
+                opacity: 1;
             }
-            
-            // Show success notification
-            showNotification('Terrain et ses réservations supprimés avec succès!', 'success');
-        } else {
-            showNotification('Erreur: ' + (result.message || 'Échec de la suppression'), 'error');
         }
-    } catch (error) {
-        console.error('Erreur lors de la suppression:', error);
-        showNotification('Erreur lors de la suppression du terrain', 'error');
-    }
-}
-
-// Notification helper function
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 15px 20px;
-        background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8'};
-        color: white;
-        border-radius: 5px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        z-index: 10000;
-        animation: slideIn 0.3s ease-out;
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
     `;
-    notification.textContent = message;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease-out';
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
-}
-
-// Add animation styles
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from {
-            transform: translateX(400px);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-    @keyframes slideOut {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(400px);
-            opacity: 0;
-        }
-    }
-`;
-document.head.appendChild(style);
+    document.head.appendChild(style);
+});
 </script>
 </body>
 </html>
