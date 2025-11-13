@@ -26,6 +26,7 @@ class Reservation extends Model {
                 r.date_reservation,
                 r.creneau,
                 r.status,
+                r.commentaire,
                 t.nom_terrain,
                 t.localisation,
                 u.nom AS client_nom,
