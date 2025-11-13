@@ -371,6 +371,7 @@ public function checkAvailability($terrainId, $date, $creneau) {
     public function getReservationById($reservationId, $userId = null) {
         $sql = "SELECT 
                     r.*,
+                    r.id_terrain,
                     t.nom_terrain,
                     t.localisation, 
                     t.type_terrain, 
