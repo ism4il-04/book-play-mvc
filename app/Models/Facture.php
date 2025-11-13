@@ -265,7 +265,7 @@ class Facture extends Model {
     /**
      * Vérifie si le gestionnaire a accès au terrain
      */
-    private function checkGestionnaireAccess($id_terrain, $gestionnaire_id) {
+    public function checkGestionnaireAccess($id_terrain, $gestionnaire_id) {
         $query = "SELECT id_terrain FROM {$this->terrainTable}
                   WHERE id_terrain = :id_terrain AND id_gestionnaire = :gestionnaire_id";
 
@@ -339,6 +339,25 @@ class Facture extends Model {
         ]);
 
         return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Récupère les factures d'un client
+     */
+    public function getFacturesByClient($client_id) {
+        $query = "SELECT f.*, r.id_reservation, r.date_reservation, r.creneau, r.status, r.type, r.commentaire,
+                         r.id_terrain, r.id_client,
+                         t.nom_terrain, t.type_terrain, t.format_terrain, t.prix_heure
+                  FROM {$this->table} f
+                  INNER JOIN {$this->reservationTable} r ON f.id_reservation = r.id_reservation
+                  INNER JOIN {$this->terrainTable} t ON r.id_terrain = t.id_terrain
+                  WHERE r.id_client = :client_id
+                  ORDER BY f.date_facturation DESC, r.date_reservation DESC";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([':client_id' => $client_id]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**

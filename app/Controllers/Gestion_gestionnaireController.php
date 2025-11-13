@@ -16,7 +16,7 @@ class Gestion_gestionnaireController extends Controller {
 
         // Charger le modèle Admin
         $adminModel = $this->model('Admin');
-        
+
         // Récupérer les gestionnaires en attente
         $gestionnairesEnAttente = $adminModel->getAllGestionnairesEnAttente();
 
@@ -43,6 +43,228 @@ class Gestion_gestionnaireController extends Controller {
 
         // Afficher la vue avec TOUTES les données
         $this->view('administrateur/Gestion_gestionnaire', $viewData);
+    }
+
+    // Méthode pour afficher les demandes d'ajout de terrains
+    public function demandes_ajout_terrains() {
+        // Vérifier la session et le rôle
+        if (!isset($_SESSION['user']) || ($_SESSION['user']['role'] ?? '') !== 'administrateur') {
+            header('Location: ' . BASE_URL . 'auth/login');
+            exit;
+        }
+
+        // Charger le modèle Admin
+        $adminModel = $this->model('Admin');
+
+        // Récupérer les demandes d'ajout de terrains
+        $demandesTerrains = $adminModel->getDemandesAjoutTerrains();
+        $nbrDemandes = $adminModel->getNombreDemandesAjoutTerrains();
+
+        // Préparer les données pour la vue
+        $viewData = [
+            'demandes_terrains' => $demandesTerrains,
+            'nbrDemandes' => $nbrDemandes,
+            'error' => null,
+        ];
+
+        // Afficher la vue
+        $this->view('administrateur/demandes_ajout_terrains', $viewData);
+    }
+
+    // Méthode pour accepter une demande d'ajout de terrain
+    public function accepterTerrain() {
+        // Nettoyer complètement le buffer de sortie
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        // Démarrer un nouveau buffer propre
+        ob_start();
+
+        // Définir les headers JSON dès le début
+        header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-cache, must-revalidate');
+
+        try {
+            // Vérifier la session et le rôle
+            if (!isset($_SESSION['user']) || ($_SESSION['user']['role'] ?? '') !== 'administrateur') {
+                ob_clean();
+                echo json_encode(['success' => false, 'message' => 'Non autorisé']);
+                exit;
+            }
+
+            // Vérifier que c'est une requête POST
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                ob_clean();
+                echo json_encode(['success' => false, 'message' => 'Méthode non autorisée']);
+                exit;
+            }
+
+            // Récupérer l'ID du terrain
+            $data = json_decode(file_get_contents('php://input'), true);
+            $idTerrain = $data['id_terrain'] ?? null;
+
+            if (!$idTerrain) {
+                ob_clean();
+                echo json_encode(['success' => false, 'message' => 'ID terrain manquant']);
+                exit;
+            }
+
+            // Charger le modèle
+            $adminModel = $this->model('Admin');
+
+            // Mettre à jour l'état du terrain à 'acceptée' et statut à 'disponible'
+            $result = $adminModel->updateTerrainStatus($idTerrain, 'acceptée', 'disponible');
+
+            if ($result) {
+                ob_clean();
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Demande de terrain acceptée avec succès !'
+                ]);
+            } else {
+                ob_clean();
+                echo json_encode(['success' => false, 'message' => 'Erreur lors de l\'acceptation']);
+            }
+            exit;
+
+        } catch (Exception $e) {
+            ob_clean();
+            error_log("Erreur dans accepterTerrain(): " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Erreur serveur: ' . $e->getMessage()]);
+            exit;
+        }
+    }
+
+    // Méthode pour récupérer une demande de terrain par ID (AJAX endpoint)
+    public function getTerrainDemandById($idTerrain) {
+        // Vérifier la session et le rôle
+        if (!isset($_SESSION['user']) || ($_SESSION['user']['role'] ?? '') !== 'administrateur') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Non autorisé']);
+            exit;
+        }
+
+        header('Content-Type: application/json');
+
+        try {
+            $adminModel = $this->model('Admin');
+            $terrain = $adminModel->getTerrainDemandById($idTerrain);
+
+            if ($terrain) {
+                echo json_encode([
+                    'success' => true,
+                    'terrain' => $terrain
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Terrain non trouvé'
+                ]);
+            }
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Erreur serveur'
+            ]);
+        }
+        exit;
+    }
+
+    // Méthode pour vérifier les nouveaux terrains en attente (AJAX endpoint)
+    public function checkNewTerrainDemands() {
+        // Vérifier la session et le rôle
+        if (!isset($_SESSION['user']) || ($_SESSION['user']['role'] ?? '') !== 'administrateur') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Non autorisé']);
+            exit;
+        }
+
+        header('Content-Type: application/json');
+
+        try {
+            $adminModel = $this->model('Admin');
+            $lastId = $adminModel->getLastTerrainDemandId();
+            echo json_encode($lastId);
+        } catch (Exception $e) {
+            echo json_encode(['lastId' => 0]);
+        }
+        exit;
+    }
+
+    // Méthode pour récupérer une demande de terrain par ID pour l'admin (AJAX endpoint)
+    public function getAdminTerrainDemandById($idTerrain) {
+        // Vérifier la session et le rôle
+        if (!isset($_SESSION['user']) || ($_SESSION['user']['role'] ?? '') !== 'administrateur') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Non autorisé']);
+            exit;
+        }
+
+        header('Content-Type: application/json');
+
+        try {
+            $adminModel = $this->model('Admin');
+            $terrain = $adminModel->getTerrainDemandById($idTerrain);
+
+            if ($terrain) {
+                echo json_encode([
+                    'success' => true,
+                    'terrain' => $terrain
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Terrain non trouvé'
+                ]);
+            }
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Erreur serveur'
+            ]);
+        }
+        exit;
+    }
+
+    // Méthode pour refuser une demande d'ajout de terrain
+    public function refuserTerrain() {
+        // Vérifier la session et le rôle
+        if (!isset($_SESSION['user']) || ($_SESSION['user']['role'] ?? '') !== 'administrateur') {
+            echo json_encode(['success' => false, 'message' => 'Non autorisé']);
+            exit;
+        }
+
+        // Vérifier que c'est une requête POST
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Méthode non autorisée']);
+            exit;
+        }
+
+        // Récupérer l'ID du terrain
+        $data = json_decode(file_get_contents('php://input'), true);
+        $idTerrain = $data['id_terrain'] ?? null;
+
+        if (!$idTerrain) {
+            echo json_encode(['success' => false, 'message' => 'ID terrain manquant']);
+            exit;
+        }
+
+        // Charger le modèle
+        $adminModel = $this->model('Admin');
+
+        // Mettre à jour l'état du terrain à 'refusée' et statut à 'non disponible'
+        $result = $adminModel->updateTerrainStatus($idTerrain, 'refusée', 'non disponible');
+
+        if ($result) {
+            echo json_encode([
+                'success' => true,
+                'message' => 'Demande de terrain refusée avec succès !'
+            ]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Erreur lors du refus']);
+        }
+        exit;
     }
 
     // Méthode pour accepter un gestionnaire
@@ -210,44 +432,6 @@ class Gestion_gestionnaireController extends Controller {
         exit;
     }
 
-    // Méthode pour remettre en attente un gestionnaire refusé
-    public function remettreEnAttente() {
-        // Vérifier la session et le rôle
-        if (!isset($_SESSION['user']) || ($_SESSION['user']['role'] ?? '') !== 'administrateur') {
-            echo json_encode(['success' => false, 'message' => 'Non autorisé']);
-            exit;
-        }
-
-        // Vérifier que c'est une requête POST
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(['success' => false, 'message' => 'Méthode non autorisée']);
-            exit;
-        }
-
-        // Récupérer l'ID du gestionnaire et du terrain
-        $data = json_decode(file_get_contents('php://input'), true);
-        $id = $data['id'] ?? null;
-        $idTerrain = $data['id_terrain'] ?? null;
-
-        if (!$id) {
-            ob_clean();
-            echo json_encode(['success' => false, 'message' => 'ID manquant']);
-            exit;
-        }
-
-        // Charger le modèle et mettre à jour le statut
-        $adminModel = $this->model('Admin');
-        // Remettre le gestionnaire en attente et son terrain en attente
-        $result = $adminModel->updateGestionnaireStatus($id, 'en attente', 'en attente', $idTerrain);
-
-        if ($result) {
-            echo json_encode(['success' => true, 'message' => 'Demande remise en attente avec succès']);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Erreur lors de la remise en attente']);
-        }
-        exit;
-    }
-
     // Méthode pour récupérer les détails d'un gestionnaire
     public function getDetails() {
         // Vérifier la session et le rôle
@@ -278,7 +462,7 @@ class Gestion_gestionnaireController extends Controller {
 
         if ($gestionnaire) {
             echo json_encode([
-                'success' => true, 
+                'success' => true,
                 'gestionnaire' => $gestionnaire
             ]);
         } else {
@@ -307,7 +491,7 @@ class Gestion_gestionnaireController extends Controller {
 
         // Charger le modèle Admin
         $adminModel = $this->model('Admin');
-        
+
         // Supprimer le gestionnaire
         $result = $adminModel->supprimerGestionnaire($id);
 
@@ -324,7 +508,7 @@ class Gestion_gestionnaireController extends Controller {
      */
     private function sendEmail($to, $subject, $htmlContent) {
         $mail = new PHPMailer(true);
-        
+
         try {
             // Configuration du serveur SMTP
             $mail->isSMTP();
@@ -334,7 +518,7 @@ class Gestion_gestionnaireController extends Controller {
             $mail->Password = $_ENV['SMTP_PASSWORD'] ?? 'votre-mot-de-passe-app';
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port = intval($_ENV['SMTP_PORT'] ?? 587);
-            
+
             // Options supplémentaires (optionnel)
             $mail->SMTPOptions = array(
                 'ssl' => array(
@@ -343,23 +527,23 @@ class Gestion_gestionnaireController extends Controller {
                     'allow_self_signed' => true
                 )
             );
-            
+
             // Expéditeur et destinataire
             $mail->setFrom('noreply@bookandplay.com', 'Book&Play');
             $mail->addAddress($to);
             $mail->addReplyTo('contact@bookandplay.com', 'Book&Play Support');
-            
+
             // Contenu de l'email
             $mail->isHTML(true);
             $mail->Subject = $subject;
             $mail->Body = $htmlContent;
             $mail->AltBody = strip_tags($htmlContent); // Version texte
             $mail->CharSet = 'UTF-8';
-            
+
             // Envoyer
             $mail->send();
             return true;
-            
+
         } catch (Exception $e) {
             error_log("PHPMailer Error: {$mail->ErrorInfo}");
             return false;
@@ -458,7 +642,7 @@ class Gestion_gestionnaireController extends Controller {
         $name = $gestionnaire['prenom'] ?? 'Gestionnaire';
         $currentYear = date('Y');
         $currentDate = date('d/m/Y à H:i');
-        
+
         // Définir le contenu selon le type (acceptation ou refus)
         if ($type === 'acceptation') {
             $subject = "🎉 Félicitations! Votre demande de gestionnaire a été acceptée";
@@ -476,7 +660,7 @@ class Gestion_gestionnaireController extends Controller {
             $statusColor = "#dc3545";
             $statusIcon = "❌";
         }
-        
+
         return <<<HTML
 <!DOCTYPE html>
 <html lang="fr">

@@ -690,225 +690,34 @@ HTML;
         return $html;
     }
     /**
- * Point d'entrée pour le CRON
+ * Point d'entrée pour le CRON (mode silencieux)
  * Accessible via: http://localhost/book-play-mvc/public/auto_newsletter/cron
- * 
- * Cette méthode peut être appelée:
- * 1. Via un CRON: curl http://localhost/book-play-mvc/public/auto_newsletter/cron
- * 2. Via le navigateur (pour tester)
- * 3. Via wget dans un CRON
+ * Aucune sortie HTML/texte n'est envoyée au navigateur.
  */
 public function cron() {
     // Pas de vérification de session pour permettre l'accès au CRON
-    
-    // Log de démarrage
-    error_log("=== CRON NEWSLETTER DÉCLENCHÉ ===");
-    error_log("URL appelée: " . $_SERVER['REQUEST_URI']);
-    error_log("Heure: " . date('Y-m-d H:i:s'));
-    
-    // En-têtes pour éviter les timeouts
-    set_time_limit(300); // 5 minutes max
-    header('Content-Type: text/plain; charset=utf-8');
-    
-    echo "🚀 CRON Newsletter Book&Play\n";
-    echo "═══════════════════════════════════════\n";
-    echo "Démarrage: " . date('Y-m-d H:i:s') . "\n\n";
-    
-    $newsletterModel = $this->model('AutoNewsletter');
-    
-    // 1. Vérifier si la newsletter est activée
-    echo "📋 Vérification de la configuration...\n";
-    $config = $newsletterModel->getConfig();
-    
-    if (!$config) {
-        echo "❌ ERREUR: Configuration introuvable\n";
-        error_log("❌ CRON: Configuration introuvable");
-        exit;
-    }
-    
-    if (!$config['enabled']) {
-        echo "⏸️  Newsletter automatique désactivée\n";
-        echo "💡 Activez-la dans l'interface admin\n";
-        error_log("⏸️  CRON: Newsletter désactivée");
-        exit;
-    }
-    
-    echo "✅ Newsletter activée\n";
-    echo "   Jour configuré: {$config['day_of_week']}\n";
-    echo "   Heure configurée: {$config['send_time']}\n\n";
-    
-    // 2. Vérifier si déjà envoyée aujourd'hui
-    echo "🔍 Vérification des envois du jour...\n";
-    $history = $newsletterModel->getHistory(1);
-    
-    if (!empty($history)) {
-        $lastSent = strtotime($history[0]['sent_at']);
-        $todayStart = strtotime('today');
-        
-        if ($lastSent >= $todayStart) {
-            $lastSentFormatted = date('H:i', $lastSent);
-            echo "⏭️  Newsletter déjà envoyée aujourd'hui à $lastSentFormatted\n";
-            echo "   Emails envoyés: {$history[0]['sent_count']}\n";
-            echo "   Échecs: {$history[0]['failed_count']}\n";
-            error_log("⏭️  CRON: Newsletter déjà envoyée aujourd'hui");
-            exit;
-        }
-    }
-    
-    echo "✅ Aucun envoi aujourd'hui\n\n";
-    
-    // 3. Vérifier le jour
-    $currentDay = strtolower(date('l'));
-    echo "📅 Vérification du jour...\n";
-    echo "   Jour actuel: $currentDay\n";
-    echo "   Jour configuré: {$config['day_of_week']}\n";
-    
-    if ($config['day_of_week'] !== $currentDay) {
-        echo "⏳ Ce n'est pas le bon jour\n";
-        echo "💡 La newsletter est programmée pour {$config['day_of_week']}\n";
-        error_log("⏳ CRON: Pas le bon jour ($currentDay vs {$config['day_of_week']})");
-        exit;
-    }
-    
-    echo "✅ Bon jour détecté\n\n";
-    
-    // 4. Vérifier l'heure (avec flexibilité de 3 heures)
-    $currentTime = date('H:i:s');
-    $configTime = strtotime($config['send_time']);
-    $now = strtotime($currentTime);
-    $diff = abs($now - $configTime);
-    $threeHours = 3 * 3600;
-    
-    echo "⏰ Vérification de l'heure...\n";
-    echo "   Heure actuelle: $currentTime\n";
-    echo "   Heure configurée: {$config['send_time']}\n";
-    echo "   Différence: " . round($diff / 60) . " minutes\n";
-    
-    // Si c'est trop tôt (plus de 3h avant l'heure configurée)
-    if ($now < ($configTime - $threeHours)) {
-        echo "⏳ Trop tôt pour envoyer\n";
-        echo "💡 Attendez au moins " . date('H:i', $configTime - $threeHours) . "\n";
-        error_log("⏳ CRON: Trop tôt");
-        exit;
-    }
-    
-    // Si c'est trop tard (plus de 3h après l'heure configurée)
-    if ($now > ($configTime + $threeHours)) {
-        echo "⏰ Dépassement de la fenêtre d'envoi\n";
-        echo "💡 L'heure d'envoi était: {$config['send_time']}\n";
-        echo "💡 Fenêtre: " . date('H:i', $configTime) . " - " . date('H:i', $configTime + $threeHours) . "\n";
-        error_log("⏰ CRON: Hors de la fenêtre d'envoi");
-        exit;
-    }
-    
-    echo "✅ Heure valide (fenêtre de 3h)\n\n";
-    
-    // 5. Générer le contenu
-    echo "📝 Génération du contenu...\n";
-    flush();
-    
+    // Exécuter en silence et journaliser uniquement côté serveur
+    error_log("=== CRON NEWSLETTER (SILENT) DÉCLENCHÉ ===");
+
+    // Éviter les timeouts
+    set_time_limit(300);
+
+    // Supprimer toute sortie potentielle provenant des méthodes appelées
+    ob_start();
     try {
-        $content = $this->generateNewsletterContent($config);
-        echo "✅ Contenu généré: {$content['subject']}\n";
-        echo "   Sections incluses: " . count($content['sections']) . "\n\n";
+        $this->sendAutomatic();
     } catch (Exception $e) {
-        echo "❌ ERREUR lors de la génération du contenu\n";
-        echo "   Message: " . $e->getMessage() . "\n";
-        error_log("❌ CRON: Erreur génération contenu - " . $e->getMessage());
-        exit;
+        error_log("CRON Newsletter exception: " . $e->getMessage());
     }
-    
-    // 6. Récupérer les abonnés
-    echo "👥 Récupération des abonnés...\n";
-    flush();
-    
-    $subscribers = $newsletterModel->getSubscribers();
-    
-    if (empty($subscribers)) {
-        echo "⚠️  Aucun abonné trouvé\n";
-        echo "💡 Vérifiez que des utilisateurs ont newsletter_subscribed = 1\n";
-        error_log("⚠️  CRON: Aucun abonné");
-        exit;
+    // Ignorer tout ce qui a pu être affiché
+    ob_end_clean();
+
+    // Réponse vide (No Content)
+    if (!headers_sent()) {
+        header('Content-Type: text/plain; charset=utf-8');
+        http_response_code(204);
     }
-    
-    echo "✅ " . count($subscribers) . " abonné(s) trouvé(s)\n\n";
-    
-    // 7. Envoi à tous les abonnés
-    echo "📤 ENVOI EN COURS...\n";
-    echo "───────────────────────────────────────\n";
-    flush();
-    
-    $sent = 0;
-    $failed = 0;
-    $startTime = microtime(true);
-    
-    foreach ($subscribers as $index => $subscriber) {
-        $email = $subscriber['email'];
-        $name = $subscriber['prenom'] ?: $subscriber['nom'] ?: 'Utilisateur';
-        $num = $index + 1;
-        
-        echo "[$num/" . count($subscribers) . "] $name ($email)... ";
-        flush();
-        
-        try {
-            $emailContent = $this->generateEmailHTML($content, $subscriber);
-            
-            if ($this->sendEmail($email, $content['subject'], $emailContent)) {
-                echo "✅\n";
-                $sent++;
-                error_log("✅ CRON: Email envoyé à $email");
-            } else {
-                echo "❌\n";
-                $failed++;
-                error_log("❌ CRON: Échec envoi à $email");
-            }
-        } catch (Exception $e) {
-            echo "❌ (erreur: {$e->getMessage()})\n";
-            $failed++;
-            error_log("❌ CRON: Exception pour $email - " . $e->getMessage());
-        }
-        
-        flush();
-        usleep(100000); // Pause de 0.1 seconde entre chaque email
-    }
-    
-    $duration = round(microtime(true) - $startTime, 2);
-    
-    echo "───────────────────────────────────────\n\n";
-    
-    // 8. Enregistrer dans l'historique
-    echo "💾 Enregistrement dans l'historique...\n";
-    
-    try {
-        $newsletterModel->logSend($content['subject'], $sent, $failed);
-        echo "✅ Historique enregistré\n\n";
-    } catch (Exception $e) {
-        echo "⚠️  Erreur lors de l'enregistrement\n";
-        error_log("⚠️  CRON: Erreur enregistrement historique - " . $e->getMessage());
-    }
-    
-    // 9. Résumé final
-    echo "📊 RÉSUMÉ FINAL\n";
-    echo "═══════════════════════════════════════\n";
-    echo "✅ Envoyés avec succès: $sent\n";
-    
-    if ($failed > 0) {
-        echo "❌ Échecs: $failed\n";
-    }
-    
-    echo "⏱️  Durée totale: {$duration}s\n";
-    echo "📅 Date: " . date('Y-m-d H:i:s') . "\n";
-    echo "═══════════════════════════════════════\n";
-    
-    if ($sent > 0) {
-        echo "🎉 Newsletter envoyée avec succès !\n";
-        error_log("🎉 CRON: Newsletter envoyée - $sent succès, $failed échecs");
-    } else {
-        echo "⚠️  Aucun email n'a pu être envoyé\n";
-        error_log("⚠️  CRON: Aucun email envoyé");
-    }
-    
-    error_log("=== FIN CRON NEWSLETTER ===");
+    exit;
 }
 
 /**
