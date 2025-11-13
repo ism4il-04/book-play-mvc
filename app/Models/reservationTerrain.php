@@ -141,8 +141,15 @@ class Reservation {
                 $reservationId = $this->db->lastInsertId();
                 error_log("ID de la nouvelle réservation: " . $reservationId);
                 
-                if (!empty($data['options'])) {
-                    $this->addReservationOptions($reservationId, $data['options']);
+                // Sauvegarder les options si elles existent
+                if (!empty($data['options']) && is_array($data['options'])) {
+                    error_log("Tentative de sauvegarde de " . count($data['options']) . " option(s) pour réservation $reservationId");
+                    $optionsSaved = $this->addReservationOptions($reservationId, $data['options']);
+                    if (!$optionsSaved) {
+                        error_log("ATTENTION: Les options n'ont pas pu être sauvegardées pour la réservation $reservationId");
+                    }
+                } else {
+                    error_log("Aucune option à sauvegarder pour la réservation $reservationId");
                 }
             }
             
@@ -158,27 +165,58 @@ class Reservation {
      */
     public function addReservationOptions($reservationId, $options, $commentaires = []) {
         if (!is_array($options) || empty($options)) {
+            error_log("addReservationOptions: Options vides ou non-array. Reservation ID: $reservationId");
             return false;
         }
 
-        $sql = "INSERT INTO reservation_option (id_reservation, id_option, commentaire) 
-                VALUES (:reservation_id, :id_option, :commentaire)";
+        // Vérifier si la table a une colonne commentaire
+        try {
+            $checkColumn = $this->db->query("SHOW COLUMNS FROM reservation_option LIKE 'commentaire'");
+            $hasCommentaire = $checkColumn->rowCount() > 0;
+        } catch (PDOException $e) {
+            $hasCommentaire = false;
+        }
+
+        if ($hasCommentaire) {
+            $sql = "INSERT INTO reservation_option (id_reservation, id_option, commentaire) 
+                    VALUES (:reservation_id, :id_option, :commentaire)";
+        } else {
+            $sql = "INSERT INTO reservation_option (id_reservation, id_option) 
+                    VALUES (:reservation_id, :id_option)";
+        }
         
         try {
             $stmt = $this->db->prepare($sql);
+            $inserted = 0;
             
             foreach ($options as $optionId) {
-                $commentaire = isset($commentaires[$optionId]) ? $commentaires[$optionId] : '';
+                $optionId = (int)$optionId;
+                if ($optionId <= 0) {
+                    error_log("addReservationOptions: Option ID invalide: $optionId");
+                    continue;
+                }
                 
                 $stmt->bindValue(':reservation_id', $reservationId, PDO::PARAM_INT);
-                $stmt->bindValue(':id_option', (int)$optionId, PDO::PARAM_INT);
-                $stmt->bindValue(':commentaire', $commentaire, PDO::PARAM_STR);
-                $stmt->execute();
+                $stmt->bindValue(':id_option', $optionId, PDO::PARAM_INT);
+                
+                if ($hasCommentaire) {
+                    $commentaire = isset($commentaires[$optionId]) ? $commentaires[$optionId] : '';
+                    $stmt->bindValue(':commentaire', $commentaire, PDO::PARAM_STR);
+                }
+                
+                if ($stmt->execute()) {
+                    $inserted++;
+                } else {
+                    error_log("addReservationOptions: Échec insertion option $optionId pour réservation $reservationId");
+                }
             }
             
-            return true;
+            error_log("addReservationOptions: $inserted option(s) insérée(s) pour réservation $reservationId");
+            return $inserted > 0;
         } catch (PDOException $e) {
             error_log("Erreur addReservationOptions: " . $e->getMessage());
+            error_log("SQL: $sql");
+            error_log("Options: " . print_r($options, true));
             return false;
         }
     }
@@ -206,13 +244,30 @@ class Reservation {
         // Ajouter un log pour déboguer
         error_log("Début getOptionsForReservation pour reservation ID: " . $reservationId);
         
-        // Requête simplifiée pour récupérer les options d'une réservation avec leurs commentaires
-        $sql = "SELECT o.id_option, o.nom_option, COALESCE(p.prix_option, o.prix_option) as prix_option, ro.commentaire 
-                FROM reservation_option ro
-                JOIN options o ON ro.id_option = o.id_option
-                LEFT JOIN reservation r ON ro.id_reservation = r.id_reservation
-                LEFT JOIN posseder p ON p.id_option = o.id_option AND p.id_terrain = r.id_terrain
-                WHERE ro.id_reservation = :id_reservation";
+        // Vérifier si la table a une colonne commentaire
+        try {
+            $checkColumn = $this->db->query("SHOW COLUMNS FROM reservation_option LIKE 'commentaire'");
+            $hasCommentaire = $checkColumn->rowCount() > 0;
+        } catch (PDOException $e) {
+            $hasCommentaire = false;
+        }
+        
+        // Requête simplifiée pour récupérer les options d'une réservation
+        if ($hasCommentaire) {
+            $sql = "SELECT o.id_option, o.nom_option, COALESCE(p.prix_option, o.prix_option, 0) as prix_option, ro.commentaire 
+                    FROM reservation_option ro
+                    JOIN options o ON ro.id_option = o.id_option
+                    LEFT JOIN reservation r ON ro.id_reservation = r.id_reservation
+                    LEFT JOIN posseder p ON p.id_option = o.id_option AND p.id_terrain = r.id_terrain
+                    WHERE ro.id_reservation = :id_reservation";
+        } else {
+            $sql = "SELECT o.id_option, o.nom_option, COALESCE(p.prix_option, o.prix_option, 0) as prix_option, '' as commentaire 
+                    FROM reservation_option ro
+                    JOIN options o ON ro.id_option = o.id_option
+                    LEFT JOIN reservation r ON ro.id_reservation = r.id_reservation
+                    LEFT JOIN posseder p ON p.id_option = o.id_option AND p.id_terrain = r.id_terrain
+                    WHERE ro.id_reservation = :id_reservation";
+        }
         
         try {
             $stmt = $this->db->prepare($sql);
@@ -235,7 +290,8 @@ class Reservation {
         $sql = "UPDATE reservation 
                 SET date_reservation = :date_reservation,
                     creneau = :creneau,
-                    commentaire = :commentaire
+                    commentaire = :commentaire,
+                    status = 'en attente'
                 WHERE id_reservation = :id 
                 AND id_client = :user_id
                 AND status IN ('en attente','accepté')";

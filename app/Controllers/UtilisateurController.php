@@ -210,6 +210,35 @@ class UtilisateurController extends Controller {
         ]);
     }
 
+    // Récupérer les informations complètes de l'utilisateur (pour le modal de réservation)
+    public function getUserInfo() {
+        header('Content-Type: application/json');
+        
+        if (!isset($_SESSION['user'])) {
+            echo json_encode(['success' => false, 'message' => 'Non connecté']);
+            exit;
+        }
+        
+        try {
+            require_once __DIR__ . '/../Core/Database.php';
+            $db = Database::getInstance()->getConnection();
+            
+            $stmt = $db->prepare("SELECT id, nom, prenom, email, num_tel FROM utilisateur WHERE id = ?");
+            $stmt->execute([$_SESSION['user']['id']]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($user) {
+                echo json_encode(['success' => true, 'user' => $user]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Utilisateur non trouvé']);
+            }
+        } catch (Exception $e) {
+            error_log("Erreur getUserInfo: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Erreur serveur']);
+        }
+        exit;
+    }
+
     // Changer le mot de passe
     public function changePassword() {
         // Vérifier si l'utilisateur est connecté
