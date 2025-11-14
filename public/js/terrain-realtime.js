@@ -13,6 +13,7 @@ class TerrainRealtimeMonitor {
         this.pollingInterval = config.pollingInterval || 3000;
         this.onNewTerrain = config.onNewTerrain || null;
         this.onTerrainUpdated = config.onTerrainUpdated || null;
+        this.onNewTerrainNotification = config.onNewTerrainNotification || 'Nouveau terrain ajouté !';
         
         this.lastTerrainId = 0;
         this.terrainSnapshots = {}; // Stocker les snapshots des terrains pour détecter les changements
@@ -38,8 +39,8 @@ class TerrainRealtimeMonitor {
         const container = document.querySelector(this.containerSelector);
         if (!container) return;
         
-        // Chercher les éléments de terrain (activity-item pour dashboard/gestion, col-* pour home)
-        const terrainElements = container.querySelectorAll('.activity-item, [class*="col-"]');
+        // Chercher les éléments de terrain (activity-item pour dashboard/gestion, col-* pour home, gestionnaire-card pour admin)
+        const terrainElements = container.querySelectorAll('.activity-item, [class*="col-"], .gestionnaire-card');
         
         for (const element of terrainElements) {
             // Méthode 1: Utiliser data-terrain-id (pour toutes les pages)
@@ -99,7 +100,9 @@ class TerrainRealtimeMonitor {
      */
     async verifierNouveauxTerrains() {
         try {
-            const response = await fetch(this.baseUrl + this.checkEndpoint);
+            const response = await fetch(this.baseUrl + this.checkEndpoint, {
+                credentials: 'same-origin' // Include session cookies for authentication
+            });
             const data = await response.json();
             
             if (data.lastId !== undefined) {
@@ -131,7 +134,8 @@ class TerrainRealtimeMonitor {
             // Récupérer tous les terrains affichés
             // Pour home page: chercher .col-* à l'intérieur du container
             // Pour dashboard/gestion: chercher .activity-item
-            const terrainElements = container.querySelectorAll('.activity-item, [class*="col-"]');
+            // Pour admin demandes: chercher .gestionnaire-card
+            const terrainElements = container.querySelectorAll('.activity-item, [class*="col-"], .gestionnaire-card');
             
             for (const element of terrainElements) {
                 // Méthode 1: Extraire l'ID depuis data-terrain-id
@@ -152,7 +156,9 @@ class TerrainRealtimeMonitor {
                 if (!terrainId) continue;
                 
                 // Récupérer les données actuelles du terrain depuis le serveur
-                const response = await fetch(this.baseUrl + this.getEndpoint + '/' + terrainId);
+                const response = await fetch(this.baseUrl + this.getEndpoint + '/' + terrainId, {
+                    credentials: 'same-origin' // Include session cookies for authentication
+                });
                 const result = await response.json();
                 
                 if (result.success && result.terrain) {
@@ -194,7 +200,7 @@ class TerrainRealtimeMonitor {
      * Créer un snapshot (signature) d'un terrain pour détecter les changements
      */
     creerSnapshotTerrain(terrain) {
-        return `${terrain.nom_terrain}|${terrain.localisation}|${terrain.type_terrain}|${terrain.format_terrain}|${terrain.prix_heure}|${terrain.statut}|${terrain.image || ''}`;
+        return `${terrain.nom_terrain}|${terrain.localisation}|${terrain.type_terrain}|${terrain.format_terrain}|${terrain.prix_heure}|${terrain.statut}|${terrain.image || ''}|${terrain.justificatif || ''}`;
     }
     
     /**
@@ -212,7 +218,9 @@ class TerrainRealtimeMonitor {
      */
     async recupererEtAfficherNouveauTerrain(terrainId) {
         try {
-            const response = await fetch(this.baseUrl + this.getEndpoint + '/' + terrainId);
+            const response = await fetch(this.baseUrl + this.getEndpoint + '/' + terrainId, {
+                credentials: 'same-origin' // Include session cookies for authentication
+            });
             const data = await response.json();
             
             if (data.success && data.terrain) {
@@ -222,7 +230,7 @@ class TerrainRealtimeMonitor {
                     this.onNewTerrain(data.terrain);
                 }
                 
-                this.afficherNotification('Nouveau terrain ajouté !');
+                this.afficherNotification(this.onNewTerrainNotification);
             }
         } catch (error) {
             console.error('Erreur lors de la récupération du nouveau terrain:', error);

@@ -232,3 +232,6 @@ fabric.properties
 *.pfx
 secrets.json
 private/
+
+storage/
+newsletter.lock

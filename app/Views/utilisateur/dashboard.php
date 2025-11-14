@@ -417,7 +417,12 @@ $filters = $filters ?? [
                             Mes Réservations
                         </a>
                     </li>
-                     <li class="nav-item">
+                    <li class="nav-item">
+                        <a class="nav-link" href="<?php echo $baseUrl; ?>facture/client">
+                            <i class="fas fa-file-invoice-dollar me-1"></i> Mes Factures
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="<?php echo $baseUrl; ?>home/tournois">
                             <i class="fas fa-trophy me-1"></i> Tournois
                         </a>

@@ -85,8 +85,9 @@ class Terrain extends Model {
         try {
             $this->db->beginTransaction();
 
-            $query = "INSERT INTO {$this->table} (nom_terrain, image, localisation, type_terrain, format_terrain, prix_heure, statut, etat, id_gestionnaire) 
-                     VALUES (:nom_terrain, :image, :localisation, :type_terrain, :format_terrain, :prix, 'disponible', 'acceptée', :id_gestionnaire)";
+            // When gestionnaire adds terrain, it should be a demand waiting for admin approval
+            $query = "INSERT INTO {$this->table} (nom_terrain, image, localisation, type_terrain, format_terrain, prix_heure, statut, etat, id_gestionnaire, justificatif) 
+                     VALUES (:nom_terrain, :image, :localisation, :type_terrain, :format_terrain, :prix, 'non disponible', 'en attente', :id_gestionnaire, :justificatif)";
 
             $stmt = $this->db->prepare($query);
             $stmt->execute([
@@ -96,7 +97,8 @@ class Terrain extends Model {
                 ':localisation' => $data['localisation'],
                 ':type_terrain' => $data['type_terrain'],
                 ':format_terrain' => $data['format_terrain'],
-                ':id_gestionnaire' => $this->gestionnaireId
+                ':id_gestionnaire' => $this->gestionnaireId,
+                ':justificatif' => $data['justificatifs'] ?? json_encode([])
             ]);
 
             $terrainId = $this->db->lastInsertId();
@@ -153,10 +155,11 @@ class Terrain extends Model {
                      prix_heure = :prix, 
                      type_terrain = :type_terrain, 
                      format_terrain = :format_terrain, 
-                     statut = :statut" . 
-                     (isset($data['image']) ? ", image = :image" : "") . 
+                     statut = :statut" .
+                     (isset($data['image']) ? ", image = :image" : "") .
+                     (isset($data['justificatifs']) ? ", justificatif = :justificatif" : "") .
                      " WHERE id_terrain = :id_terrain AND id_gestionnaire = :id_gestionnaire";
-            
+
             $stmt = $this->db->prepare($query);
             $params = [
                 ':nom_terrain' => $data['nom_terrain'],
@@ -171,6 +174,10 @@ class Terrain extends Model {
 
             if (isset($data['image'])) {
                 $params[':image'] = $data['image'];
+            }
+
+            if (isset($data['justificatifs'])) {
+                $params[':justificatif'] = $data['justificatifs'];
             }
 
             $stmt->execute($params);
@@ -352,6 +359,17 @@ class Terrain extends Model {
         $lastId = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return json_encode($lastId ?: ['lastId' => 0]);
+    }
+
+    /**
+     * Check the last ID of available terrains (statut = 'disponible' AND etat = 'acceptée')
+     */
+    public function checkLastAvailableId()
+    {
+        $stmt = $this->db->query("SELECT MAX(id_terrain) AS lastId FROM {$this->table} WHERE statut = 'disponible' AND etat = 'acceptée'");
+        $lastId = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $lastId ?: ['lastId' => 0];
     }
     public function getRecentTerrains($limit = 5) {
         try {

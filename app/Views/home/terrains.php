@@ -199,6 +199,7 @@ function renderHomeTerrainCard(terrain) {
 // Initialiser la surveillance en temps réel pour les terrains disponibles
 const terrainMonitor = new TerrainRealtimeMonitor({
     baseUrl: '<?= $baseUrl ?>',
+    checkEndpoint: 'terrain/checkNewAvailableTerrains', // New endpoint for public available terrains
     containerSelector: '.row.g-4',
     renderFunction: renderHomeTerrainCard,
     pollingInterval: 5000, // Vérifier toutes les 5 secondes pour la page d'accueil

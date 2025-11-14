@@ -82,7 +82,7 @@ class Admin extends Model {
             $stmt = $this->db->prepare($sql);
             $stmt->execute();
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
+
             return $results;
         } catch (PDOException $e) {
             error_log("Erreur getAllGestionnaires: " . $e->getMessage());
@@ -234,7 +234,7 @@ class Admin extends Model {
             return [];
         }
     }
-    
+
 
     // Récupérer un gestionnaire par son ID
     public function getGestionnaireById($id) {
@@ -279,26 +279,39 @@ class Admin extends Model {
                 return false;
             }
             
-            // Mettre à jour le statut du gestionnaire
-            $sqlGestionnaire = "
-                UPDATE gestionnaire 
-                SET status = ?, date_validation = NOW() 
-                WHERE id = ?
-            ";
-            $stmtGestionnaire = $this->db->prepare($sqlGestionnaire);
-            $resultGest = $stmtGestionnaire->execute([$status, $id]);
+            // Vérifier d'abord le statut actuel du gestionnaire
+            $checkGestSql = "SELECT status FROM gestionnaire WHERE id = ?";
+            $checkGestStmt = $this->db->prepare($checkGestSql);
+            $checkGestStmt->execute([$id]);
+            $gestionnaireStatus = $checkGestStmt->fetch(PDO::FETCH_ASSOC);
             
-            if (!$resultGest) {
-                error_log("Échec de la mise à jour du gestionnaire");
-                return false;
+            $gestionnaireDejaAccepte = ($gestionnaireStatus && $gestionnaireStatus['status'] === 'accepté');
+            
+            // Mettre à jour le statut du gestionnaire seulement s'il n'est pas déjà accepté
+            if (!$gestionnaireDejaAccepte) {
+                $sqlGestionnaire = "
+                    UPDATE gestionnaire 
+                    SET status = ?, date_validation = NOW() 
+                    WHERE id = ?
+                ";
+                $stmtGestionnaire = $this->db->prepare($sqlGestionnaire);
+                $resultGest = $stmtGestionnaire->execute([$status, $id]);
+                
+                if (!$resultGest) {
+                    error_log("Échec de la mise à jour du gestionnaire");
+                    return false;
+                }
+                
+                $rowsAffectedGest = $stmtGestionnaire->rowCount();
+                error_log("Premier terrain accepté - Gestionnaire $id mis à jour: $rowsAffectedGest lignes affectées");
+            } else {
+                error_log("Terrain supplémentaire accepté - Gestionnaire $id déjà accepté, pas de mise à jour");
             }
-            
-            $rowsAffectedGest = $stmtGestionnaire->rowCount();
-            error_log("Gestionnaire mis à jour: $rowsAffectedGest lignes affectées");
 
-            // Mettre à jour l'état du terrain spécifique ou tous les terrains du gestionnaire
+            // Mettre à jour l'état du terrain spécifique
             if ($idTerrain !== null) {
-                // Mettre à jour uniquement le terrain spécifique
+                
+                // Mettre à jour le terrain spécifique
                 $sqlTerrain = "
                     UPDATE terrain
                     SET etat = ?
@@ -307,9 +320,9 @@ class Admin extends Model {
                 $stmtTerrain = $this->db->prepare($sqlTerrain);
                 $resultTerrain = $stmtTerrain->execute([$etatterrain, $idTerrain, $id]);
                 $rowsAffectedTerrain = $stmtTerrain->rowCount();
-                error_log("Terrain spécifique mis à jour: $rowsAffectedTerrain lignes affectées");
+                error_log("Terrain spécifique $idTerrain mis à jour: $rowsAffectedTerrain lignes affectées");
             } else {
-                // Mettre à jour tous les terrains du gestionnaire
+                // Mettre à jour tous les terrains du gestionnaire (cas rare)
                 $sqlTerrain = "
                     UPDATE terrain
                     SET etat = ?
@@ -461,6 +474,55 @@ class Admin extends Model {
     }
 
 
+    // Récupérer l'ID du dernier gestionnaire accepté (pour le système temps réel)
+    public function getLastAcceptedGestionnaireId() {
+        try {
+            $sql = "SELECT MAX(g.id) as last_id FROM gestionnaire g WHERE g.status = 'accepté'";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return (int)($result['last_id'] ?? 0);
+        } catch (PDOException $e) {
+            error_log("Erreur getLastAcceptedGestionnaireId: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    // Récupérer tous les gestionnaires acceptés (pour comparaison temps réel)
+    public function getRecentlyAcceptedGestionnaires($minutes = 5) {
+        try {
+            // On récupère TOUS les gestionnaires acceptés
+            // La logique JavaScript se chargera de détecter les nouveaux
+            $sql = "
+                SELECT 
+                    g.id,
+                    g.RIB,
+                    g.status AS statut_gestionnaire,
+                    g.date_demande,
+                    u.nom,
+                    u.prenom,
+                    u.email,
+                    u.num_tel,
+                    t.nom_terrain,
+                    t.id_terrain,
+                    t.statut as statut_terrain
+                FROM gestionnaire g
+                INNER JOIN utilisateur u ON g.id = u.id
+                LEFT JOIN terrain t ON g.id = t.id_gestionnaire
+                WHERE g.status = 'accepté'
+                ORDER BY g.date_demande DESC
+            ";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            return $results;
+        } catch (PDOException $e) {
+            error_log("Erreur getRecentlyAcceptedGestionnaires: " . $e->getMessage());
+            return [];
+        }
+    }
+
     // Récupérer les statistiques globales
     public function getStats() {
         return [
@@ -469,5 +531,129 @@ class Admin extends Model {
             'en_attente' => $this->getDemandesEnAttente(),
             'refuses' => $this->getDemandesRefusees()
         ];
+    }
+
+    // Récupérer les demandes d'ajout de terrains des gestionnaires acceptés
+    public function getDemandesAjoutTerrains() {
+        try {
+            $sql = "
+                SELECT 
+                    t.id_terrain,
+                    t.nom_terrain,
+                    t.localisation,
+                    t.type_terrain,
+                    t.format_terrain,
+                    t.prix_heure,
+                    t.image,
+                    t.justificatif,
+                    g.id AS id_gestionnaire,
+                    u.prenom,
+                    u.nom,
+                    u.email,
+                    u.num_tel
+                FROM terrain t
+                INNER JOIN gestionnaire g ON t.id_gestionnaire = g.id
+                INNER JOIN utilisateur u ON g.id = u.id
+                WHERE g.status = 'accepté' AND t.etat = 'en attente'
+                ORDER BY t.id_terrain DESC
+            ";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            return $results;
+        } catch (PDOException $e) {
+            error_log("Erreur getDemandesAjoutTerrains: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    // Récupérer le dernier ID des demandes de terrains en attente
+    public function getLastTerrainDemandId() {
+        try {
+            $sql = "
+                SELECT MAX(t.id_terrain) AS lastId
+                FROM terrain t
+                INNER JOIN gestionnaire g ON t.id_gestionnaire = g.id
+                WHERE g.status = 'accepté' AND t.etat = 'en attente'
+            ";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $result ?: ['lastId' => 0];
+        } catch (PDOException $e) {
+            error_log("Erreur getLastTerrainDemandId: " . $e->getMessage());
+            return ['lastId' => 0];
+        }
+    }
+
+    // Compter les demandes d'ajout de terrains en attente
+    public function getNombreDemandesAjoutTerrains() {
+        try {
+            $sql = "
+                SELECT COUNT(*) as total 
+                FROM terrain t
+                INNER JOIN gestionnaire g ON t.id_gestionnaire = g.id
+                WHERE g.status = 'accepté' AND t.etat = 'en attente'
+            ";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return (int)($result['total'] ?? 0);
+        } catch (PDOException $e) {
+            error_log("Erreur getNombreDemandesAjoutTerrains: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    // Récupérer une demande de terrain par ID pour l'admin
+    public function getTerrainDemandById($idTerrain) {
+        try {
+            $sql = "
+                SELECT
+                    t.id_terrain,
+                    t.nom_terrain,
+                    t.localisation,
+                    t.type_terrain,
+                    t.format_terrain,
+                    t.prix_heure,
+                    t.image,
+                    t.justificatif,
+                    g.id AS id_gestionnaire,
+                    u.prenom,
+                    u.nom,
+                    u.email,
+                    u.num_tel
+                FROM terrain t
+                INNER JOIN gestionnaire g ON t.id_gestionnaire = g.id
+                INNER JOIN utilisateur u ON g.id = u.id
+                WHERE g.status = 'accepté' AND t.etat = 'en attente' AND t.id_terrain = ?
+            ";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$idTerrain]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return $result;
+        } catch (PDOException $e) {
+            error_log("Erreur getTerrainDemandById: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // Mettre à jour l'état et le statut d'un terrain
+    public function updateTerrainStatus($idTerrain, $etat, $statut) {
+        try {
+            $sql = "
+                UPDATE terrain
+                SET etat = ?, statut = ?
+                WHERE id_terrain = ?
+            ";
+            $stmt = $this->db->prepare($sql);
+            $result = $stmt->execute([$etat, $statut, $idTerrain]);
+            return $result;
+        } catch (PDOException $e) {
+            error_log("Erreur updateTerrainStatus: " . $e->getMessage());
+            return false;
+        }
     }
 }
