@@ -35,7 +35,7 @@ class AuthController extends Controller {
                         header('Location: ' . BASE_URL . 'dashboard/administrateur');
                         break;
                     default:
-                        header('Location: ' . BASE_URL . 'dashboard/utilisateur');
+                        header('Location: ' . BASE_URL . 'utilisateur/dashboard');
                 }
                 exit;
             }

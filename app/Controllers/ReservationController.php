@@ -18,6 +18,47 @@ class ReservationController {
         exit;
     }
 
+    public function statuses() {
+        if (!isset($_SESSION['user'])) {
+            if (ob_get_length()) ob_clean();
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Non connecté']);
+            exit;
+        }
+
+        $idsParam = $_GET['ids'] ?? '';
+        $ids = array_values(array_filter(array_map(function($v){ return (int)trim($v); }, explode(',', $idsParam)), function($v){ return $v > 0; }));
+        if (empty($ids)) {
+            if (ob_get_length()) ob_clean();
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Aucun ID fourni']);
+            exit;
+        }
+
+        try {
+            $userId = (int)($_SESSION['user']['id'] ?? 0);
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $sql = "SELECT id_reservation, status FROM reservation WHERE id_client = ? AND id_reservation IN ($placeholders)";
+            $stmt = $this->db->prepare($sql);
+            $bind = array_merge([$userId], $ids);
+            $stmt->execute($bind);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $out = [];
+            foreach ($rows as $row) {
+                $out[(string)$row['id_reservation']] = $row['status'];
+            }
+            if (ob_get_length()) ob_clean();
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'statuses' => $out]);
+            exit;
+        } catch (\Throwable $e) {
+            if (ob_get_length()) ob_clean();
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Erreur serveur']);
+            exit;
+        }
+    }
+
     // POST /reservation/create
 public function create() {
     if (!isset($_SESSION['user'])) {

@@ -662,9 +662,9 @@ $reservations = [
                     }
                     ?>
                     
-                    <div class="reservation-card">
+                    <div class="reservation-card" data-reservation-id="<?php echo (int)($reservation['id'] ?? ($reservation['id_reservation'] ?? 0)); ?>">
                         <div style="position: relative;">
-                            <span class="status-badge <?php echo $statutClass; ?>"><?php echo $statutLabel; ?></span>
+                            <span class="status-badge js-status-badge <?php echo $statutClass; ?>"><?php echo $statutLabel; ?></span>
                             <img src="<?php echo htmlspecialchars($imageUrl); ?>" 
                                  alt="<?php echo htmlspecialchars($reservation['terrain_nom'] ?? 'Terrain'); ?>" 
                                  class="reservation-image">
@@ -781,8 +781,23 @@ $reservations = [
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="<?php echo $baseUrl; ?>js/reservation-status-poller.js"></script>
+    <script src="<?php echo $baseUrl; ?>js/creneaux-realtime.js"></script>
     
     <script>
+        // Démarrer le poller de statuts (mise à jour badge uniquement)
+        document.addEventListener('DOMContentLoaded', function(){
+            if (window.BookPlayReservationStatusPoller) {
+                window.BookPlayReservationStatusPoller.start('<?php echo $baseUrl; ?>', 1000);
+            }
+
+            // Attacher le poller de créneaux au modal d'édition
+            const editModalEl = document.getElementById('editModal');
+            if (window.BookPlayCreneauxRealtime && editModalEl) {
+                window.BookPlayCreneauxRealtime.attachToModal('<?php echo $baseUrl; ?>', editModalEl, 3000);
+            }
+        });
+
         // Recherche en temps réel
         document.querySelector('.search-input').addEventListener('input', function(e) {
             const searchTerm = e.target.value.toLowerCase();

@@ -581,5 +581,15 @@ $filters = $filters ?? [
     <?php require_once __DIR__ . '/../components/reserverTerrain_modal.php'; ?>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="<?php echo $baseUrl; ?>js/creneaux-realtime.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function(){
+        const modalEl = document.getElementById('reservationModal');
+        if (window.BookPlayCreneauxRealtime && modalEl){
+          window.BookPlayCreneauxRealtime.attachToModal('<?php echo $baseUrl; ?>', modalEl, 1000);
+        }
+      });
+    </script>
+
 </body>
 </html>
