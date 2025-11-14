@@ -262,7 +262,7 @@ if ($user) {
     <main class="main-content">
         <!-- Header Section -->
         <section class="facture-section">
-            <div class="container">
+            <div class="container" id="factures-container">
                 <div class="row">
                     <div class="col-12 text-center">
                         <h1><i class="fas fa-file-invoice-dollar"></i> Mes Factures</h1>
@@ -272,7 +272,7 @@ if ($user) {
             </div>
         </section>
 
-        <div class="container">
+        <div class="container" id="factures-list-container">
             <!-- Messages -->
             <?php if (isset($_SESSION['success'])): ?>
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -294,7 +294,7 @@ if ($user) {
             <?php if (!empty($factures)): ?>
                 <div class="row">
                     <?php foreach ($factures as $facture): ?>
-                        <div class="col-12">
+                        <div class="col-12" data-num-facture="<?= (int) $facture['num_facture'] ?>">
                             <div class="facture-card">
                                 <div class="facture-header">
                                     <div>
@@ -336,8 +336,11 @@ if ($user) {
                                         <div class="detail-item">
                                             <div class="detail-label">Date Réservation</div>
                                             <div class="detail-value">
-                                                <?= date('d/m/Y', strtotime($facture['date_reservation'])) ?> à
-                                                <?= date('H:i', strtotime($facture['creneau'])) ?>
+                                                <?php
+                                                $dateRes = !empty($facture['date_reservation']) ? date('d/m/Y', strtotime($facture['date_reservation'])) : '';
+                                                $timeRes = !empty($facture['creneau']) ? date('H:i', strtotime($facture['creneau'])) : '';
+                                                ?>
+                                                <?= $dateRes ?><?= ($dateRes && $timeRes) ? ' à ' : '' ?><?= $timeRes ?>
                                             </div>
                                         </div>
 
@@ -405,5 +408,209 @@ if ($user) {
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        (function() {
+            const BASE_URL = '<?php echo $baseUrl; ?>';
+            const FACTURE_POLL_INTERVAL = 5000; // 5s
+            const knownIds = new Set();
+            let lastNumFacture = 0;
+
+            function initFromDom() {
+                const nodes = document.querySelectorAll('[data-num-facture]');
+                nodes.forEach(el => {
+                    const id = parseInt(el.getAttribute('data-num-facture'), 10);
+                    if (!isNaN(id)) {
+                        knownIds.add(id);
+                        if (id > lastNumFacture) {
+                            lastNumFacture = id;
+                        }
+                    }
+                });
+            }
+
+            function buildFactureCard(facture) {
+                const col = document.createElement('div');
+                col.className = 'col-12';
+                col.setAttribute('data-num-facture', facture.num_facture);
+
+                const numStr = String(facture.num_facture).padStart(6, '0');
+                const dateFact = facture.date_facturation ? new Date(facture.date_facturation) : null;
+                const dateReservation = facture.date_reservation ? new Date(facture.date_reservation) : null;
+                const creneau = facture.creneau ? new Date('1970-01-01T' + facture.creneau) : null;
+
+                function formatDate(d) {
+                    if (!d || isNaN(d.getTime())) return '';
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const year = d.getFullYear();
+                    return day + '/' + month + '/' + year;
+                }
+
+                function formatTime(t) {
+                    if (!t || isNaN(t.getTime())) return '';
+                    const h = String(t.getHours()).padStart(2, '0');
+                    const m = String(t.getMinutes()).padStart(2, '0');
+                    return h + ':' + m;
+                }
+
+                const typeReservation = (facture.type === 'tournoi') ? 'Tournoi' : 'Normal';
+                const ttcdh = Number(facture.TTC || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                const prixHeure = Number(facture.prix_heure || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                col.innerHTML = `
+                    <div class="facture-card">
+                        <div class="facture-header">
+                            <div>
+                                <h5 class="mb-0">
+                                    <i class="fas fa-file-invoice"></i>
+                                    Facture #${numStr}
+                                </h5>
+                                <small>
+                                    Émise le ${formatDate(dateFact)}
+                                </small>
+                            </div>
+                            <span class="badge bg-success">
+                                ${ttcdh} DH
+                            </span>
+                        </div>
+
+                        <div class="facture-info">
+                            <div class="facture-details">
+                                <div class="detail-item">
+                                    <div class="detail-label">Terrain</div>
+                                    <div class="detail-value">
+                                        <span class="badge bg-primary">
+                                            <i class="fas fa-futbol"></i> ${facture.nom_terrain ? facture.nom_terrain : ''}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="detail-item">
+                                    <div class="detail-label">Type</div>
+                                    <div class="detail-value">${facture.type_terrain ? facture.type_terrain : ''}</div>
+                                </div>
+
+                                <div class="detail-item">
+                                    <div class="detail-label">Format</div>
+                                    <div class="detail-value">${facture.format_terrain ? facture.format_terrain : ''}</div>
+                                </div>
+
+                                <div class="detail-item">
+                                    <div class="detail-label">Date Réservation</div>
+                                    <div class="detail-value">
+                                        ${formatDate(dateReservation)} à ${formatTime(creneau)}
+                                    </div>
+                                </div>
+
+                                <div class="detail-item">
+                                    <div class="detail-label">Prix/heure</div>
+                                    <div class="detail-value">${prixHeure} DH</div>
+                                </div>
+
+                                <div class="detail-item">
+                                    <div class="detail-label">Type Réservation</div>
+                                    <div class="detail-value">
+                                        ${typeReservation}
+                                    </div>
+                                </div>
+                            </div>
+
+                            ${facture.commentaire ? `
+                            <div class="mt-3">
+                                <strong><i class="fas fa-comment"></i> Commentaire:</strong>
+                                <p class="mb-0 mt-1 text-muted fst-italic">
+                                    "${facture.commentaire}"
+                                </p>
+                            </div>` : ''}
+                        </div>
+
+                        <div class="facture-actions">
+                            <div class="prix-info">
+                                <i class="fas fa-euro-sign"></i>
+                                Total: ${ttcdh} DH
+                            </div>
+
+                            <div>
+                                <a href="${BASE_URL}facture/download/${facture.num_facture}"
+                                   class="btn btn-view" target="_blank">
+                                    <i class="fas fa-eye"></i> Voir Facture
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                return col;
+            }
+
+            async function fetchFactures(afterNum) {
+                try {
+                    let url = BASE_URL + 'facture/clientAjax';
+                    if (afterNum && afterNum > 0) {
+                        url += '?after=' + encodeURIComponent(afterNum);
+                    }
+
+                    const res = await fetch(url, {
+                        credentials: 'same-origin',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    if (!res.ok) return null;
+                    const data = await res.json();
+                    if (!data || !data.success || !Array.isArray(data.factures)) return null;
+                    return data.factures;
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            async function pollFactures() {
+                const container = document.getElementById('factures-list-container');
+                if (!container) return;
+
+                let listContainer = container.querySelector('.row');
+                const emptyState = container.querySelector('.empty-state');
+
+                const factures = await fetchFactures(lastNumFacture);
+                if (!factures) return;
+
+                const newOnes = factures.filter(f => {
+                    const id = parseInt(f.num_facture, 10);
+                    return !isNaN(id) && !knownIds.has(id);
+                });
+
+                if (!newOnes.length) return;
+
+                if (emptyState && emptyState.parentElement) {
+                    emptyState.parentElement.removeChild(emptyState);
+                }
+
+                if (!listContainer) {
+                    listContainer = document.createElement('div');
+                    listContainer.className = 'row';
+                    container.appendChild(listContainer);
+                }
+
+                newOnes.forEach(f => {
+                    const id = parseInt(f.num_facture, 10);
+                    const card = buildFactureCard(f);
+                    listContainer.insertBefore(card, listContainer.firstChild);
+                    if (!isNaN(id)) {
+                        knownIds.add(id);
+                        if (id > lastNumFacture) {
+                            lastNumFacture = id;
+                        }
+                    }
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+                initFromDom();
+                pollFactures();
+                setInterval(pollFactures, FACTURE_POLL_INTERVAL);
+            });
+        })();
+    </script>
 </body>
 </html>

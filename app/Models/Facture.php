@@ -279,15 +279,16 @@ class Facture extends Model {
     }
 
     /**
-     * Génère un numéro de facture unique
+     * Génère un numéro de facture unique et croissant
      */
     private function generateNumFacture() {
-        do {
-            $num_facture = mt_rand(100000, 999999);
-            $exists = $this->factureExistsByNum($num_facture);
-        } while ($exists);
+        $query = "SELECT MAX(num_facture) AS max_num FROM {$this->table}";
+        $stmt = $this->db->query($query);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        return $num_facture;
+        $currentMax = ($row && $row['max_num'] !== null) ? (int) $row['max_num'] : 0;
+
+        return $currentMax + 1;
     }
 
     /**
@@ -342,20 +343,29 @@ class Facture extends Model {
     }
 
     /**
-     * Récupère les factures d'un client
+     *
+     * Optionnellement, ne retourne que celles dont le numéro est supérieur à $afterNumFacture
      */
-    public function getFacturesByClient($client_id) {
+    public function getFacturesByClient($client_id, $afterNumFacture = null) {
+        $params = [':client_id' => $client_id];
+
         $query = "SELECT f.*, r.id_reservation, r.date_reservation, r.creneau, r.status, r.type, r.commentaire,
                          r.id_terrain, r.id_client,
                          t.nom_terrain, t.type_terrain, t.format_terrain, t.prix_heure
                   FROM {$this->table} f
                   INNER JOIN {$this->reservationTable} r ON f.id_reservation = r.id_reservation
                   INNER JOIN {$this->terrainTable} t ON r.id_terrain = t.id_terrain
-                  WHERE r.id_client = :client_id
-                  ORDER BY f.date_facturation DESC, r.date_reservation DESC";
+                  WHERE r.id_client = :client_id";
+
+        if ($afterNumFacture !== null) {
+            $query .= " AND f.num_facture > :after_num";
+            $params[':after_num'] = $afterNumFacture;
+        }
+
+        $query .= " ORDER BY f.date_facturation DESC, r.date_reservation DESC";
 
         $stmt = $this->db->prepare($query);
-        $stmt->execute([':client_id' => $client_id]);
+        $stmt->execute($params);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

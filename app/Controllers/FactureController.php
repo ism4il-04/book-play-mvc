@@ -408,4 +408,34 @@ class FactureController extends Controller {
             'user' => $_SESSION['user']
         ]);
     }
+
+    /**
+     * Retourne juste la nouvelle facture du client connecté en JSON (AJAX polling)
+     */
+    public function clientAjax() {
+        // Vérifier que c'est un utilisateur (client)
+        if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'utilisateur') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Non autorisé']);
+            exit;
+        }
+
+        $client_id = $_SESSION['user']['id'];
+        $factureModel = new Facture();
+
+        // ne récupérer que les factures avec un numéro supérieur à "after"
+        $afterNum = null;
+        if (isset($_GET['after']) && is_numeric($_GET['after'])) {
+            $afterNum = (int) $_GET['after'];
+        }
+
+        $factures = $factureModel->getFacturesByClient($client_id, $afterNum);
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'factures' => $factures,
+        ]);
+        exit;
+    }
 }
