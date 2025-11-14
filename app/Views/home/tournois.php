@@ -142,6 +142,14 @@ $currentUser = $_SESSION['user'] ?? [];
         background: #b9ff00;
         color: #0b2e0f;
     }
+    @keyframes tournoiRowHighlight {
+        0% { background-color: #fff7d6; }
+        60% { background-color: #ffffff; }
+        100% { background-color: transparent; }
+    }
+    .row-highlight {
+        animation: tournoiRowHighlight 2s ease-in-out;
+    }
     @media (max-width:900px) {
         .tournois-page .tournois-card {padding-left: 2px; padding-right: 2px;}
         .tournois-page table { font-size: 0.98em; }
@@ -260,39 +268,97 @@ $currentUser = $_SESSION['user'] ?? [];
           <th class="text-end pe-3">Actions</th>
         </tr>
       </thead>
-      <tbody>
-        <?php foreach ($tournois as $t): ?>
-        <tr>
-          <td><?= htmlspecialchars($t['nom_tournoi']) ?></td>
-          <td><?= htmlspecialchars($t['date_debut']) ?><?= ($t['date_fin']) ? ' - '.htmlspecialchars($t['date_fin']) : '' ?></td>
-          <td>
-            <?= htmlspecialchars($t['nom_terrain'] ?? '—') ?>
-            <?php if (!empty($t['localisation'])): ?>
-              <small class="text-muted"> — <?= htmlspecialchars($t['localisation']) ?></small>
-            <?php endif; ?>
-          </td>
-          <td><?= (int)($t['equipes_inscrites'] ?? 0) ?> / <?= (int)($t['nb_equipes'] ?? 0) ?></td>
-          <td>
-            <?php if (($t['statut_inscription'] ?? '') === 'disponible'): ?>
-              <span class="badge-vert">Disponible</span>
-            <?php else: ?>
-              <span class="badge-orange">Complet</span>
-            <?php endif; ?>
-          </td>
-          <td class="text-end pe-3">
-            <?php if (($t['statut_inscription'] ?? '') === 'disponible'): ?>
-              <a class="btn-action" href="<?= $baseUrl ?>tournoi/inscriptionForm/<?= (int)$t['id_tournoi'] ?>"><i class="bi bi-eye"></i> Détails</a>
-              <a class="btn-inscrire" href="<?= $baseUrl ?>tournoi/inscriptionForm/<?= (int)$t['id_tournoi'] ?>">S'inscrire</a>
-            <?php else: ?>
-              <button class="btn-inscrire" type="button" disabled>Complet</button>
-            <?php endif; ?>
-          </td>
-        </tr>
-        <?php endforeach; ?>
+      <tbody id="tournoisTableBody">
+        <?php if (empty($tournois)): ?>
+            <tr class="no-data-row">
+                <td colspan="6" class="text-center py-4 text-muted">
+                    <i class="fas fa-trophy me-2"></i>Aucun tournoi disponible pour le moment
+                </td>
+            </tr>
+        <?php else: ?>
+            <?php foreach ($tournois as $t): ?>
+            <tr data-tournoi-id="<?= (int)$t['id_tournoi'] ?>">
+              <td><?= htmlspecialchars($t['nom_tournoi']) ?></td>
+              <td><?= htmlspecialchars($t['date_debut']) ?><?= ($t['date_fin']) ? ' - '.htmlspecialchars($t['date_fin']) : '' ?></td>
+              <td>
+                <?= htmlspecialchars($t['nom_terrain'] ?? '—') ?>
+                <?php if (!empty($t['localisation'])): ?>
+                  <small class="text-muted"> — <?= htmlspecialchars($t['localisation']) ?></small>
+                <?php endif; ?>
+              </td>
+              <td><?= (int)($t['equipes_inscrites'] ?? 0) ?> / <?= (int)($t['nb_equipes'] ?? 0) ?></td>
+              <td>
+                <?php if (($t['statut_inscription'] ?? '') === 'disponible'): ?>
+                  <span class="badge-vert">Disponible</span>
+                <?php else: ?>
+                  <span class="badge-orange">Complet</span>
+                <?php endif; ?>
+              </td>
+              <td class="text-end pe-3">
+                <?php if (($t['statut_inscription'] ?? '') === 'disponible'): ?>
+                  <a class="btn-action" href="<?= $baseUrl ?>tournoi/inscriptionForm/<?= (int)$t['id_tournoi'] ?>"><i class="bi bi-eye"></i> Détails</a>
+                  <a class="btn-inscrire" href="<?= $baseUrl ?>tournoi/inscriptionForm/<?= (int)$t['id_tournoi'] ?>">S'inscrire</a>
+                <?php else: ?>
+                  <button class="btn-inscrire" type="button" disabled>Complet</button>
+                <?php endif; ?>
+              </td>
+            </tr>
+            <?php endforeach; ?>
+        <?php endif; ?>
       </tbody>
     </table>
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?= $baseUrl ?>js/tournoi-realtime.js"></script>
+<script>
+    const baseUrl = '<?= $baseUrl ?>';
+
+    function escapeHtmlTournoi(text = '') {
+        const div = document.createElement('div');
+        div.textContent = text ?? '';
+        return div.innerHTML;
+    }
+
+    function renderTournoiRow(tournoi) {
+        const tr = document.createElement('tr');
+        tr.setAttribute('data-tournoi-id', tournoi.id_tournoi);
+
+        const dateFin = tournoi.date_fin ? ` - ${escapeHtmlTournoi(tournoi.date_fin)}` : '';
+        const terrain = escapeHtmlTournoi(tournoi.nom_terrain || '—');
+        const localisation = tournoi.localisation ? `<small class="text-muted"> — ${escapeHtmlTournoi(tournoi.localisation)}</small>` : '';
+        const equipes = `${Number(tournoi.equipes_inscrites || 0)} / ${Number(tournoi.nb_equipes || 0)}`;
+        const statutDisponible = (tournoi.statut_inscription || '').toLowerCase() === 'disponible';
+        const badge = statutDisponible
+            ? '<span class="badge-vert">Disponible</span>'
+            : '<span class="badge-orange">Complet</span>';
+        const detailUrl = `${baseUrl}tournoi/inscriptionForm/${tournoi.id_tournoi}`;
+        const actions = statutDisponible
+            ? `<a class="btn-action" href="${detailUrl}"><i class="bi bi-eye"></i> Détails</a>
+               <a class="btn-inscrire" href="${detailUrl}">S'inscrire</a>`
+            : '<button class="btn-inscrire" type="button" disabled>Complet</button>';
+
+        tr.innerHTML = `
+            <td>${escapeHtmlTournoi(tournoi.nom_tournoi)}</td>
+            <td>${escapeHtmlTournoi(tournoi.date_debut)}${dateFin}</td>
+            <td>${terrain}${localisation}</td>
+            <td>${equipes}</td>
+            <td>${badge}</td>
+            <td class="text-end pe-3">${actions}</td>
+        `;
+        return tr;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const tournoiMonitor = new TournoiRealtimeMonitor({
+            baseUrl: baseUrl,
+            listEndpoint: 'home/tournois?format=json',
+            containerSelector: '#tournoisTableBody',
+            renderFunction: renderTournoiRow,
+            pollingInterval: 1000
+        });
+        tournoiMonitor.init();
+    });
+</script>
 </body>
 </html>
