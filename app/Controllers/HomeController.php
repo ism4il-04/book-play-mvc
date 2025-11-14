@@ -39,7 +39,7 @@ class HomeController extends Controller {
         $taille = isset($_GET['taille']) ? trim($_GET['taille']) : '';
         $type = isset($_GET['type']) ? trim($_GET['type']) : '';
 
-        if ($search !== '' || $taille !== '' || $type !== '') {
+        if ('' !== $search || '' !== $taille || '' !== $type) {
             $terrains = $terrainModel->getAvailableTerrainsFiltered($search, $taille, $type);
         } else {
             $terrains = $terrainModel->getAvailableTerrains();
@@ -55,14 +55,75 @@ class HomeController extends Controller {
         ]);
     }
     
-    public function tournois() {
-        require_once __DIR__ . '/../Models/Tournoi.php';
-        $tournoiModel = new Tournoi();
-        $tournois = $tournoiModel->existedTournoi();
-        $this->view('home/tournois', ['tournois' => $tournois]);
+   public function tournois() {
+    try {
+        $db = Database::getInstance()->getConnection();
+        
+        // Récupérer UNIQUEMENT les tournois créés par les gestionnaires
+        // (ceux qui n'ont PAS d'entrée dans la table demande)
+        $sql = "SELECT 
+                    t.id_tournoi,
+                    t.nom_tournoi,
+                    t.slogan,
+                    t.date_debut,
+                    t.date_fin,
+                    t.nb_equipes,
+                    t.prixPremiere,
+                    t.prixDeuxieme,
+                    t.prixTroisieme,
+                    t.status,
+                    u.nom AS gestionnaire_nom,
+                    u.prenom AS gestionnaire_prenom,
+                    ter.nom_terrain,
+                    ter.localisation,
+                    ter.image,
+                    ter.type_terrain,
+                    ter.format_terrain,
+                    COALESCE(pi.equipes_inscrites, 0) AS equipes_inscrites,
+                    CASE 
+                        WHEN COALESCE(pi.equipes_inscrites, 0) >= t.nb_equipes THEN 'complet'
+                        ELSE 'disponible'
+                    END AS statut_inscription
+                FROM tournoi t
+                INNER JOIN gestionnaire g ON t.id_gestionnaire = g.id
+                INNER JOIN utilisateur u ON g.id = u.id
+                LEFT JOIN demande d ON t.id_tournoi = d.id_tournoi
+                LEFT JOIN reservation r ON t.id_tournoi = r.id_tournoi
+                LEFT JOIN terrain ter ON r.id_terrain = ter.id_terrain
+                LEFT JOIN (
+                    SELECT p.id_tournoi, COUNT(DISTINCT p.id_equipe) AS equipes_inscrites
+                    FROM participation p
+                    GROUP BY p.id_tournoi
+                ) pi ON pi.id_tournoi = t.id_tournoi
+                WHERE t.date_debut >= CURDATE()
+                AND g.status = 'accepté'
+                AND d.id_tournoi IS NULL
+                GROUP BY t.id_tournoi
+                ORDER BY t.date_debut ASC";
+        
+        $stmt = $db->prepare($sql);
+        $stmt->execute();
+        $tournois = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (isset($_GET['format']) && $_GET['format'] === 'json') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'tournois' => $tournois]);
+            exit;
+        }
+
+        $this->view('home/tournois', [
+            'user' => $_SESSION['user'] ?? null,
+            'tournois' => $tournois
+        ]);
+
+    } catch (PDOException $e) {
+        error_log("Erreur tournois home: " . $e->getMessage());
+        $this->view('home/tournois', [
+            'user' => $_SESSION['user'] ?? null,
+            'tournois' => []
+        ]);
     }
-    
-    public function subscribe() {
+}    public function subscribe() {
         // Vérifier que c'est une requête POST
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: ' . BASE_URL . 'home?error=invalid_request');

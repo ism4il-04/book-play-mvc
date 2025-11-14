@@ -94,10 +94,10 @@
                                             <th>Statut</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody id="gestionnaires-tbody">
                                     <?php if (!empty($gestionnaires) && is_array($gestionnaires)): ?>
                                         <?php foreach ($gestionnaires as $g): ?>
-                                        <tr>
+                                        <tr data-gestionnaire-id="<?php echo htmlspecialchars($g['id'] ?? ''); ?>">
                                             <td>
                                                 <strong>
                                                     <?php 
@@ -159,5 +159,81 @@
             </div>
         </div>
     </div>
+
+<!-- Script pour la surveillance en temps réel des gestionnaires -->
+<script src="<?php echo $baseUrl; ?>js/gestionnaire-realtime.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Variables globales pour l'authentification
+    window.userAuthenticated = <?php echo (isset($_SESSION['user']) ? 'true' : 'false'); ?>;
+    window.userRole = '<?php echo $_SESSION['user']['role'] ?? ''; ?>';
+    
+    // Vérifier si l'utilisateur est authentifié et est admin
+    <?php if (isset($_SESSION['user']) && ($_SESSION['user']['role'] ?? '') === 'administrateur'): ?>
+    
+    // Récupérer les IDs des gestionnaires existants
+    const existingRows = document.querySelectorAll('#gestionnaires-tbody tr[data-gestionnaire-id]');
+    const gestionnaireIds = Array.from(existingRows).map(row => {
+        const id = row.getAttribute('data-gestionnaire-id');
+        return id ? parseInt(id) : 0;
+    }).filter(id => !isNaN(id) && id > 0);
+    
+    const maxId = gestionnaireIds.length > 0 ? Math.max(...gestionnaireIds) : 0;
+    
+    // Passer les IDs au script global
+    window.gestionnaireIds = gestionnaireIds;
+    
+    // Initialiser le moniteur de gestionnaires en temps réel
+    const gestionnaireMonitor = new GestionnaireRealtimeMonitor({
+        baseUrl: '<?php echo $baseUrl; ?>index.php?url=',
+        checkEndpoint: 'gestion_gestionnaire/checkNewGestionnaires',
+        getEndpoint: 'gestion_gestionnaire/getGestionnaireById',
+        containerSelector: '#gestionnaires-tbody',
+        renderFunction: renderDashboardGestionnaireRow,
+        pollingInterval: 4000, // Vérifier toutes les 4 secondes
+        onNewGestionnaire: function(gestionnaire) {
+            console.log('Nouveau gestionnaire accepté:', gestionnaire);
+            // Mettre à jour les statistiques
+            updateDashboardStatistics();
+        },
+        onGestionnaireUpdated: function(gestionnaire) {
+            console.log('Gestionnaire mis à jour:', gestionnaire);
+            // Mettre à jour les statistiques
+            updateDashboardStatistics();
+        }
+    });
+
+    // Initialiser et démarrer la surveillance
+    gestionnaireMonitor.init(maxId);
+    
+    console.log('Surveillance des gestionnaires initialisée avec maxId:', maxId);
+    
+    <?php endif; ?>
+});
+
+// Fonction pour mettre à jour les statistiques du dashboard
+function updateDashboardStatistics() {
+    const tbody = document.querySelector('#gestionnaires-tbody');
+    if (!tbody) return;
+
+    const rows = tbody.querySelectorAll('tr[data-gestionnaire-id]');
+    let total = rows.length;
+    let actifs = 0;
+
+    rows.forEach(row => {
+        const badge = row.querySelector('.badge.bg-success');
+        if (badge) {
+            actifs++;
+        }
+    });
+
+    // Mettre à jour les cartes de statistiques
+    const statCards = document.querySelectorAll('.stat-number');
+    if (statCards.length >= 3) {
+        statCards[0].textContent = total; // Total Proprietaires
+        statCards[2].textContent = actifs; // Gestionnaires actifs
+    }
+}
+</script>
 
 <?php include __DIR__ . '/footer.php'; ?>

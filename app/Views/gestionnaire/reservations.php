@@ -66,32 +66,35 @@ $currentUser = $user ?? null;
                     </form>
                 </div>
 
-                <?php if (empty($reservations)): ?>
-                    <div class="no-data" style="text-align:center; padding:40px;">
-                        <i class="fas fa-calendar-times" style="font-size: 48px; color: #ccc; margin-bottom: 15px;"></i>
-                        <p>Aucune réservation trouvée.</p>
-                    </div>
-                <?php else: ?>
-                    <div class="table-responsive" style="background:#fff; border-radius:12px; box-shadow:0 3px 10px rgba(0,0,0,0.06); overflow:hidden;">
-                        <table class="table" style="width:100%; border-collapse:collapse;">
-                            <thead style="background:#f7f9fc;">
+                <div class="table-responsive" style="background:#fff; border-radius:12px; box-shadow:0 3px 10px rgba(0,0,0,0.06); overflow:hidden;">
+                    <table class="table" style="width:100%; border-collapse:collapse;">
+                        <thead style="background:#f7f9fc;">
+                            <tr>
+                                <th style="padding:12px; text-align:left;">Client</th>
+                                <th style="padding:12px; text-align:left;">Terrain</th>
+                                <th style="padding:12px; text-align:left;">Date</th>
+                                <th style="padding:12px; text-align:left;">Créneau</th>
+                                <th style="padding:12px; text-align:left;">Options</th>
+                                <th style="padding:12px; text-align:left;">Commentaire</th>
+                                <th style="padding:12px; text-align:left;">Statut</th>
+                                <th style="padding:12px; text-align:right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reservationsTableBody">
+                            <?php if (empty($reservations)): ?>
                                 <tr>
-                                    <th style="padding:12px; text-align:left;">Client</th>
-                                    <th style="padding:12px; text-align:left;">Terrain</th>
-                                    <th style="padding:12px; text-align:left;">Date</th>
-                                    <th style="padding:12px; text-align:left;">Creneau</th>
-                                    <th style="padding:12px; text-align:left;">Options</th>
-                                    <th style="padding:12px; text-align:left;">Statut</th>
-                                    <th style="padding:12px; text-align:right;">Actions</th>
+                                    <td colspan="8" class="no-data" style="text-align:center; padding:40px;">
+                                        <i class="fas fa-calendar-times" style="font-size: 48px; color: #ccc; margin-bottom: 15px;"></i>
+                                        <p>Aucune réservation trouvée.</p>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
+                            <?php else: ?>
                                 <?php foreach ($reservations as $r): ?>
-                                    <tr style="border-top:1px solid #eef2f7;">
+                                    <tr data-reservation-id="<?php echo (int)$r['id_reservation']; ?>" style="border-top:1px solid #eef2f7;">
                                         <td style="padding:12px;">
                                             <?php 
                                                 $clientName = trim(($r['client_prenom'] ?? '') . ' ' . ($r['client_nom'] ?? ''));
-                                                echo htmlspecialchars($clientName !== '' ? $clientName : ($r['client_email'] ?? ''));
+                                                echo htmlspecialchars($clientName !== '' ? $clientName : ($r['client_email'] ?? 'Client inconnu'));
                                             ?>
                                         </td>
                                         <td style="padding:12px;">
@@ -112,7 +115,17 @@ $currentUser = $user ?? null;
                                                 echo $opts ? htmlspecialchars($opts) : '<span style="color:#95a5a6;">Aucune option</span>';
                                             ?>
                                         </td>
-                                        <td style="padding:12px;">
+                                        <td style="padding:12px;" class="comment-cell">
+                                            <?php
+                                                $comment = $r['commentaire'] ?? '';
+                                                if ($comment) {
+                                                    echo '<span title="' . htmlspecialchars($comment) . '" style="display: inline-block; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' . htmlspecialchars($comment) . '</span>';
+                                                } else {
+                                                    echo '<span style="color:#95a5a6;">Aucun commentaire</span>';
+                                                }
+                                            ?>
+                                        </td>
+                                        <td style="padding:12px;" class="status-cell">
                                             <?php
                                                 $status = $r['status'] ?? 'en attente';
                                                 $color = '#999';
@@ -124,24 +137,24 @@ $currentUser = $user ?? null;
                                                 <?php echo htmlspecialchars(ucfirst($status)); ?>
                                             </span>
                                         </td>
-                                        <td style="padding:12px; text-align:right;">
+                                        <td style="padding:12px; text-align:right;" class="actions-cell">
                                             <?php if (($r['status'] ?? '') === 'en attente'): ?>
-                                                <a class="btn btn-success" href="<?php echo $baseUrl; ?>reservations/accept/<?php echo (int)$r['id_reservation']; ?>" style="margin-right:8px;">
+                                                <button class="btn btn-success btn-sm" onclick="reservationMonitor.updateStatus(<?php echo (int)$r['id_reservation']; ?>, 'accepté')" style="margin-right:8px; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">
                                                     <i class="fas fa-check"></i> Accepter
-                                                </a>
-                                                <a class="btn btn-danger" href="<?php echo $baseUrl; ?>reservations/refuse/<?php echo (int)$r['id_reservation']; ?>">
+                                                </button>
+                                                <button class="btn btn-danger btn-sm" onclick="reservationMonitor.updateStatus(<?php echo (int)$r['id_reservation']; ?>, 'refusé')" style="padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">
                                                     <i class="fas fa-times"></i> Refuser
-                                                </a>
+                                                </button>
                                             <?php else: ?>
                                                 <span style="color:#95a5a6; font-size:12px;">Aucune action</span>
                                             <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                <?php endif; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -153,6 +166,161 @@ $currentUser = $user ?? null;
     </main>
 
     <script src="<?php echo $baseUrl; ?>js/dashboard_gest.js"></script>
+    <script src="<?php echo $baseUrl; ?>js/reservation-realtime.js"></script>
+    <script>
+        // Fonction pour rendre une ligne de réservation
+        function renderReservationRow(reservation) {
+            const clientName = (reservation.client_prenom || '') + ' ' + (reservation.client_nom || '');
+            const displayName = clientName.trim() || reservation.client_email || 'Client inconnu';
+            
+            const creneau = reservation.creneau || '';
+            const creneauDisplay = creneau ? creneau.substring(0, 5) : '';
+            
+            const options = reservation.options_selectionnees || '';
+            const optionsDisplay = options || '<span style="color:#95a5a6;">Aucune option</span>';
+            
+            const comment = reservation.commentaire || '';
+            const commentDisplay = comment 
+                ? `<span title="${escapeHtml(comment)}" style="display: inline-block; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(comment)}</span>`
+                : '<span style="color:#95a5a6;">Aucun commentaire</span>';
+            
+            const status = reservation.status || 'en attente';
+            const statusColors = {
+                'en attente': '#f39c12',
+                'accepté': '#27ae60',
+                'refusé': '#e74c3c',
+                'annulé': '#e74c3c'
+            };
+            const statusColor = statusColors[status] || '#999';
+            
+            const actions = status === 'en attente' 
+                ? `<button class="btn btn-success btn-sm" onclick="reservationMonitor.updateStatus(${reservation.id_reservation}, 'accepté')" style="margin-right:8px; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">
+                    <i class="fas fa-check"></i> Accepter
+                   </button>
+                   <button class="btn btn-danger btn-sm" onclick="reservationMonitor.updateStatus(${reservation.id_reservation}, 'refusé')" style="padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">
+                    <i class="fas fa-times"></i> Refuser
+                   </button>`
+                : '<span style="color:#95a5a6; font-size:12px;">Aucune action</span>';
+            
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-reservation-id', reservation.id_reservation);
+            tr.style.borderTop = '1px solid #eef2f7';
+            tr.innerHTML = `
+                <td style="padding:12px;">${escapeHtml(displayName)}</td>
+                <td style="padding:12px;">${escapeHtml(reservation.nom_terrain || 'Terrain #' + reservation.id_terrain)}</td>
+                <td style="padding:12px;">${escapeHtml(reservation.date_reservation)}</td>
+                <td style="padding:12px;">${escapeHtml(creneauDisplay)}</td>
+                <td style="padding:12px;">${optionsDisplay}</td>
+                <td style="padding:12px;" class="comment-cell">${commentDisplay}</td>
+                <td style="padding:12px;" class="status-cell">
+                    <span class="status-badge" style="background-color: ${statusColor}; color:#fff; padding:6px 10px; border-radius:12px; font-size:12px;">
+                        ${escapeHtml(capitalizeFirst(status))}
+                    </span>
+                </td>
+                <td style="padding:12px; text-align:right;" class="actions-cell">${actions}</td>
+            `;
+            return tr;
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function capitalizeFirst(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+        
+        // Initialiser le moniteur de réservations en temps réel
+        const baseUrl = '<?php echo $baseUrl; ?>index.php?url=';
+        const filterStatus = '<?php echo htmlspecialchars($filter_status ?? ''); ?>';
+        const lastReservationId = <?php echo (int)($last_reservation_id ?? 0); ?>;
+        
+        const reservationMonitor = new ReservationRealtimeMonitor({
+            baseUrl: baseUrl,
+            checkEndpoint: 'reservations/checkNewReservations',
+            getEndpoint: 'reservations/getReservationById',
+            updateEndpoint: 'reservations/updateStatus',
+            containerSelector: '#reservationsTableBody',
+            renderFunction: renderReservationRow,
+            pollingInterval: 1000,
+            filterStatus: filterStatus || null
+        });
+        
+        // Démarrer le monitoring quand le DOM est prêt
+        document.addEventListener('DOMContentLoaded', function() {
+            reservationMonitor.init(lastReservationId);
+            
+            // Mettre à jour le filtre si le select change
+            const statusSelect = document.querySelector('select[name="status"]');
+            if (statusSelect) {
+                statusSelect.addEventListener('change', function() {
+                    const newStatus = this.value || null;
+                    reservationMonitor.setFilterStatus(newStatus);
+                    // Recharger la page avec le nouveau filtre
+                    window.location.href = '<?php echo $baseUrl; ?>reservations' + (newStatus ? '?status=' + encodeURIComponent(newStatus) : '');
+                });
+            }
+        });
+        
+        // Exposer globalement pour les boutons onclick
+        window.reservationMonitor = reservationMonitor;
+    </script>
+    <style>
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        .btn-success {
+            background-color: #27ae60;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #229954;
+        }
+        
+        .btn-danger {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .btn-sm {
+            font-size: 13px;
+            padding: 6px 12px;
+        }
+        
+        tr[data-reservation-id] {
+            transition: background-color 0.3s ease;
+        }
+        
+        tr[data-reservation-id]:hover {
+            background-color: #f8f9fa;
+        }
+    </style>
 </body>
 </html>
 

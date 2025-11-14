@@ -780,10 +780,15 @@ $baseUrl = BASE_URL;
                 const data = await response.json();
 
                 if (data.success) {
+                    try {
+                        if (data.tournoi) {
+                            sessionStorage.setItem('new_tournoi', JSON.stringify(data.tournoi));
+                        }
+                    } catch (e) {}
                     showAlert('success', data.message);
                     setTimeout(() => {
                         window.location.href = '<?= $baseUrl ?>tournoi/mesDemandes';
-                    }, 2000);
+                    }, 800);
                 } else {
                     showAlert('error', data.message);
                     submitBtn.disabled = false;

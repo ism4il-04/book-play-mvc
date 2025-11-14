@@ -20,12 +20,12 @@
             Connexion
         </h1>
 
-        <?php if (isset($_GET['error'])): ?>
+        <?php if (isset($_GET['error'])) { ?>
             <div class="error-message">
                 <i class="bi bi-exclamation-triangle-fill"></i>
                 <?php echo htmlspecialchars($_GET['error']); ?>
             </div>
-        <?php endif; ?>
+        <?php } ?>
 
         <form method="POST" action="<?php echo BASE_URL; ?>auth/login">
             <div class="form-group">

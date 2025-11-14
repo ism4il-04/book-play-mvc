@@ -1,4 +1,5 @@
 <?php
+
 class Dashboad_gestionnaireController extends Controller {
     public function index() {
         // Check if user is logged in and is a manager
@@ -20,5 +21,3 @@ class Dashboad_gestionnaireController extends Controller {
         $this->view('gestionnaire/ajouter_terrain', ['user' => $_SESSION['user']]);
     }
 }
-
-

@@ -27,7 +27,24 @@ class TerrainController extends Controller{
         }
     }
 
+    /**
+     * Default index method - redirects based on user role
+     */
+    public function index() {
+        if (!isset($_SESSION['user'])) {
+            header('Location: ' . BASE_URL . 'auth/login');
+            exit;
+        }
 
+        $role = $_SESSION['user']['role'] ?? null;
+        
+        if ($role === 'gestionnaire') {
+            header('Location: ' . BASE_URL . 'terrain/gestionnaireTerrains');
+        } else {
+            header('Location: ' . BASE_URL . 'utilisateur/dashboard');
+        }
+        exit;
+    }
 
     public function gestionnaireTerrains() {
         // Check if user is logged in and is a manager
@@ -343,5 +360,205 @@ class TerrainController extends Controller{
             ]);
         }
         exit;
+    }
+
+    /**
+     * Afficher les créneaux disponibles pour un terrain à une date donnée
+     * Cette méthode est appelée par la vue et affiche les créneaux dans le modal
+     * 
+     * @param int $terrainId ID du terrain
+     * @param string $date Date au format Y-m-d
+     * @return array Données des créneaux
+     */
+    public function getCreneauxDisponibles($terrainId, $date = null) {
+        $terrain = new Terrain();
+        return $terrain->getCreneauxDisponibles($terrainId, $date);
+    }
+    
+    /**
+     * Point d'entrée pour la route /api/terrain/creneaux
+     * Redirige vers la méthode reserver pour éliminer l'utilisation d'API/AJAX
+     */
+public function creneaux() {
+    header('Content-Type: application/json');
+
+    $terrainId = (int)($_GET['id'] ?? 0);
+    $date = $_GET['date'] ?? date('Y-m-d');
+
+    if (!$terrainId) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'ID du terrain manquant'
+        ]);
+        exit;
+    }
+
+    try {
+        $terrainModel = new Terrain();
+        $result = $terrainModel->getCreneauxDisponibles($terrainId, $date);
+        
+        // Retourner directement le résultat du modèle qui contient déjà
+        // success, creneaux, heure_ouverture et heure_fermeture
+        echo json_encode($result);
+        
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Erreur serveur : ' . $e->getMessage()
+        ]);
+    }
+    exit;
+}
+
+    
+    /**
+     * Point d'entrée pour la route /api/terrain/options
+     * Redirige vers la méthode reserver pour éliminer l'utilisation d'API/AJAX
+     */
+    public function options() {
+        header('Content-Type: application/json');
+        
+        $terrainId = (int)($_GET['id'] ?? 0);
+        
+        if (!$terrainId) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Paramètre id manquant'
+            ]);
+            exit;
+        }
+        
+        try {
+            $sql = "SELECT 
+                        o.id_option,
+                        o.nom_option,
+                        o.description,
+                        p.prix_option,
+                        p.disponible
+                    FROM options o
+                    INNER JOIN posseder p ON o.id_option = p.id_option
+                    WHERE p.id_terrain = :terrain_id
+                    AND (p.disponible = 1 OR p.disponible IS NULL)
+                    ORDER BY o.nom_option";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindValue(':terrain_id', $terrainId, PDO::PARAM_INT);
+            $stmt->execute();
+            $options = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            echo json_encode([
+                'success' => true,
+                'options' => $options
+            ]);
+            
+        } catch (PDOException $e) {
+            error_log("Erreur API options: " . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'message' => 'Erreur serveur: ' . $e->getMessage()
+            ]);
+        }
+    }
+    
+    /**
+     * Afficher le formulaire de réservation avec les créneaux et options
+     * Cette méthode remplace l'ancien système API/AJAX
+     * 
+     * @param int $terrainId ID du terrain à réserver
+     * @param string $date Date sélectionnée (optionnelle)
+     */
+    public function reserver($terrainId = null, $date = null) {
+        // Vérifier si l'utilisateur est connecté
+        if (!isset($_SESSION['user'])) {
+            header('Location: ' . BASE_URL . 'auth/login');
+            exit;
+        }
+        
+        // Valider les paramètres
+        $terrainId = (int)($terrainId ?: ($_GET['id'] ?? 0));
+        $date = $date ?: ($_GET['date'] ?? date('Y-m-d'));
+        
+        if (!$terrainId) {
+            $_SESSION['error'] = "ID du terrain manquant";
+            header('Location: ' . BASE_URL . 'utilisateur/dashboard');
+            exit;
+        }
+        
+        // Récupérer les informations du terrain
+        $terrainModel = new Terrain();
+        $terrain = $terrainModel->getTerrainById($terrainId);
+        
+        if (!$terrain || $terrain['statut'] !== 'disponible' || $terrain['etat'] !== 'acceptée') {
+            $_SESSION['error'] = "Ce terrain n'est pas disponible";
+            header('Location: ' . BASE_URL . 'utilisateur/dashboard');
+            exit;
+        }
+        
+        // Récupérer les créneaux disponibles
+        $creneaux = array_values($terrainModel->getCreneauxDisponibles($terrainId, $date));
+        
+        // Récupérer les options disponibles
+        $optionsResult = $this->getOptionsForReservation($terrainId);
+        $options = [];
+        if ($optionsResult && isset($optionsResult['options'])) {
+            $options = $optionsResult['options'];
+        }
+        
+        // Stocker les données dans la session pour les récupérer dans la vue
+        $_SESSION['reservation_data'] = [
+            'terrain' => $terrain,
+            'creneaux' => $creneaux,
+            'options' => $options
+        ];
+        
+        // Rediriger vers la page dashboard avec les paramètres
+        $params = [
+            'terrain_id' => $terrainId,
+            'date' => $date,
+            'open_modal' => '1'
+        ];
+        header('Location: ' . BASE_URL . 'utilisateur/dashboard?' . http_build_query($params));
+        exit;
+    }
+
+    /**
+     * Alias method for reserver() to match the view route
+     * @param int $terrainId ID du terrain à réserver
+     */
+    public function reserverTerrain($terrainId = null) {
+        $this->reserver($terrainId);
+    }
+
+    /**
+     * Get options for reservation (internal method)
+     */
+    private function getOptionsForReservation($terrainId) {
+        if (!$terrainId) {
+            return ['success' => false, 'options' => []];
+        }
+        
+        try {
+            $sql = "SELECT 
+                        o.id_option,
+                        o.nom_option,
+                        o.description,
+                        p.prix_option,
+                        p.disponible
+                    FROM options o
+                    INNER JOIN posseder p ON o.id_option = p.id_option
+                    WHERE p.id_terrain = :terrain_id
+                    AND (p.disponible = 1 OR p.disponible IS NULL)
+                    ORDER BY o.nom_option";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindValue(':terrain_id', $terrainId, PDO::PARAM_INT);
+            $stmt->execute();
+            $options = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            return ['success' => true, 'options' => $options];
+        } catch (PDOException $e) {
+            error_log("Erreur getOptionsForReservation: " . $e->getMessage());
+            return ['success' => false, 'options' => []];
+        }
     }
 }

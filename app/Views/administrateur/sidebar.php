@@ -72,16 +72,6 @@
           </ul>
         </div>
       </li>
-      
-      <!-- Notifications -->
-      <li class="nav-item">
-          <a class="nav-link" href="<?= $baseUrl ?>dashboard/administrateur">
-            <i class="bi bi-bell nav-icon"></i>
-            <span class="nav-text">Notifications</span>
-          </a>
-        </li>
-    </ul>
-
     </div>
 
     <!-- User Profile Section -->

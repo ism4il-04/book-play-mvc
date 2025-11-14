@@ -8,31 +8,58 @@ class TournoiController extends Controller {
      * Gestionnaire - liste des tournois
      */
     public function index() {
-        if (!isset($_SESSION['user'])) {
-            header('Location: ' . BASE_URL . 'auth/login');
-            exit;
+    if (!isset($_SESSION['user'])) {
+        header('Location: ' . BASE_URL . 'auth/login');
+        exit;
+    }
+
+    $role = $_SESSION['user']['role'] ?? null;
+
+    if ($role !== 'gestionnaire') {
+        if ($role === 'utilisateur') {
+            header('Location: ' . BASE_URL . 'tournoi/mesDemandes');
+        } else {
+            header('Location: ' . BASE_URL);
         }
+        exit;
+    }
 
-        $role = $_SESSION['user']['role'] ?? null;
+    require_once __DIR__ . '/../Models/terrain.php';
 
-        if ($role !== 'gestionnaire') {
-            if ($role === 'utilisateur') {
-                header('Location: ' . BASE_URL . 'tournoi/mesDemandes');
-            } else {
-                header('Location: ' . BASE_URL);
-            }
-            exit;
-        }
-
-        require_once __DIR__ . '/../Models/Tournoi.php';
-        require_once __DIR__ . '/../Models/terrain.php';
-
-        $gestionnaireId = $_SESSION['user']['id'];
-        $tournoiModel = new Tournoi($gestionnaireId);
-        $terrainModel = new Terrain($gestionnaireId);
-
-        $tournois = $tournoiModel->getForGestionnaire();
-        $demandes = $tournoiModel->getDemandesForGestionnaire();
+    $gestionnaireId = $_SESSION['user']['id'];
+    $terrainModel = new Terrain($gestionnaireId);
+    
+    try {
+        $db = Database::getInstance()->getConnection();
+        
+        // TOURNOIS CRÉÉS PAR LE GESTIONNAIRE (sans entrée dans demande)
+        $sqlTournois = "SELECT t.*
+                       FROM tournoi t
+                       LEFT JOIN demande d ON t.id_tournoi = d.id_tournoi
+                       WHERE t.id_gestionnaire = ?
+                       AND d.id_tournoi IS NULL
+                       ORDER BY t.date_debut DESC";
+        $stmtTournois = $db->prepare($sqlTournois);
+        $stmtTournois->execute([$gestionnaireId]);
+        $tournois = $stmtTournois->fetchAll(PDO::FETCH_ASSOC);
+        
+        // DEMANDES DE TOURNOIS PAR LES CLIENTS (avec entrée dans demande)
+        $sqlDemandes = "SELECT DISTINCT
+                           t.*,
+                           u.nom AS client_nom,
+                           u.prenom AS client_prenom,
+                           u.email AS client_email,
+                           d.statut AS demande_statut
+                       FROM tournoi t
+                       INNER JOIN demande d ON t.id_tournoi = d.id_tournoi
+                       INNER JOIN client c ON d.id_client = c.id
+                       INNER JOIN utilisateur u ON c.id = u.id
+                       WHERE t.id_gestionnaire = ?
+                       ORDER BY t.date_debut DESC";
+        $stmtDemandes = $db->prepare($sqlDemandes);
+        $stmtDemandes->execute([$gestionnaireId]);
+        $demandes = $stmtDemandes->fetchAll(PDO::FETCH_ASSOC);
+        
         $terrains = $terrainModel->getGestionnaireTerrains();
 
         $activeSection = $_GET['section'] ?? 'tournois';
@@ -45,7 +72,14 @@ class TournoiController extends Controller {
             'demandes' => $demandes,
             'activeSection' => $activeSection
         ]);
+        
+    } catch (PDOException $e) {
+        error_log("Erreur index tournoi: " . $e->getMessage());
+        $_SESSION['error'] = 'Erreur lors du chargement des tournois';
+        header('Location: ' . BASE_URL . 'dashboard/gestionnaire');
+        exit;
     }
+}
 
     /**
      * Afficher le formulaire de création/demande de tournoi
@@ -335,13 +369,29 @@ class TournoiController extends Controller {
 
             $db->commit();
 
+            // Récupérer info gestionnaire pour réponse JSON
+            $sqlUser = "SELECT u.prenom, u.nom FROM utilisateur u INNER JOIN gestionnaire g ON u.id = g.id WHERE g.id = ? LIMIT 1";
+            $stmtUser = $db->prepare($sqlUser);
+            $stmtUser->execute([(int)$_POST['gestionnaire_id']]);
+            $gest = $stmtUser->fetch(PDO::FETCH_ASSOC) ?: ['prenom' => '', 'nom' => ''];
+
             // Envoyer notification au gestionnaire
             $this->sendNotificationGestionnaire($_POST['gestionnaire_id'], $tournoiId);
 
             echo json_encode([
                 'success' => true,
                 'message' => 'Demande de tournoi envoyée avec succès !',
-                'tournoi_id' => $tournoiId
+                'tournoi_id' => $tournoiId,
+                'tournoi' => [
+                    'id_tournoi' => (int)$tournoiId,
+                    'nom_tournoi' => (string)($_POST['nom_tournoi'] ?? ''),
+                    'gestionnaire_prenom' => (string)($gest['prenom'] ?? ''),
+                    'gestionnaire_nom' => (string)($gest['nom'] ?? ''),
+                    'date_debut' => (string)($_POST['date_debut'] ?? ''),
+                    'date_fin' => (string)($_POST['date_fin'] ?? ''),
+                    'nb_equipes' => (int)($_POST['nb_equipes'] ?? 0),
+                    'status' => 'en attente'
+                ]
             ]);
 
         } catch (Exception $e) {
@@ -560,6 +610,80 @@ class TournoiController extends Controller {
     }
 
     /**
+     * Afficher le formulaire d'inscription public pour un tournoi
+     * URL attendue: tournoi/inscriptionForm/{id_tournoi}
+     */
+    public function inscriptionForm($id = null) {
+        // Pas de redirection vers mesDemandes ici: la vue gère l'état de connexion
+        $tournoiId = $id ?? ($_GET['id'] ?? null);
+        if (!$tournoiId) {
+            $_SESSION['error'] = 'ID tournoi manquant';
+            header('Location: ' . BASE_URL . 'home/tournois');
+            exit;
+        }
+
+        try {
+            $db = Database::getInstance()->getConnection();
+
+            // Récupérer les informations du tournoi, le terrain et le nombre réel d'équipes inscrites
+            $sql = "SELECT 
+                        t.id_tournoi,
+                        t.nom_tournoi,
+                        t.slogan,
+                        t.date_debut,
+                        t.date_fin,
+                        t.nb_equipes,
+                        t.prixPremiere,
+                        t.prixDeuxieme,
+                        t.prixTroisieme,
+                        t.status,
+                        MAX(ter.nom_terrain) AS nom_terrain,
+                        MAX(ter.localisation) AS localisation,
+                        MAX(ter.image) AS image,
+                        MAX(ter.type_terrain) AS type_terrain,
+                        MAX(ter.format_terrain) AS format_terrain,
+                        COALESCE(pi.equipes_inscrites, 0) AS equipes_inscrites
+                    FROM tournoi t
+                    INNER JOIN gestionnaire g ON t.id_gestionnaire = g.id
+                    INNER JOIN utilisateur u ON g.id = u.id
+                    LEFT JOIN reservation r ON t.id_tournoi = r.id_tournoi
+                    LEFT JOIN terrain ter ON r.id_terrain = ter.id_terrain
+                    LEFT JOIN (
+                        SELECT p.id_tournoi, COUNT(DISTINCT p.id_equipe) AS equipes_inscrites
+                        FROM participation p
+                        GROUP BY p.id_tournoi
+                    ) pi ON pi.id_tournoi = t.id_tournoi
+                    WHERE t.id_tournoi = ?
+                    GROUP BY t.id_tournoi
+                    LIMIT 1";
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute([(int)$tournoiId]);
+            $tournoi = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$tournoi) {
+                $_SESSION['error'] = 'Tournoi introuvable';
+                header('Location: ' . BASE_URL . 'home/tournois');
+                exit;
+            }
+
+            $places_restantes = max(0, ((int)$tournoi['nb_equipes']) - ((int)$tournoi['equipes_inscrites']));
+
+            $this->view('home/tournoi_inscription', [
+                'user' => $_SESSION['user'] ?? null,
+                'tournoi' => $tournoi,
+                'places_restantes' => $places_restantes,
+            ]);
+
+        } catch (PDOException $e) {
+            error_log('Erreur inscriptionForm: ' . $e->getMessage());
+            $_SESSION['error'] = 'Erreur lors du chargement du formulaire';
+            header('Location: ' . BASE_URL . 'home/tournois');
+            exit;
+        }
+    }
+
+    /**
      * Gestionnaire : ajouter un match au tournoi
      */
     public function addMatch($id) {
@@ -715,4 +839,270 @@ class TournoiController extends Controller {
             exit;
         }
     }
+ /**
+ * Gestionnaire - liste des tournois
+ */
+
+/**
+ * Afficher les tournois publics (pour tous les visiteurs)
+ */
+public function listPublic() {
+    try {
+        $db = Database::getInstance()->getConnection();
+        
+        // Récupérer UNIQUEMENT les tournois créés par les gestionnaires
+        // (ceux qui n'ont PAS d'entrée dans la table demande)
+        $sql = "SELECT 
+                    t.id_tournoi,
+                    t.nom_tournoi,
+                    t.slogan,
+                    t.date_debut,
+                    t.date_fin,
+                    t.nb_equipes,
+                    t.prixPremiere,
+                    t.prixDeuxieme,
+                    t.prixTroisieme,
+                    t.status,
+                    u.nom AS gestionnaire_nom,
+                    u.prenom AS gestionnaire_prenom,
+                    ter.nom_terrain,
+                    ter.localisation,
+                    ter.image,
+                    ter.type_terrain,
+                    ter.format_terrain,
+                    COALESCE(pi.equipes_inscrites, 0) AS equipes_inscrites,
+                    CASE 
+                        WHEN COALESCE(pi.equipes_inscrites, 0) >= t.nb_equipes THEN 'complet'
+                        ELSE 'disponible'
+                    END AS statut_inscription
+                FROM tournoi t
+                INNER JOIN gestionnaire g ON t.id_gestionnaire = g.id
+                INNER JOIN utilisateur u ON g.id = u.id
+                LEFT JOIN reservation r ON t.id_tournoi = r.id_tournoi
+                LEFT JOIN terrain ter ON r.id_terrain = ter.id_terrain
+                LEFT JOIN (
+                    SELECT p.id_tournoi, COUNT(DISTINCT p.id_equipe) AS equipes_inscrites
+                    FROM participation p
+                    GROUP BY p.id_tournoi
+                ) pi ON pi.id_tournoi = t.id_tournoi
+                WHERE t.date_debut >= CURDATE()
+                AND g.status = 'accepté'
+                AND NOT EXISTS (
+                    SELECT 1 FROM demande d WHERE d.id_tournoi = t.id_tournoi
+                )
+                GROUP BY t.id_tournoi
+                ORDER BY t.date_debut ASC";
+        
+        $stmt = $db->prepare($sql);
+        $stmt->execute();
+        $tournois = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (isset($_GET['format']) && $_GET['format'] === 'json') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'tournois' => $tournois]);
+            exit;
+        }
+
+        $this->view('home/tournois', [
+            'user' => $_SESSION['user'] ?? null,
+            'tournois' => $tournois
+        ]);
+
+    } catch (PDOException $e) {
+        error_log("Erreur listPublic: " . $e->getMessage());
+        $_SESSION['error'] = 'Erreur lors du chargement des tournois';
+        header('Location: ' . BASE_URL);
+        exit;
+    }
+}
+/**
+ * Soumettre une inscription à un tournoi
+ */
+public function submitInscription() {
+    header('Content-Type: application/json');
+
+    // Vérifier que l'utilisateur est connecté
+    if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'utilisateur') {
+        echo json_encode(['success' => false, 'message' => 'Vous devez être connecté en tant que client']);
+        exit;
+    }
+
+    try {
+        $required = ['tournoi_id', 'nom_equipe', 'nbr_joueurs', 'liste_joueurs'];
+        
+        foreach ($required as $field) {
+            if (empty($_POST[$field])) {
+                echo json_encode(['success' => false, 'message' => "Le champ $field est requis"]);
+                exit;
+            }
+        }
+
+        $tournoiId = (int)$_POST['tournoi_id'];
+        $userId = (int)$_SESSION['user']['id'];
+        
+        $db = Database::getInstance()->getConnection();
+        $db->beginTransaction();
+
+        // Vérifier que le tournoi existe et accepte encore des inscriptions
+        $sqlTournoi = "SELECT t.*, 
+                            COUNT(DISTINCT p.id_equipe) AS equipes_inscrites
+                       FROM tournoi t
+                       LEFT JOIN participation p ON t.id_tournoi = p.id_tournoi
+                       WHERE t.id_tournoi = ?
+                       GROUP BY t.id_tournoi";
+        $stmtTournoi = $db->prepare($sqlTournoi);
+        $stmtTournoi->execute([$tournoiId]);
+        $tournoi = $stmtTournoi->fetch(PDO::FETCH_ASSOC);
+
+        if (!$tournoi) {
+            throw new Exception('Tournoi non trouvé ou non disponible');
+        }
+
+        if ($tournoi['equipes_inscrites'] >= $tournoi['nb_equipes']) {
+            throw new Exception('Le tournoi est complet');
+        }
+
+        // Vérifier si l'utilisateur n'a pas déjà inscrit une équipe
+        $sqlCheck = "SELECT e.id_equipe 
+                     FROM equipe e
+                     INNER JOIN participation p ON e.id_equipe = p.id_equipe
+                     WHERE e.id_client = ? AND p.id_tournoi = ?";
+        $stmtCheck = $db->prepare($sqlCheck);
+        $stmtCheck->execute([$userId, $tournoiId]);
+        
+        if ($stmtCheck->fetch()) {
+            throw new Exception('Vous avez déjà inscrit une équipe à ce tournoi');
+        }
+
+        // Vérifier et créer l'entrée dans la table client si elle n'existe pas
+        $sqlCheckClient = "SELECT id FROM client WHERE id = ?";
+        $stmtCheckClient = $db->prepare($sqlCheckClient);
+        $stmtCheckClient->execute([$userId]);
+        
+        if (!$stmtCheckClient->fetch()) {
+            $sqlInsertClient = "INSERT INTO client (id) VALUES (?)";
+            $stmtInsertClient = $db->prepare($sqlInsertClient);
+            $stmtInsertClient->execute([$userId]);
+        }
+
+        // Décoder la liste des joueurs
+        $listeJoueurs = json_decode($_POST['liste_joueurs'], true);
+        if (!is_array($listeJoueurs) || empty($listeJoueurs)) {
+            throw new Exception('La liste des joueurs est invalide');
+        }
+
+        // Créer l'équipe
+        $sqlEquipe = "INSERT INTO equipe (nom_equipe, nbr_joueurs, liste_joueurs, id_client) 
+                     VALUES (?, ?, ?, ?)";
+        $stmtEquipe = $db->prepare($sqlEquipe);
+        $stmtEquipe->execute([
+            $_POST['nom_equipe'],
+            (int)$_POST['nbr_joueurs'],
+            json_encode($listeJoueurs),
+            $userId
+        ]);
+        
+        $equipeId = $db->lastInsertId();
+        
+        // Créer la participation
+        $sqlParticipation = "INSERT INTO participation (id_tournoi, id_equipe) VALUES (?, ?)";
+        $stmtParticipation = $db->prepare($sqlParticipation);
+        $stmtParticipation->execute([$tournoiId, $equipeId]);
+
+        $db->commit();
+
+        // Recalculer les compteurs pour la réponse
+        $sqlCounts = "SELECT 
+                          t.nb_equipes,
+                          COUNT(DISTINCT p.id_equipe) AS equipes_inscrites
+                       FROM tournoi t
+                       LEFT JOIN participation p ON t.id_tournoi = p.id_tournoi
+                       WHERE t.id_tournoi = ?
+                       GROUP BY t.id_tournoi";
+        $stmtCounts = $db->prepare($sqlCounts);
+        $stmtCounts->execute([$tournoiId]);
+        $counts = $stmtCounts->fetch(PDO::FETCH_ASSOC) ?: ['nb_equipes' => 0, 'equipes_inscrites' => 0];
+
+        $nbEquipes = (int)($counts['nb_equipes'] ?? 0);
+        $eqInscrites = (int)($counts['equipes_inscrites'] ?? 0);
+        $nouveauStatut = ($eqInscrites >= $nbEquipes) ? 'complet' : 'disponible';
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Inscription réussie ! Votre équipe a été inscrite au tournoi.',
+            'tournoi_id' => (int)$tournoiId,
+            'nb_equipes' => $nbEquipes,
+            'equipes_inscrites' => $eqInscrites,
+            'nouveau_statut' => $nouveauStatut
+        ]);
+
+    } catch (Exception $e) {
+        if (isset($db)) {
+            $db->rollBack();
+        }
+        error_log("Erreur submitInscription: " . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
+    exit;
+}
+
+/**
+ * Backfill des entrées manquantes dans la table 'demande' pour les tournois créés par des clients.
+ * - Idempotent: ne crée pas de doublons (JOIN avec demande pour n'insérer que les manquantes)
+ * - Utilise d'abord reservation.id_client si présent, sinon dérive via participation -> equipe.id_client
+ *
+ * Accès: nécessite une session utilisateur. À utiliser une seule fois pour corriger des données incohérentes.
+ */
+public function backfillDemandes() {
+    header('Content-Type: application/json');
+
+    if (!isset($_SESSION['user'])) {
+        echo json_encode(['success' => false, 'message' => 'Non autorisé']);
+        exit;
+    }
+
+    try {
+        $db = Database::getInstance()->getConnection();
+        $db->beginTransaction();
+
+        // 1) Backfill à partir de reservation.id_client lorsqu'il est présent
+        $sql1 = "INSERT INTO demande (id_tournoi, id_client, id_reservation, statut)
+                 SELECT r.id_tournoi, r.id_client, r.id_reservation, 'en attente'
+                 FROM reservation r
+                 LEFT JOIN demande d ON d.id_reservation = r.id_reservation
+                 WHERE r.type = 'tournoi'
+                   AND d.id_reservation IS NULL
+                   AND r.id_client IS NOT NULL";
+        $db->exec($sql1);
+
+        // 2) Backfill lorsque reservation.id_client est NULL: dériver via participation -> equipe.id_client
+        $sql2 = "INSERT INTO demande (id_tournoi, id_client, id_reservation, statut)
+                 SELECT DISTINCT r.id_tournoi, e.id_client, r.id_reservation, 'en attente'
+                 FROM reservation r
+                 INNER JOIN tournoi t ON t.id_tournoi = r.id_tournoi
+                 LEFT JOIN participation p ON p.id_tournoi = t.id_tournoi
+                 LEFT JOIN equipe e ON e.id_equipe = p.id_equipe
+                 LEFT JOIN demande d ON d.id_reservation = r.id_reservation
+                 WHERE r.type = 'tournoi'
+                   AND d.id_reservation IS NULL
+                   AND (r.id_client IS NULL OR r.id_client = 0)
+                   AND e.id_client IS NOT NULL";
+        $db->exec($sql2);
+
+        $db->commit();
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Backfill des demandes effectué. Les tournois créés par clients auront désormais une entrée dans demande.'
+        ]);
+
+    } catch (Exception $e) {
+        if (isset($db)) {
+            $db->rollBack();
+        }
+        error_log('Erreur backfillDemandes: ' . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => 'Erreur serveur: ' . $e->getMessage()]);
+    }
+    exit;
+}
 }

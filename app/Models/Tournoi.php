@@ -41,6 +41,7 @@ class Tournoi extends Model {
     public function existedTournoi() {
         $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE id_gestionnaire IS NOT NULL");
         $stmt->execute();
+
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

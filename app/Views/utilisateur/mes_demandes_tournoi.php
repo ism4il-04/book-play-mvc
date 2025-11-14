@@ -33,7 +33,7 @@ $demandes = $demandes ?? [];
    ============================================ */
 body {
     font-family: "Poppins", sans-serif;
-    background-color: #f6f9f8;
+    background: linear-gradient(135deg, #fbfff5 0%, #f1faea 100%);
     color: #333;
 }
 
@@ -57,20 +57,62 @@ body {
     vertical-align: middle;
 }
 
-.btn-success.rounded-pill {
-    background: linear-gradient(135deg, var(--green-primary) 0%, var(--green-dark) 100%);
-    border: none;
-    padding: 0.75rem 2rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+.page-title::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 26px;
+    margin-right: 10px;
+    border-radius: 3px;
+    background: linear-gradient(135deg, #CEFE24, #b9ff00);
+    vertical-align: -4px;
 }
 
-.btn-success.rounded-pill:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(40, 167, 69, 0.4);
-    background: linear-gradient(135deg, var(--green-dark) 0%, var(--green-darker) 100%);
+/* CTA: Nouvelle Demande (vert clair, simple & fancy) */
+.btn-fancy-green {
+    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+    color: #fff;
+    border: 2px solid rgba(6, 68, 32, 0.12);
+    padding: 0.7rem 1.4rem;
+    font-weight: 700;
+    border-radius: 999px;
+    letter-spacing: 0.01em;
+    transition: transform 0.2s ease, box-shadow 0.3s ease, border-color 0.2s ease;
+    box-shadow: 0 6px 16px rgba(46, 204, 113, 0.28), inset 0 1px 0 rgba(255,255,255,0.3);
 }
+
+.btn-fancy-green i { opacity: 0.9; }
+
+.btn-fancy-green:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(46, 204, 113, 0.36), inset 0 1px 0 rgba(255,255,255,0.5);
+    border-color: rgba(6, 68, 32, 0.2);
+}
+
+/* Bouton retour (outline) */
+.btn-back-outline {
+    background: #fff;
+    color: var(--green-dark);
+    border: 2px solid rgba(6, 68, 32, 0.18);
+    padding: 0.55rem 1rem;
+    border-radius: 999px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    transition: transform .15s ease, box-shadow .2s ease, border-color .2s ease;
+}
+
+.btn-back-outline:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+    border-color: rgba(6, 68, 32, 0.28);
+}
+
+/* Pas de soulignement sur les boutons (ancres) */
+.btn, .btn:visited, .btn:hover { text-decoration: none !important; }
+
+.btn-fancy-green:active { transform: translateY(0); }
 
 /* ============================================
    ALERTS
@@ -167,7 +209,7 @@ body {
 }
 
 .table thead {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    background: linear-gradient(135deg, #f9fbf4 0%, #eef6e6 100%);
 }
 
 .table thead th {
@@ -196,6 +238,70 @@ body {
 
 .table-row:last-child td {
     border-bottom: none;
+}
+
+/* ============================================
+   TOOLBAR (SEARCH + FILTERS)
+   ============================================ */
+.tournoi-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.search-input {
+    position: relative;
+    flex: 1 1 320px;
+    max-width: 520px;
+}
+
+.search-input input[type="text"] {
+    width: 100%;
+    padding: 0.75rem 2.5rem 0.75rem 2.5rem;
+    border: 2px solid var(--border-color);
+    border-radius: 999px;
+    background: #fff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-input input[type="text"]:focus {
+    outline: none;
+    border-color: var(--green-primary);
+    box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.08);
+}
+
+.search-input .icon-left {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+}
+
+.filter-pills {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.filter-pill {
+    border: 1px solid var(--border-color);
+    background: #fff;
+    color: #495057;
+    padding: 0.5rem 0.9rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-pill:hover { box-shadow: var(--shadow-sm); }
+.filter-pill.active {
+    border-color: var(--green-primary);
+    background: var(--success-bg);
+    color: var(--green-dark);
 }
 
 /* ============================================
@@ -282,41 +388,27 @@ body {
     gap: 0.5rem;
 }
 
-.btn-link {
-    text-decoration: none;
-    padding: 0.5rem 0.75rem;
-    border-radius: 8px;
-    font-weight: 500;
+.btn-chip {
+    border: none;
+    padding: 0.55rem 0.9rem;
+    border-radius: 999px;
+    font-weight: 600;
     font-size: 0.9rem;
-    transition: all 0.3s ease;
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.4rem;
+    color: #fff;
+    transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    box-shadow: var(--shadow-sm);
 }
 
-.btn-link:hover {
-    background: rgba(0, 0, 0, 0.05);
-    transform: translateY(-1px);
-}
+.btn-chip i { font-size: 0.95rem; }
+.btn-chip:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-chip:disabled { opacity: 0.7; cursor: not-allowed; }
 
-.btn-link.text-success:hover {
-    background: var(--success-bg);
-    color: var(--green-primary) !important;
-}
-
-.btn-link.text-warning:hover {
-    background: rgba(255, 193, 7, 0.1);
-    color: #f39c12 !important;
-}
-
-.btn-link.text-danger:hover {
-    background: rgba(220, 53, 69, 0.1);
-    color: #dc3545 !important;
-}
-
-.btn-link i {
-    font-size: 0.95rem;
-}
+.btn-chip.btn-success { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+.btn-chip.btn-warning { background: linear-gradient(135deg, #f6c23e, #e0a800); }
+.btn-chip.btn-danger { background: linear-gradient(135deg, #e74c3c, #c0392b); }
 
 /* ============================================
    MODAL
@@ -389,7 +481,7 @@ body {
         font-size: 1.4rem;
     }
 
-    .btn.btn-success {
+    .btn.btn-fancy-green {
         width: 100%;
         justify-content: center;
     }
@@ -423,6 +515,9 @@ body {
     .modal-footer .btn {
         width: 100%;
     }
+
+    .tournoi-toolbar { flex-direction: column; align-items: stretch; }
+    .filter-pills { flex-wrap: wrap; }
 }
 
 @media (max-width: 480px) {
@@ -474,13 +569,25 @@ body {
 <div class="container my-5">
     <div class="row justify-content-center">
         <div class="col-12 col-xl-10">
-            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-6">
                 <h1 class="page-title mb-0">
                     <i class="fas fa-list me-2 text-success"></i>Mes Demandes de Tournoi
                 </h1>
-                <a href="<?= BASE_URL ?>tournoi/create" class="btn btn-success rounded-pill px-4">
+                <a href="<?= BASE_URL ?>tournoi/create" class="btn btn-fancy-green">
                     <i class="fas fa-plus me-2"></i>Nouvelle Demande
                 </a>
+            </div>
+            <div class="tournoi-toolbar mb-4" style="margin-top: 1rem;">
+                <div class="search-input">
+                    <i class="fas fa-search icon-left"></i>
+                    <input type="text" id="searchInput" placeholder="Rechercher un tournoi ou un gestionnaire..." aria-label="Rechercher">
+                </div>
+                <div class="filter-pills" role="tablist" aria-label="Filtrer par statut">
+                    <button type="button" class="filter-pill active" data-filter="all">Tous</button>
+                    <button type="button" class="filter-pill" data-filter="en attente">En attente</button>
+                    <button type="button" class="filter-pill" data-filter="accepté">Accepté</button>
+                    <button type="button" class="filter-pill" data-filter="refusé">Refusé</button>
+                </div>
             </div>
 
             <?php if (isset($_SESSION['success'])): ?>
@@ -490,6 +597,7 @@ body {
                 </div>
                 <?php unset($_SESSION['success']); ?>
             <?php endif; ?>
+
 
             <?php if (isset($_SESSION['error'])): ?>
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -530,13 +638,12 @@ body {
                                 <tbody>
                                     <?php foreach ($demandes as $tournoi): ?>
                                         <?php $status = $tournoi['status'] ?? 'en attente'; ?>
-                                        <tr class="table-row">
+                                        <tr class="table-row" data-status="<?= htmlspecialchars(strtolower($status)) ?>" data-search="<?= htmlspecialchars(strtolower(($tournoi['nom_tournoi'] ?? '') . ' ' . ($tournoi['gestionnaire_prenom'] ?? '') . ' ' . ($tournoi['gestionnaire_nom'] ?? ''))) ?>">
                                             <td class="fw-semibold">
                                                 <div class="d-flex align-items-center gap-3">
                                                     <span class="icon-badge"><i class="fas fa-trophy"></i></span>
                                                     <div>
                                                         <div><?= htmlspecialchars($tournoi['nom_tournoi']) ?></div>
-                                                        <small class="text-muted">ID #<?= $tournoi['id_tournoi'] ?></small>
                                                     </div>
                                                 </div>
                                             </td>
@@ -571,20 +678,15 @@ body {
                                             </td>
                                             <td class="text-center">
                                                 <div class="btn-group" role="group">
-                                                    <a href="<?= BASE_URL ?>tournoi/details/<?= $tournoi['id_tournoi'] ?>" class="btn btn-link btn-sm text-success">
-                                                        <i class="fas fa-eye me-1"></i>Détails
+                                                    <a href="<?= BASE_URL ?>tournoi/details/<?= $tournoi['id_tournoi'] ?>" class="btn btn-chip btn-success">
+                                                        <i class="fas fa-eye"></i>Détails
                                                     </a>
                                                     <?php if ($status === 'en attente'): ?>
-                                                        <a href="<?= BASE_URL ?>tournoi/edit/<?= $tournoi['id_tournoi'] ?>" class="btn btn-link btn-sm text-warning">
-                                                            <i class="fas fa-edit me-1"></i>Modifier
+                                                        <a href="<?= BASE_URL ?>tournoi/edit/<?= $tournoi['id_tournoi'] ?>" class="btn btn-chip btn-warning">
+                                                            <i class="fas fa-edit"></i>Modifier
                                                         </a>
-                                                        <button type="button"
-                                                                class="btn btn-link btn-sm text-danger"
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#deleteModal"
-                                                                data-tournoi-id="<?= $tournoi['id_tournoi'] ?>"
-                                                                data-tournoi-nom="<?= htmlspecialchars($tournoi['nom_tournoi']) ?>">
-                                                            <i class="fas fa-trash me-1"></i>Annuler
+                                                        <button type="button" class="btn btn-chip btn-danger js-cancel-demande" data-tournoi-id="<?= $tournoi['id_tournoi'] ?>">
+                                                            <i class="fas fa-trash"></i>Annuler
                                                         </button>
                                                     <?php endif; ?>
                                                 </div>
@@ -601,75 +703,183 @@ body {
     </div>
 </div>
 
-<!-- Modal Confirmation Suppression -->
-<div class="modal fade" id="deleteModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Confirmer l'annulation</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p class="mb-1">Êtes-vous sûr de vouloir annuler la demande de tournoi&nbsp;?</p>
-                <p class="fw-semibold" id="tournoiNom"></p>
-                <p class="text-muted small mb-0">Cette action est irréversible.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>
-                <form id="deleteForm" method="POST" class="mb-0">
-                    <input type="hidden" name="tournoi_id" id="tournoiId">
-                    <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-trash me-2"></i>Oui, annuler
-                    </button>
-                </form>
-            </div>
+<div class="container">
+    <div class="row">
+        <div class="col-12 d-flex justify-content-start my-5">
+            <button type="button" class="btn btn-back-outline" onclick="history.back()">
+                <i class="fas fa-arrow-left"></i> Retour
+            </button>
         </div>
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const deleteModal = document.getElementById('deleteModal');
-    const tournoiIdInput = document.getElementById('tournoiId');
-    const tournoiNomSpan = document.getElementById('tournoiNom');
-    const deleteForm = document.getElementById('deleteForm');
+    const searchInput = document.getElementById('searchInput');
+    const filterButtons = document.querySelectorAll('.filter-pill');
+    const rows = Array.from(document.querySelectorAll('tbody .table-row'));
+    const cancelButtons = document.querySelectorAll('.js-cancel-demande');
+    let activeFilter = 'all';
 
-    if (deleteModal) {
-        deleteModal.addEventListener('show.bs.modal', event => {
-            const button = event.relatedTarget;
-            const tournoiId = button?.getAttribute('data-tournoi-id');
-            const tournoiNom = button?.getAttribute('data-tournoi-nom') ?? '';
+    cancelButtons.forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const tournoiId = btn.getAttribute('data-tournoi-id');
+            if (!tournoiId) return;
+            try {
+                btn.disabled = true;
+                const data = new FormData();
+                data.append('tournoi_id', tournoiId);
+                const res = await fetch('<?= BASE_URL ?>tournoi/deleteDemande', { method: 'POST', body: data });
+                const out = await res.json();
+                if (out.success) {
+                    window.location.reload();
+                } else {
+                    alert(out.message || 'Une erreur est survenue.');
+                    btn.disabled = false;
+                }
+            } catch (e) {
+                alert('Une erreur est survenue.');
+                btn.disabled = false;
+            }
+        });
+    });
 
-            tournoiIdInput.value = tournoiId ?? '';
-            tournoiNomSpan.textContent = tournoiNom;
+    function applyFilters() {
+        const q = (searchInput?.value || '').trim().toLowerCase();
+        rows.forEach(tr => {
+            const status = tr.getAttribute('data-status') || '';
+            const hay = tr.getAttribute('data-search') || '';
+            const byStatus = activeFilter === 'all' || status === activeFilter;
+            const bySearch = !q || hay.includes(q);
+            tr.style.display = (byStatus && bySearch) ? '' : 'none';
         });
     }
 
-    if (deleteForm) {
-        deleteForm.addEventListener('submit', event => {
-            event.preventDefault();
-            const tournoiId = tournoiIdInput.value;
-            if (!tournoiId) {
-                return;
+    searchInput?.addEventListener('input', applyFilters);
+    filterButtons.forEach(btn => btn.addEventListener('click', () => {
+        filterButtons.forEach(b => b.classList.toggle('active', b === btn));
+        activeFilter = (btn.getAttribute('data-filter') || 'all').toLowerCase();
+        applyFilters();
+    }));
+
+    // Injecter le nouveau tournoi depuis sessionStorage (si présent)
+    try {
+        const raw = sessionStorage.getItem('new_tournoi');
+        if (raw) {
+            const t = JSON.parse(raw);
+            sessionStorage.removeItem('new_tournoi');
+
+            const status = (t.status || 'en attente').toLowerCase();
+            const statusClass = status === 'accepté' ? 'badge-accepted' : status === 'refusé' ? 'badge-rejected' : 'badge-pending';
+
+            // Trouver/Créer tbody
+            let tbody = document.querySelector('table tbody');
+            if (!tbody) {
+                const container = document.querySelector('.container .card.shadow-sm') || document.querySelector('.container');
+                const card = document.createElement('div');
+                card.className = 'card shadow-sm';
+                const cardBody = document.createElement('div');
+                cardBody.className = 'card-body p-0';
+                const wrap = document.createElement('div');
+                wrap.className = 'table-responsive';
+                const table = document.createElement('table');
+                table.className = 'table table-hover table-borderless align-middle mb-0';
+                table.innerHTML = `
+                    <thead class="table-light">
+                        <tr class="text-muted text-uppercase small">
+                            <th scope="col">Tournoi</th>
+                            <th scope="col">Gestionnaire</th>
+                            <th scope="col">Dates</th>
+                            <th scope="col" class="text-center">Équipes</th>
+                            <th scope="col">Statut</th>
+                            <th scope="col" class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                `;
+                wrap.appendChild(table);
+                cardBody.appendChild(wrap);
+                card.appendChild(cardBody);
+                const empty = document.querySelector('.empty-state');
+                if (empty && empty.parentElement) {
+                    empty.parentElement.replaceWith(card);
+                } else if (container) {
+                    container.appendChild(card);
+                }
+                tbody = table.querySelector('tbody');
             }
 
-            const data = new FormData();
-            data.append('tournoi_id', tournoiId);
+            if (tbody) {
+                const tr = document.createElement('tr');
+                const searchStr = `${(t.nom_tournoi||'')} ${(t.gestionnaire_prenom||'')} ${(t.gestionnaire_nom||'')}`.toLowerCase();
+                tr.className = 'table-row';
+                tr.setAttribute('data-status', status);
+                tr.setAttribute('data-search', searchStr);
+                tr.innerHTML = `
+                    <td class="fw-semibold">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="icon-badge"><i class="fas fa-trophy"></i></span>
+                            <div><div>${escapeHtml(t.nom_tournoi || '')}</div></div>
+                        </div>
+                    </td>
+                    <td>${escapeHtml(((t.gestionnaire_prenom||'') + ' ' + (t.gestionnaire_nom||'')).trim())}</td>
+                    <td>
+                        <div class="d-flex flex-column">
+                            <span>${formatDate(t.date_debut)}</span>
+                            <small class="text-muted">au ${formatDate(t.date_fin)}</small>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <span class="badge rounded-pill bg-light text-success fw-semibold">${Number(t.nb_equipes||0)} équipes</span>
+                    </td>
+                    <td>
+                        <span class="status-chip ${statusClass}">${status === 'accepté' ? 'Accepté' : status === 'refusé' ? 'Refusé' : 'En attente'}</span>
+                    </td>
+                    <td class="text-center">
+                        <div class="btn-group" role="group">
+                            <a href="<?= BASE_URL ?>tournoi/details/${Number(t.id_tournoi||0)}" class="btn btn-chip btn-success"><i class="fas fa-eye"></i>Détails</a>
+                            <a href="<?= BASE_URL ?>tournoi/edit/${Number(t.id_tournoi||0)}" class="btn btn-chip btn-warning"><i class="fas fa-edit"></i>Modifier</a>
+                            <button type="button" class="btn btn-chip btn-danger js-cancel-demande" data-tournoi-id="${Number(t.id_tournoi||0)}"><i class="fas fa-trash"></i>Annuler</button>
+                        </div>
+                    </td>
+                `;
+                tbody.prepend(tr);
 
-            fetch('<?= BASE_URL ?>tournoi/deleteDemande', {
-                method: 'POST',
-                body: data
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    window.location.reload();
-                } else {
-                    alert(result.message || 'Une erreur est survenue.');
+                const newCancel = tr.querySelector('.js-cancel-demande');
+                if (newCancel) {
+                    newCancel.addEventListener('click', async () => {
+                        const tournoiId = newCancel.getAttribute('data-tournoi-id');
+                        if (!tournoiId) return;
+                        try {
+                            newCancel.disabled = true;
+                            const data = new FormData();
+                            data.append('tournoi_id', tournoiId);
+                            const res = await fetch('<?= BASE_URL ?>tournoi/deleteDemande', { method: 'POST', body: data });
+                            const out = await res.json();
+                            if (out.success) {
+                                tr.remove();
+                            } else {
+                                alert(out.message || 'Une erreur est survenue.');
+                                newCancel.disabled = false;
+                            }
+                        } catch (e) {
+                            alert('Une erreur est survenue.');
+                            newCancel.disabled = false;
+                        }
+                    });
                 }
-            })
-            .catch(() => alert('Une erreur est survenue.'));
-        });
+            }
+        }
+    } catch (e) {}
+
+    applyFilters();
+
+    function escapeHtml(str) {
+        return String(str).replace(/[&<>"]{1}/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s]));
+    }
+    function formatDate(s) {
+        if (!s) return '';
+        try { const d = new Date(s); return d.toLocaleDateString('fr-FR'); } catch { return s; }
     }
 });
 </script>
