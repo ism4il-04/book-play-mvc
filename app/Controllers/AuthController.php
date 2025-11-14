@@ -105,7 +105,7 @@ class AuthController extends Controller {
                 ];
 
                 // Demande: header vers views/utilisateur/dashboard.php
-                header('Location: ' . BASE_URL . 'views/utilisateur/dashboard.php');
+                header('Location: ' . BASE_URL . 'utilisateur/dashboard');
                 exit;
             }
 

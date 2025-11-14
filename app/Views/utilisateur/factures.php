@@ -26,6 +26,7 @@ if ($user) {
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         :root {
             --primary: #2c3e50;
@@ -47,33 +48,75 @@ if ($user) {
             line-height: 1.6;
         }
 
-        /* Navbar */
+        /* Navbar - Version compacte */
         .navbar {
             background: #064420 !important;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 0.8rem 2rem;
+            padding: 0.5rem 2rem;
+            min-height: 60px;
         }
 
         .navbar-brand {
             font-weight: 700;
-            color: var(--primary) !important;
-            font-size: 1.5rem;
+            color: white !important;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            padding: 0;
         }
 
-        .navbar-brand span {
-            color: var(--success);
+        .navbar-brand img {
+            height: 35px;
+            margin-right: 8px;
+        }
+
+        .navbar-brand .brand-text {
+            color: #b9ff00;
         }
 
         .nav-link {
             color: white !important;
             font-weight: 500;
-            padding: 0.5rem 1rem !important;
+            padding: 0.4rem 0.8rem !important;
             transition: all 0.3s;
+            font-size: 0.95rem;
         }
 
         .nav-link:hover, .nav-link.active {
             color: #ffeb3b !important;
             opacity: 0.9;
+        }
+
+        .nav-link i {
+            font-size: 0.9rem;
+        }
+
+        .center-nav {
+            margin: 0 auto;
+        }
+
+        .navbar-nav.ms-auto {
+            margin-left: auto !important;
+        }
+
+        /* Dropdown profil */
+        .navbar-nav .dropdown-menu {
+            margin-top: 0.5rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 991.98px) {
+            .navbar {
+                padding: 0.5rem 1rem;
+            }
+            
+            .navbar-brand {
+                font-size: 1.1rem;
+            }
+            
+            .navbar-brand img {
+                height: 30px;
+            }
         }
 
         /* Main Content */
@@ -195,29 +238,41 @@ if ($user) {
             margin-bottom: 20px;
             opacity: 0.5;
         }
+
+        /* Footer */
+        .main-footer {
+            background: #2c3e50;
+            color: white;
+            margin-top: 3rem;
+        }
+
+        .footer-content {
+            padding: 1.5rem 0;
+        }
     </style>
 </head>
 <body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-green">
+   <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg">
         <div class="container-fluid">
             <a class="navbar-brand" href="<?php echo $baseUrl; ?>">
-                <img src="<?php echo $baseUrl; ?>images/logo.png" alt="Logo" height="40" class="d-inline-block align-text-top me-2">
-                <span class="brand-text">Book<span>&</span>Play</span>
+                <img src="<?php echo $baseUrl; ?>images/logo.png" alt="Logo">
+                <span>Book<span class="brand-text">&</span><span class="brand-text">Play</span></span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" style="background: white;">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto align-items-center">
+                <!-- Menu centré -->
+                <ul class="navbar-nav center-nav">
                     <li class="nav-item">
                         <a class="nav-link" href="<?php echo $baseUrl; ?>utilisateur/dashboard">
-                            <i class="fas fa-home me-1"></i> Tableau de bord
+                            Terrains
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="<?php echo $baseUrl; ?>home/terrains">
-                            <i class="far fa-calendar-alt me-1"></i> Mes Réservations
+                        <a class="nav-link" href="<?php echo $baseUrl; ?>utilisateur/mesReservations">
+                            Mes Réservations
                         </a>
                     </li>
                     <li class="nav-item">
@@ -225,7 +280,7 @@ if ($user) {
                             <i class="fas fa-file-invoice-dollar me-1"></i> Mes Factures
                         </a>
                     </li>
-                    <li class="nav-item">
+                     <li class="nav-item">
                         <a class="nav-link" href="<?php echo $baseUrl; ?>home/tournois">
                             <i class="fas fa-trophy me-1"></i> Tournois
                         </a>
@@ -235,23 +290,61 @@ if ($user) {
                             <i class="fas fa-plus-circle me-1"></i> Demander un tournoi
                         </a>
                     </li>
-                    <li class="nav-item me-3">
-                        <a class="nav-link" href="<?php echo $baseUrl; ?>compte">
-                            <i class="far fa-user me-1"></i> Mon Compte
+                </ul>
+                
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item dropdown me-2">
+                        <a class="nav-link p-0" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Mon profil">
+                            <i class="bi bi-person-circle" style="font-size: 1.4rem;"></i>
                         </a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <div class="rounded-circle bg-light text-dark d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                <?php echo strtoupper(substr($userName, 0, 1)); ?>
+                        <div class="dropdown-menu dropdown-menu-end p-3" aria-labelledby="profileDropdown" style="min-width: 280px;">
+                            <h6 class="mb-3" style="color:#2c3e50; font-weight:700;">Informations personnelles</h6>
+                            <div class="d-flex align-items-start mb-2" style="gap:.6rem; color:#7f8c8d;">
+                                <i class="bi bi-person" style="color:#00bcd4;"></i>
+                                <div>
+                                    <div style="font-size:.8rem; opacity:.8;">Nom complet</div>
+                                    <div style="font-weight:600; color:#2c3e50;">
+                                        <?php 
+                                        $prenom = $currentUser['prenom'] ?? '';
+                                        $nom = $currentUser['nom'] ?? '';
+                                        $name = trim($prenom . ' ' . $nom);
+                                        if ($name === '') { $name = $currentUser['name'] ?? 'Utilisateur'; }
+                                        echo htmlspecialchars($name);
+                                        ?>
+                                    </div>
+                                </div>
                             </div>
+                            <div class="d-flex align-items-start mb-2" style="gap:.6rem; color:#7f8c8d;">
+                                <i class="bi bi-envelope" style="color:#00bcd4;"></i>
+                                <div>
+                                    <div style="font-size:.8rem; opacity:.8;">Email</div>
+                                    <div style="font-weight:600; color:#2c3e50;">
+                                        <?php echo htmlspecialchars($currentUser['email'] ?? ''); ?>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-start mb-3" style="gap:.6rem; color:#7f8c8d;">
+                                <i class="bi bi-telephone" style="color:#00bcd4;"></i>
+                                <div>
+                                    <div style="font-size:.8rem; opacity:.8;">Téléphone</div>
+                                    <div style="font-weight:600; color:#2c3e50;">
+                                        <?php 
+                                        $tel = $currentUser['telephone'] ?? ($currentUser['num_tel'] ?? '');
+                                        echo htmlspecialchars($tel);
+                                        ?>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <a class="btn btn-outline-secondary btn-sm" href="<?php echo $baseUrl; ?>utilisateur/changePassword">Changer mot de passe</a>
+                                <a class="btn btn-primary btn-sm" style="background:#b9ff00; color:#064420; border-color:#b9ff00;" href="<?php echo $baseUrl; ?>utilisateur/profil">Modifier mes informations</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<?php echo $baseUrl; ?>logout" title="Déconnexion">
+                            <i class="bi bi-box-arrow-right" style="font-size: 1.2rem;"></i>
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                            <li><a class="dropdown-item" href="<?php echo $baseUrl; ?>profil"><i class="fas fa-user-circle me-2"></i>Mon Profil</a></li>
-                            <li><a class="dropdown-item" href="<?php echo $baseUrl; ?>parametres"><i class="fas fa-cog me-2"></i>Paramètres</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger" href="<?php echo $baseUrl; ?>logout"><i class="fas fa-sign-out-alt me-2"></i>Déconnexion</a></li>
-                        </ul>
                     </li>
                 </ul>
             </div>
@@ -394,14 +487,14 @@ if ($user) {
                 </div>
             <?php endif; ?>
         </div>
-
-        <!-- Footer -->
-        <footer class="main-footer mt-5">
-            <div class="footer-content text-center py-4">
-                <p>&copy; <?php echo date('Y'); ?> <?php echo APP_NAME; ?>. Tous droits réservés.</p>
-            </div>
-        </footer>
     </main>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="footer-content text-center">
+            <p class="mb-0">&copy; <?php echo date('Y'); ?> <?php echo APP_NAME ?? 'Book&Play'; ?>. Tous droits réservés.</p>
+        </div>
+    </footer>
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>

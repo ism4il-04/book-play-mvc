@@ -105,7 +105,7 @@ $baseUrl = rtrim(BASE_URL, '/') . '/';
             <ul class="navbar-nav align-items-center">
                 <li class="nav-item"><a class="nav-link px-3" href="#features">Features</a></li>
                 <li class="nav-item"><a class="nav-link px-3" href="#newsletter">Newsletter</a></li>
-                <li class="nav-item"><a class="btn btn-green ms-lg-3" href="<?php echo $baseUrl; ?>auth/login">Book a Field</a></li>
+                <li class="nav-item"><a class="btn btn-green ms-lg-3" href="<?php echo $baseUrl; ?>auth/login">Connexion</a></li>
             </ul>
         </div>
     </div>
