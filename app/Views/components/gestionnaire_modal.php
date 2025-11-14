@@ -22,7 +22,7 @@
                         </div>
                     </div>
 
-                    <div class="row mb-4">
+                    <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="email" class="form-label">Email</label>
                             <input type="email" class="form-control" id="email" name="email" required>
@@ -30,6 +30,18 @@
                         <div class="col-md-6">
                             <label for="telephone" class="form-label">Téléphone</label>
                             <input type="tel" class="form-control" id="telephone" name="telephone" placeholder="+212 6 XX XX XX XX">
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="password" class="form-label">Mot de passe</label>
+                            <input type="password" class="form-control" id="password" name="password" required minlength="6">
+                            <div class="form-text">Minimum 6 caractères</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="confirm_password" class="form-label">Confirmer le mot de passe</label>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required minlength="6">
                         </div>
                     </div>
 
@@ -471,9 +483,32 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Password validation
+    function validatePasswords() {
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirm_password').value;
+        
+        if (password !== confirmPassword) {
+            alert('Les mots de passe ne correspondent pas');
+            return false;
+        }
+        
+        if (password.length < 6) {
+            alert('Le mot de passe doit contenir au moins 6 caractères');
+            return false;
+        }
+        
+        return true;
+    }
+    
     // Form submission
     document.getElementById('gestionnaireForm').addEventListener('submit', async function(e) {
         e.preventDefault();
+        
+        // Validate passwords before submission
+        if (!validatePasswords()) {
+            return;
+        }
         
         const formData = new FormData(this);
         const submitBtn = document.querySelector('.btn-submit');

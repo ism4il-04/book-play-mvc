@@ -17,12 +17,24 @@ class GestionnaireController extends Controller {
         
         try {
             // Validate personal information
-            $requiredFields = ['nom', 'prenom', 'email'];
+            $requiredFields = ['nom', 'prenom', 'email', 'password'];
             foreach ($requiredFields as $field) {
                 if (empty($_POST[$field])) {
                     echo json_encode(['success' => false, 'message' => "Le champ $field est requis"]);
                     exit;
                 }
+            }
+            
+            // Validate password length
+            if (strlen($_POST['password']) < 6) {
+                echo json_encode(['success' => false, 'message' => 'Le mot de passe doit contenir au moins 6 caractères']);
+                exit;
+            }
+            
+            // Validate password confirmation
+            if ($_POST['password'] !== $_POST['confirm_password']) {
+                echo json_encode(['success' => false, 'message' => 'Les mots de passe ne correspondent pas']);
+                exit;
             }
             
             // Check if email already exists
@@ -43,7 +55,8 @@ class GestionnaireController extends Controller {
                 'nom' => trim($_POST['nom']),
                 'prenom' => trim($_POST['prenom']),
                 'email' => trim($_POST['email']),
-                'telephone' => trim($_POST['telephone'] ?? '')
+                'telephone' => trim($_POST['telephone'] ?? ''),
+                'password' => password_hash($_POST['password'], PASSWORD_DEFAULT)
             ];
             
             // Process terrains and upload justificatifs
@@ -219,18 +232,14 @@ class GestionnaireController extends Controller {
         }
         
         try {
-            // Generate random password
-            $password = bin2hex(random_bytes(8));
-            
             $gestionnaireModel = new Gestionnaire();
-            $gestionnaireModel->approveDemand($id, $password);
+            $gestionnaireModel->approveDemand($id);
             
-            // TODO: Send email with credentials to gestionnaire
+            // TODO: Send email notification to gestionnaire
             
             echo json_encode([
                 'success' => true,
-                'message' => 'Demande approuvée avec succès',
-                'password' => $password
+                'message' => 'Demande approuvée avec succès'
             ]);
             
         } catch (Exception $e) {

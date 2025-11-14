@@ -26,7 +26,7 @@ class Gestionnaire extends Model {
                 ':nom' => $data['nom'],
                 ':prenom' => $data['prenom'],
                 ':email' => $data['email'],
-                ':password' => password_hash(bin2hex(random_bytes(8)), PASSWORD_DEFAULT), // Temporary password
+                ':password' => $data['password'], // Use the password provided by user (already hashed in controller)
                 ':num_tel' => $data['telephone'] ?? null
             ]);
             
@@ -159,22 +159,11 @@ class Gestionnaire extends Model {
     /**
      * Approve gestionnaire demand
      */
-    public function approveDemand($id, $password) {
+    public function approveDemand($id) {
         try {
             $this->db->beginTransaction();
             
-            // Update utilisateur password
-            $query = "UPDATE {$this->userTable} 
-                      SET password = :password
-                      WHERE id = :id";
-            
-            $stmt = $this->db->prepare($query);
-            $stmt->execute([
-                ':id' => $id,
-                ':password' => password_hash($password, PASSWORD_DEFAULT)
-            ]);
-            
-            // Update gestionnaire status
+            // Update gestionnaire status (no need to update password as user already provided one)
             $query = "UPDATE {$this->table} 
                       SET status = 'accepté', 
                           date_validation = NOW()
