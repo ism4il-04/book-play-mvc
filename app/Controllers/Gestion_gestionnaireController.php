@@ -588,6 +588,43 @@ class Gestion_gestionnaireController extends Controller {
     }
 
     /**
+     * Vérifier les nouvelles demandes de gestionnaire (pour le système temps réel)
+     */
+    public function checkNewDemandes() {
+        header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-cache, must-revalidate');
+        
+        // Vérifier la session et le rôle
+        if (!isset($_SESSION['user']) || ($_SESSION['user']['role'] ?? '') !== 'administrateur') {
+            echo json_encode(['success' => false, 'message' => 'Non autorisé']);
+            exit;
+        }
+
+        try {
+            $adminModel = $this->model('Admin');
+            
+            // Récupérer toutes les nouvelles demandes en attente
+            $newDemandes = $adminModel->getAllGestionnairesEnAttente();
+            
+            // Log pour débogage
+            error_log('checkNewDemandes - Nombre de nouvelles demandes: ' . count($newDemandes));
+            
+            echo json_encode([
+                'success' => true,
+                'newDemandes' => $newDemandes,
+                'debug' => [
+                    'count' => count($newDemandes),
+                    'timestamp' => date('Y-m-d H:i:s')
+                ]
+            ]);
+        } catch (Exception $e) {
+            error_log('Erreur checkNewDemandes: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Erreur serveur']);
+        }
+        exit;
+    }
+
+    /**
      * Récupérer un gestionnaire par son ID (pour le système temps réel)
      */
     public function getGestionnaireById($id = null) {

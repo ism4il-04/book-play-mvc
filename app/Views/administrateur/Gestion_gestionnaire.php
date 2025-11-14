@@ -403,6 +403,11 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    // Marquer la demande comme récemment mise à jour pour éviter la double notification
+                    if (window.demandeGestionnaireMonitor) {
+                        window.demandeGestionnaireMonitor.marquerDemandeMiseAJour(id);
+                    }
+                    
                     // Récupérer l'élément gestionnaire dans la liste "en attente"
                     const gestionnaireCard = acceptBtn.closest('.gestionnaire-card');
                     
@@ -474,6 +479,11 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    // Marquer la demande comme récemment mise à jour pour éviter la double notification
+                    if (window.demandeGestionnaireMonitor) {
+                        window.demandeGestionnaireMonitor.marquerDemandeMiseAJour(id);
+                    }
+                    
                     // Récupérer l'élément gestionnaire dans la liste "en attente"
                     const gestionnaireCard = rejectBtn.closest('.gestionnaire-card');
                     
@@ -1219,5 +1229,13 @@
                 card.style.display = text.includes(searchTerm) ? '' : 'none';
             });
         });
+
+        // Variables globales pour le système temps réel
+        window.userAuthenticated = true;
+        window.userRole = 'administrateur';
+        window.BASE_URL = '<?php echo $baseUrl; ?>';
     </script>
+
+    <!-- Script de surveillance en temps réel des demandes de gestionnaire -->
+    <script src="<?php echo $baseUrl; ?>js/demande-gestionnaire-realtime.js"></script>
 <?php include __DIR__ . '/footer.php'; ?>
